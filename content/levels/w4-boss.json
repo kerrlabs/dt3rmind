@@ -1,0 +1,246 @@
+{
+  "id": "w4-boss",
+  "world": 4,
+  "order": 5,
+  "title": "The refund promise with no ticket",
+  "kicker": "World 4 · Name the Check · Boss",
+  "competencies": ["C5", "C6", "C7"],
+  "movesTaught": ["M6", "M4"],
+  "isBoss": true,
+  "job": {
+    "text": "New domain, held out. Your support team has 8 replies going out today, and every reply that <b>promises a refund</b> must say: the refund amount, a ticket number to track it, and a clear next step for the customer. You can't read all 8. How do you know a refund went out without a ticket number?<br><br><i>Boss rule: the real ask is free text — \"ask the AI for a checker, prove it can fail, run it on every reply.\" For now, build that ask from the chips below; your pass is decided by the checker, never by the AI's say-so.</i>",
+    "preview": {
+      "text": "8 replies waiting (Dana … Omar). The trap is Omar's reply, where \"we've opened a ticket and your refund is on its way\" names a refund and the word \"ticket\" — but no ticket number and nothing for Omar to do.",
+      "more": "graded against the 3 rules"
+    }
+  },
+  "naivePrompt": "Draft replies to these 8 support emails.",
+  "basePrompt": "Draft replies to these 8 support emails.",
+  "simulatorId": "w4-check",
+  "renderer": "item-grid",
+  "moves": [
+    {
+      "id": "check",
+      "kind": "real",
+      "label": "Ask for a checker first",
+      "text": {
+        "plain": "Before you write anything, write a checker that fails any reply promising a refund without {criteria}.",
+        "tech": "Before drafting, write a Python function check(reply, customer) that returns False if a refund-promising reply is missing {criteria}."
+      }
+    },
+    {
+      "id": "prove",
+      "kind": "real",
+      "label": "Make it prove the checker can fail",
+      "text": {
+        "plain": "Test the checker on a bad example first — a refund promise with no real ticket number — and show me it fails.",
+        "tech": "Run check() on a known-bad reply (refund promised, no ticket number) first and show me it returns False."
+      }
+    },
+    {
+      "id": "run",
+      "kind": "real",
+      "label": "Run the checker on every reply",
+      "text": {
+        "plain": "Then run the checker on every reply and rewrite any that fail until they pass.",
+        "tech": "Execute check() on every reply, regenerate any that fail, and report the final pass/fail for each."
+      }
+    },
+    {
+      "id": "show",
+      "kind": "real",
+      "label": "Show me the checker",
+      "text": {
+        "plain": "Show me the checker and the results.",
+        "tech": "Show me the code and the results table."
+      }
+    },
+    {
+      "id": "remind",
+      "kind": "trick",
+      "label": "Remind it of the rules",
+      "text": {
+        "plain": "Remember: every refund promise needs an amount, a ticket number, and a next step.",
+        "tech": null
+      }
+    },
+    {
+      "id": "apologetic",
+      "kind": "trick",
+      "label": "Check it sounds apologetic",
+      "text": {
+        "plain": "Make sure every reply sounds apologetic.",
+        "tech": null
+      }
+    },
+    {
+      "id": "double",
+      "kind": "trick",
+      "label": "Double-check your work",
+      "text": {
+        "plain": "Double-check your work before answering.",
+        "tech": null
+      }
+    }
+  ],
+  "subChoiceGroup": "What should the checker test on a refund promise? (it fails any reply that misses one)",
+  "subChoices": [
+    { "id": "greet", "kind": "real", "label": "the refund amount" },
+    { "id": "name", "kind": "real", "label": "a ticket number" },
+    { "id": "step", "kind": "real", "label": "a clear next step" },
+    { "id": "friendly", "kind": "trick", "label": "an apologetic tone" },
+    { "id": "pro", "kind": "trick", "label": "a professional tone" }
+  ],
+  "rules": [
+    {
+      "id": "pass",
+      "when": {
+        "requireAll": ["check", "prove", "run", "greet", "name", "step"]
+      },
+      "isPass": true,
+      "claim": "Checker: 8 of 8 pass",
+      "doer": "checker",
+      "feedback": "<b>8 of 8 correct, and the AI's report matches reality.</b> The checker proved it could fail on a refund promise with no ticket number, caught the broken replies, and they were rewritten. You can trust this without reading all 8.",
+      "lesson": "Ask for the check first, prove it can fail, run it — then a green is real.",
+      "output": {}
+    },
+    {
+      "id": "bug",
+      "when": {
+        "requireAll": ["check", "run", "greet", "name", "step"],
+        "forbidAny": ["prove"]
+      },
+      "isPass": false,
+      "claim": "Checker: 8 of 8 pass",
+      "doer": "checker",
+      "feedback": "<b>False green.</b> The checker said 8 of 8 pass, but Omar's reply promised a refund with no ticket number. The AI's checker just looked for the word \"ticket\", and \"we've opened a <i>ticket</i>\" matched. Your checker never failed anything, so nobody noticed it was broken.<br><br>What move would have caught a broken checker <i>before</i> you trusted it?",
+      "lesson": "A check never seen failing can be silently broken.",
+      "output": {}
+    },
+    {
+      "id": "vague",
+      "when": {
+        "requireAll": ["check", "run"],
+        "forbidAny": ["greet", "name", "step"]
+      },
+      "isPass": false,
+      "claim": "Checker: 8 of 8 pass",
+      "doer": "checker",
+      "feedback": "<b>Your checker can't fail.</b> \"Apologetic tone\" and \"professional tone\" aren't things a checker can measure, so it passed all 8, including the refund promise with no ticket. A check has to test something that's clearly there or not there.",
+      "lesson": "A vacuous criterion can't catch anything.",
+      "output": {}
+    },
+    {
+      "id": "partial",
+      "when": { "requireAll": ["check", "run"], "requireAny": ["greet", "name", "step"] },
+      "isPass": false,
+      "claim": "Checker: some pass",
+      "doer": "checker",
+      "feedback": "<b>The checker said some pass, but a refund promise still breaks a rule.</b> Your checker never tests for every rule — a reply can be missing the ticket number and still slip by. A check only proves what it actually checks.",
+      "lesson": "A check only covers what it tests.",
+      "output": {}
+    },
+    {
+      "id": "notRun",
+      "when": { "requireAll": ["check"], "forbidAny": ["run"] },
+      "isPass": false,
+      "claim": "\"I checked them. All 8 pass.\" (It never ran the checker.)",
+      "doer": "checker",
+      "feedback": "<b>It wrote a checker, then said \"all pass\" without running it.</b> A checker nobody runs is just a promise. Make it <b>run</b> the checker on every reply.",
+      "lesson": "A checker that isn't run proves nothing.",
+      "output": {}
+    },
+    {
+      "id": "remind",
+      "when": { "requireAny": ["remind"], "forbidAny": ["check"] },
+      "isPass": false,
+      "claim": "Nothing. It just handed them over.",
+      "doer": "ai-guessing",
+      "feedback": "<b>Better, but still 1 refund promise broken, and you'd only know by reading all 8.</b> Telling the AI the rule isn't the same as <i>checking</i> the rule. What would actually catch the one that slipped?",
+      "lesson": "Reminding isn't checking.",
+      "output": {}
+    },
+    {
+      "id": "tricks",
+      "when": { "requireAny": ["apologetic", "double"], "forbidAny": ["check"] },
+      "isPass": false,
+      "claim": "\"All 8 are perfect.\"",
+      "doer": "ai-guessing",
+      "feedback": "<b>\"Sounds apologetic\" and \"double-check\" just change how the AI talks — not whether you can trust it.</b> At least one refund promise still has no ticket number. Asking it to try harder buys you a nicer reply, not a way to <i>know</i>.",
+      "lesson": "Effort isn't evidence.",
+      "output": {}
+    },
+    {
+      "id": "naive",
+      "when": {},
+      "isPass": false,
+      "claim": "Nothing. It just handed them over.",
+      "doer": "ai-guessing",
+      "feedback": "<b>4 of 8 broke a rule</b> (Priya, Marcus, Nadia, Omar), and the AI didn't mention it. Look at Omar's: \"we've opened a ticket\" <i>sounds</i> like it has a ticket number, but there's no number and nothing for him to do.<br><br>Asking more nicely won't tell you which replies are wrong. <b>Your move:</b> change what you ask for.",
+      "lesson": "A rule you don't check is a rule you don't know was broken.",
+      "output": {
+        "customers": [
+          { "name": "Dana", "topic": "We're refunding your $58 overcharge.", "step": "Track it with ticket #RF-2041; funds arrive in 3 to 5 days." },
+          { "name": "Leo", "topic": "Your refund of $120 has been approved.", "step": "Track it with ticket #RF-2042 in your account." },
+          { "name": "Priya", "topic": "We've approved your $35 refund.", "step": "Funds arrive in 3 to 5 business days." },
+          { "name": "Grace", "topic": "Your duplicate charge of $90 is being refunded.", "step": "Track it with ticket #RF-2044; reply if it hasn't cleared by Friday." },
+          { "name": "Marcus", "topic": "We're issuing a refund of $210 for the cancelled order.", "step": "Track it with ticket #RF-2045 in your account." },
+          { "name": "Nadia", "topic": "Your $47 refund is confirmed.", "step": "Track it with ticket #RF-2046; funds arrive next week." },
+          { "name": "Hana", "topic": "We've refunded the $15 shipping fee.", "step": "Track it with ticket #RF-2047 in your account." },
+          { "name": "Omar", "topic": "Your blender refund of $64 is approved.", "step": "Track it with ticket #RF-2048; funds arrive in 3 to 5 days.", "fake": "We've opened a ticket and your refund is on its way." }
+        ],
+        "baseDrafts": [
+          { "greet": true, "name": true, "step": true },
+          { "greet": true, "name": true, "step": true },
+          { "greet": true, "name": true, "step": false },
+          { "greet": true, "name": true, "step": true },
+          { "greet": true, "name": false, "step": true },
+          { "greet": true, "name": true, "step": true },
+          { "greet": false, "name": true, "step": true },
+          { "greet": true, "name": true, "step": false, "fakeStep": true }
+        ],
+        "remindedDrafts": [
+          { "greet": true, "name": true, "step": true },
+          { "greet": true, "name": true, "step": true },
+          { "greet": true, "name": true, "step": true },
+          { "greet": true, "name": true, "step": true },
+          { "greet": true, "name": true, "step": true },
+          { "greet": true, "name": true, "step": true },
+          { "greet": true, "name": true, "step": true },
+          { "greet": true, "name": true, "step": false, "fakeStep": true }
+        ]
+      }
+    }
+  ],
+  "attemptBudget": 3,
+  "stars": {
+    "attemptBudget": 3,
+    "showMove": "show",
+    "thirdStar": null
+  },
+  "xp": { "level": 20, "seenFailing": 15, "boss": 50 },
+  "hints": {
+    "nudge": "You can't read all 8. What if the AI built something that reads them for you — and that you could watch go red on a refund promise with no ticket number?",
+    "gap": "Ask for a <b>checker first</b> that tests the three rules (amount, ticket number, next step), and make it <b>run</b> on every reply. Skip the tone rules: a checker can't measure \"apologetic\".",
+    "moves": "Add <b>Ask for a checker first</b> (the refund amount, a ticket number, a next step), <b>Run the checker on every reply</b>, and <b>Make it prove the checker can fail</b>. That last one catches the word-matching \"ticket\" bug before you trust it."
+  },
+  "whatYouDoDifferently": {
+    "naive": "\"draft replies to these 8\" → a refund promise with no ticket slips out, no warning.",
+    "rewrite": "\"write a checker, prove it can fail on a no-ticket refund, run it on every reply, show it\" → read one short checker instead of 8 emails."
+  },
+  "tryIt": {
+    "template": {
+      "plain": "Before you write anything, write a checker that fails any reply promising a refund without an amount, a ticket number, or a next step. Test it on a bad example first — a refund promise that only says \"ticket\" with no number — and show me it fails. Then draft the replies, run the checker on every one, and redo any that fail. Show me the checker and the results.",
+      "tech": "Before generating, write a function check(reply, customer) that returns False if a refund-promising reply lacks an amount, a ticket number, or a next step. Run it on a known-bad reply (refund promised, the word 'ticket' but no number) and show it returns False. Then generate, execute check() on every reply, regenerate failures, and show me the code and the pass/fail table."
+    },
+    "notes": [
+      "<b>ChatGPT with file or code tools:</b> it can write and run the checker itself, so \"run it\" really happens.",
+      "<b>Copilot in Excel:</b> put the replies in a column and ask for checker formulas, e.g. =ISNUMBER(SEARCH(\"#RF-\", A2)) for \"has a ticket number\" — matching a label a word alone can't fake.",
+      "<b>A chat AI that can't run code:</b> it can't truly check its own work. Ask for the checker, then run it yourself in a spreadsheet. Never accept \"I checked, they all pass.\""
+    ]
+  },
+  "expectPass": {
+    "conditions": { "requireAll": ["check", "prove", "run"] },
+    "requireSubChoicesAll": ["greet", "name", "step"]
+  }
+}

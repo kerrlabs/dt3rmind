@@ -1,0 +1,114 @@
+{
+  "id": "w4-l3",
+  "world": 4,
+  "order": 3,
+  "title": "Fix the check that lets a bad one through",
+  "kicker": "World 4 · Name the Check · Level 3",
+  "competencies": ["C6"],
+  "movesTaught": ["M6"],
+  "isBoss": false,
+  "job": {
+    "text": "You asked the AI to check that <b>the appointment date is in the future</b>. The check it wrote is \"the answer contains a date.\" A planted bad answer has a date — in the past (last year). Add a clause until the check fails that bad answer.",
+    "preview": {
+      "text": "The planted bad answer to catch: \"Your appointment is set for March 14, 2025.\" — a real, nicely-formatted date, but in the past.",
+      "more": "the check already looks for: contains a date"
+    }
+  },
+  "naivePrompt": "Check that it contains a date.",
+  "basePrompt": "Check that it contains a date.",
+  "renderer": "table",
+  "moves": [
+    {
+      "id": "future",
+      "kind": "real",
+      "label": "…and the date is after today",
+      "text": {
+        "plain": "AND the date is after today.",
+        "tech": "AND date > today"
+      }
+    },
+    {
+      "id": "formatted",
+      "kind": "trick",
+      "label": "…and it's nicely formatted",
+      "text": {
+        "plain": "AND the date looks nicely formatted.",
+        "tech": "AND it matches a date format"
+      }
+    },
+    {
+      "id": "polite",
+      "kind": "trick",
+      "label": "…and the wording is polite",
+      "text": {
+        "plain": "AND the wording is polite.",
+        "tech": "AND the wording is polite."
+      }
+    }
+  ],
+  "subChoices": [],
+  "rules": [
+    {
+      "id": "pass",
+      "when": { "requireAll": ["future"] },
+      "isPass": true,
+      "claim": "On last year's date: FAIL. On next week's date: PASS.",
+      "doer": "checker",
+      "feedback": "<b>Now it catches it.</b> Adding \"after today\" is what tells a good date from a bad one. It fails last year's date and passes next week's.",
+      "lesson": "Tighten a check until the bad case fails it.",
+      "output": {
+        "columns": ["check", "\"...March 14, 2025\" (past)", "\"...next Tuesday\" (future)"],
+        "rows": [
+          { "cells": ["contains a date AND after today", "fails (in the past)", "passes"], "pass": true }
+        ],
+        "source": "a check that looks at when"
+      }
+    },
+    {
+      "id": "weak",
+      "when": {},
+      "isPass": false,
+      "claim": "On last year's date: PASS.",
+      "doer": "checker",
+      "feedback": "<b>Your check still lets the bad one through.</b> The bad answer <i>has</i> a date — a nicely-formatted, politely-worded one, in the past. \"Has a date\" can't be enough; a formatted or polite clause doesn't look at <i>when</i>.",
+      "lesson": "If the bad answer satisfies the check, the check isn't tight enough.",
+      "output": {
+        "columns": ["check", "\"...March 14, 2025\" (past)", "\"...next Tuesday\" (future)"],
+        "rows": [
+          { "cells": ["contains a date", "passes (has a date)", "passes"], "pass": false }
+        ],
+        "source": "a check that never looks at when"
+      }
+    }
+  ],
+  "attemptBudget": 2,
+  "stars": {
+    "attemptBudget": 2,
+    "showMove": null,
+    "thirdStar": null
+  },
+  "xp": { "level": 20, "seenFailing": 15, "boss": 0 },
+  "hints": {
+    "nudge": "The bad answer has a date too — so \"has a date\" can't be enough. What else is true of a <i>good</i> answer here?",
+    "gap": "Look again: the bad date is in the past. The check never looks at <i>when</i>.",
+    "moves": "Add <b>…and the date is after today</b>. Skip \"formatted\" and \"polite\" — they don't separate a past date from a future one."
+  },
+  "whatYouDoDifferently": {
+    "naive": "\"check it contains a date\" → a past date sails through.",
+    "rewrite": "\"…and the date is after today\" → the past date fails."
+  },
+  "tryIt": {
+    "template": {
+      "plain": "Your check passed this bad answer: [paste it]. That means the check is too loose. Tighten it so it FAILS this one, and show me it now failing.",
+      "tech": "This bad input passed your check: [paste it]. Add the condition it ignores so the check returns False on it, then re-run and show it failing."
+    },
+    "notes": [
+      "<b>ChatGPT:</b> paste the bad answer and demand the check go red on it before you trust it.",
+      "<b>Copilot in Excel:</b> add the missing condition (e.g. >TODAY()) to the check formula and confirm the bad row flips to FALSE.",
+      "<b>A chat AI that can't run code:</b> ask \"what is true of the bad answer that your check ignores?\" — that gap is the clause to add. Never accept \"I checked, it's fine.\""
+    ]
+  },
+  "expectPass": {
+    "conditions": { "requireAll": ["future"] }
+  }
+}

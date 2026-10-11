@@ -1,0 +1,137 @@
+{
+  "id": "w4-l2",
+  "world": 4,
+  "order": 2,
+  "title": "Which check is stronger?",
+  "kicker": "World 4 · Name the Check · Level 2",
+  "competencies": ["C5", "C6"],
+  "movesTaught": ["M6"],
+  "isBoss": false,
+  "job": {
+    "text": "You want the AI to <b>flag refunds over $100</b> in a list. Two non-vacuous check requests are offered. Pick the stronger one — the one that's right on every row.",
+    "preview": {
+      "columns": ["line", "amount", "should be flagged?"],
+      "rows": [
+        ["refund #1", "$140", "yes"],
+        ["refund #2", "$220", "yes"],
+        ["refund #3", "$105", "yes"],
+        ["refund #4", "$40", "no"],
+        ["refund #5", "$95", "no"]
+      ],
+      "more": "5 rows · 3 over $100, 2 under"
+    }
+  },
+  "naivePrompt": "Check that it mentions a dollar amount.",
+  "basePrompt": "Check that it mentions a dollar amount.",
+  "renderer": "table",
+  "moves": [
+    {
+      "id": "mentions",
+      "kind": "trick",
+      "label": "Flags any dollar amount",
+      "text": {
+        "plain": "Flag any line that mentions a dollar amount.",
+        "tech": "assert '$' in line"
+      }
+    },
+    {
+      "id": "threshold",
+      "kind": "real",
+      "label": "Flags only amounts over $100",
+      "text": {
+        "plain": "Flag every line where the amount is over $100, and flag none that are $100 or under.",
+        "tech": "assert (amount > 100) == flagged"
+      }
+    }
+  ],
+  "subChoices": [],
+  "rules": [
+    {
+      "id": "pass",
+      "when": { "requireAll": ["threshold"], "forbidAny": ["mentions"] },
+      "isPass": true,
+      "claim": "Flags the 3 over $100, leaves the 2 under alone.",
+      "doer": "checker",
+      "feedback": "<b>Right in both directions.</b> It catches every refund over $100 and leaves the small ones alone. That's a two-sided check.",
+      "lesson": "A strong check is correct on good and bad cases.",
+      "output": {
+        "columns": ["amount", "should flag?", "this check"],
+        "rows": [
+          { "cells": ["$140", "yes", "flags"], "pass": true },
+          { "cells": ["$220", "yes", "flags"], "pass": true },
+          { "cells": ["$105", "yes", "flags"], "pass": true },
+          { "cells": ["$40", "no", "leaves"], "pass": true },
+          { "cells": ["$95", "no", "leaves"], "pass": true }
+        ],
+        "source": "a check that's right on every row"
+      }
+    },
+    {
+      "id": "mentions",
+      "when": { "requireAny": ["mentions"] },
+      "isPass": false,
+      "claim": "Flags all 5 lines, including the $40 one.",
+      "doer": "checker",
+      "feedback": "<b>False green on the $40 row.</b> \"Mentions a dollar amount\" is true of a $40 line — so it flags one it shouldn't. Saying yes too often is as broken as saying no too rarely.",
+      "lesson": "A check must say no when it should, too.",
+      "output": {
+        "columns": ["amount", "should flag?", "this check"],
+        "rows": [
+          { "cells": ["$140", "yes", "flags"], "pass": true },
+          { "cells": ["$220", "yes", "flags"], "pass": true },
+          { "cells": ["$105", "yes", "flags"], "pass": true },
+          { "cells": ["$40", "no", "flags it anyway"], "pass": false },
+          { "cells": ["$95", "no", "flags it anyway"], "pass": false }
+        ],
+        "source": "a check that says yes too often"
+      }
+    },
+    {
+      "id": "naive",
+      "when": {},
+      "isPass": false,
+      "claim": "Nothing picked yet.",
+      "doer": "checker",
+      "feedback": "<b>Pick a check.</b> One of these flags the $40 row it shouldn't; the other is right on every row. Run the test-bench to see which is which.",
+      "lesson": "A strong check is right on good and bad cases alike.",
+      "output": {
+        "columns": ["amount", "should flag?", "verdict"],
+        "rows": [
+          { "cells": ["$140", "yes", "—"], "pass": false },
+          { "cells": ["$40", "no", "—"], "pass": false }
+        ],
+        "source": "pick one and run the bench"
+      }
+    }
+  ],
+  "attemptBudget": 2,
+  "stars": {
+    "attemptBudget": 2,
+    "showMove": null,
+    "thirdStar": null
+  },
+  "xp": { "level": 20, "seenFailing": 15, "boss": 0 },
+  "hints": {
+    "nudge": "Does it only say yes when it should — and no when it shouldn't?",
+    "gap": "Watch the $40 row: \"mentions a dollar amount\" flags it, but $40 isn't over $100.",
+    "moves": "Pick <b>Flags only amounts over $100</b> — it's the one that's right on every row. Leave \"flags any dollar amount\" off."
+  },
+  "whatYouDoDifferently": {
+    "naive": "\"check it mentions a dollar amount\" → flags a $40 line it shouldn't.",
+    "rewrite": "\"flag over $100, flag none under\" → correct on every row."
+  },
+  "tryIt": {
+    "template": {
+      "plain": "Write a check that flags X and does NOT flag not-X. Show me it on an example of each — one that should be flagged and one that shouldn't.",
+      "tech": "Write a check where flagged == (condition). Run it on a positive example and a borderline negative example and show both verdicts."
+    },
+    "notes": [
+      "<b>ChatGPT:</b> make it run both examples; a check that flags the wrong one is too loose.",
+      "<b>Copilot in Excel:</b> the check column should be TRUE on the over rows and FALSE on the under rows — eyeball both.",
+      "<b>A chat AI that can't run code:</b> ask it for a borderline example and whether the check fires — that reveals the threshold. Never accept \"I checked, it's fine.\""
+    ]
+  },
+  "expectPass": {
+    "conditions": { "requireAll": ["threshold"], "forbidAny": ["mentions"] }
+  }
+}

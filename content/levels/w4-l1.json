@@ -1,0 +1,148 @@
+{
+  "id": "w4-l1",
+  "world": 4,
+  "order": 1,
+  "title": "Can this check even fail?",
+  "kicker": "World 4 · Name the Check · Level 1",
+  "competencies": ["C5"],
+  "movesTaught": ["M6"],
+  "isBoss": false,
+  "job": {
+    "text": "You asked the AI to summarize an order, and you want to be sure the summary <b>includes the price</b>. Three ways to ask it to check its own work are offered. Pick the one request that would actually catch a summary with no price.",
+    "preview": {
+      "text": "The planted summary to catch: \"Thanks for your order!\" — no price at all.",
+      "more": "run it against the garbage summary"
+    }
+  },
+  "naivePrompt": "Check that the summary includes the price.",
+  "basePrompt": "Check that the summary includes the price.",
+  "renderer": "table",
+  "moves": [
+    {
+      "id": "nonempty",
+      "kind": "trick",
+      "label": "Check it isn't empty",
+      "text": {
+        "plain": "Check that the summary isn't blank.",
+        "tech": "assert len(out) > 0"
+      }
+    },
+    {
+      "id": "isstring",
+      "kind": "trick",
+      "label": "Check it's text",
+      "text": {
+        "plain": "Check that the summary is text.",
+        "tech": "assert isinstance(out, str)"
+      }
+    },
+    {
+      "id": "hasprice",
+      "kind": "real",
+      "label": "Check for a labeled price",
+      "text": {
+        "plain": "Check that the summary contains a number labeled 'price'.",
+        "tech": "assert re.search(r'price[:=]\\s*\\$?\\d', out)"
+      }
+    }
+  ],
+  "subChoices": [],
+  "rules": [
+    {
+      "id": "pass",
+      "when": { "requireAll": ["hasprice"], "forbidAny": ["nonempty", "isstring"] },
+      "isPass": true,
+      "claim": "On the garbage summary: FAIL. On a real summary with a price: PASS.",
+      "doer": "checker",
+      "feedback": "<b>This one can say no.</b> It fails the summary with no price and passes one that has it. That's the whole job of a check — to go red on a bad answer.",
+      "lesson": "A real check references the thing that matters, so it can fail.",
+      "output": {
+        "columns": ["check request", "\"Thanks for your order!\"", "\"...price: $4.50\""],
+        "rows": [
+          { "cells": ["contains a labeled price", "fails (no price)", "passes"], "pass": true }
+        ],
+        "source": "a check that looks at the price"
+      }
+    },
+    {
+      "id": "nonempty",
+      "when": { "requireAny": ["nonempty"] },
+      "isPass": false,
+      "claim": "On the garbage summary: PASS.",
+      "doer": "checker",
+      "feedback": "<b>That check can't fail here.</b> \"Thanks for your order!\" isn't blank, so this passes it — and it has no price. A check that says yes to garbage checks nothing.",
+      "lesson": "Non-empty isn't a check.",
+      "output": {
+        "columns": ["check request", "\"Thanks for your order!\"", "\"...price: $4.50\""],
+        "rows": [
+          { "cells": ["isn't blank", "passes (not blank)", "passes"], "pass": false }
+        ],
+        "source": "a check that never says no"
+      }
+    },
+    {
+      "id": "isstring",
+      "when": { "requireAny": ["isstring"] },
+      "isPass": false,
+      "claim": "On the garbage summary: PASS.",
+      "doer": "checker",
+      "feedback": "<b>Still green on garbage.</b> \"Is it text?\" is true of every reply, good or bad. It never says no.",
+      "lesson": "A check that's always true is vacuous.",
+      "output": {
+        "columns": ["check request", "\"Thanks for your order!\"", "\"...price: $4.50\""],
+        "rows": [
+          { "cells": ["is text", "passes (is text)", "passes"], "pass": false }
+        ],
+        "source": "a check that never says no"
+      }
+    },
+    {
+      "id": "naive",
+      "when": {},
+      "isPass": false,
+      "claim": "Nothing picked yet.",
+      "doer": "checker",
+      "feedback": "<b>Pick a check request.</b> You want the one that goes red on \"Thanks for your order!\" and green on a summary that has a price. Hit \"try to break it\" to watch which ones stay green on garbage.",
+      "lesson": "A real check says no to a bad answer.",
+      "output": {
+        "columns": ["check request", "\"Thanks for your order!\"", "\"...price: $4.50\""],
+        "rows": [
+          { "cells": ["isn't blank", "passes (not blank)", "passes"], "pass": false },
+          { "cells": ["is text", "passes (is text)", "passes"], "pass": false },
+          { "cells": ["contains a labeled price", "fails (no price)", "passes"], "pass": true }
+        ],
+        "source": "pick one and run it"
+      }
+    }
+  ],
+  "attemptBudget": 2,
+  "stars": {
+    "attemptBudget": 2,
+    "showMove": null,
+    "thirdStar": null
+  },
+  "xp": { "level": 20, "seenFailing": 15, "boss": 0 },
+  "hints": {
+    "nudge": "A good check says NO to a bad answer. Which of these ever says no?",
+    "gap": "Watch \"isn't blank\" and \"is text\" both pass \"Thanks for your order!\" — neither looks at the price.",
+    "moves": "Only the price check looks at the thing you actually care about (a labeled price), so it's the only one that can fail. Pick <b>Check for a labeled price</b>; leave the other two off."
+  },
+  "whatYouDoDifferently": {
+    "naive": "\"check it includes the price\" → the AI says \"looks good\" at garbage.",
+    "rewrite": "ask for a check that looks for a labeled price → the one that can go red."
+  },
+  "tryIt": {
+    "template": {
+      "plain": "Write me a check for this that would FAIL a bad answer. Then show me it failing a bad example — if it can't fail, it isn't a check.",
+      "tech": "Write an assertion that returns False on a bad output. Run it on an obviously-bad example first and show me it fails; if it stays green, it isn't a check."
+    },
+    "notes": [
+      "<b>ChatGPT:</b> ask it to run the check on an obviously-bad input first; if it stays green, reject it.",
+      "<b>Copilot in Excel:</b> a check formula should return FALSE on a bad row — test it on one.",
+      "<b>A chat AI that can't run code:</b> ask \"what bad answer would this check still pass?\" If the answer is \"lots\", the check is too loose. Never accept \"I checked, it's fine.\""
+    ]
+  },
+  "expectPass": {
+    "conditions": { "requireAll": ["hasprice"], "forbidAny": ["nonempty", "isstring"] }
+  }
+}
