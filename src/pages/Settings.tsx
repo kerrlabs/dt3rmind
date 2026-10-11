@@ -11,7 +11,7 @@ export function Settings(): JSX.Element {
         <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
           <div className="badge" aria-hidden="true">⚙</div>
           <div>
-            <div className="kicker">Puzzle Ladder</div>
+            <div className="kicker">Dt3rmind</div>
             <h1>Settings</h1>
           </div>
         </div>

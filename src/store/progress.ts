@@ -18,7 +18,7 @@ export interface Progress {
   bustedTricks: string[];
 }
 
-const STORAGE_KEY = 'puzzle-ladder:progress:v1';
+const STORAGE_KEY = 'dt3rmind:progress:v1';
 
 export function emptyProgress(): Progress {
   return { xp: 0, stars: {}, passed: {}, moves: [], bustedTricks: [] };

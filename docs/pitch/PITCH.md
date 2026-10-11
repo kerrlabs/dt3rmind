@@ -1,7 +1,7 @@
-# Tool Moves — 3-minute demo pitch
+# Dt3rmind — 3-minute demo pitch
 
 Audience: HackMidwest judging panel + a mixed technical/non-technical crowd.
-Voice: Carl — direct, pragmatic, dry, anti-hype. Name: **Tool Moves** (recommended; swap freely). Tagline: *Ask for the tool, not the answer.*
+Voice: Carl — direct, pragmatic, dry, anti-hype. Name: **Dt3rmind** (say it "Determined"; keep the spelled logo on screen whenever you say it, because the spoken name collides with Determined AI and Determind AI). Tagline: *Ask for the tool, not the answer.*
 Every number below is from the build or Jeff's real run. Nothing invented.
 
 ---
@@ -31,7 +31,7 @@ And this isn't a mock. `[CLICK — Jeff's run]` My partner Jeff ran this live on
 That's the whole product: seven worlds, twenty-three levels and a boss for each, you climb from Guesser to Architect, you collect the moves that work as badges and watch the popular tricks get busted on screen.
 
 **2:52 — The close**
-You leave with one move you can paste into ChatGPT tomorrow: *don't let it guess the part that has a right answer.* `Tool Moves`. That's the ask — come try to break it.
+You leave with one move you can paste into ChatGPT tomorrow: *don't let it guess the part that has a right answer.* `Dt3rmind`. That's the ask — come try to break it.
 
 ---
 
@@ -125,7 +125,7 @@ Maybe for a sum. But the lesson isn't "AI can't add" — it's "don't let it gues
 ## 5. Shortest versions
 
 **One sentence:**
-Tool Moves is a puzzle game that teaches anyone to stop asking AI for the answer and start asking it for the tool and the check that make the answer exact — because determinism comes from the tools you force the AI through, not the words you give it.
+Dt3rmind is a puzzle game that teaches anyone to stop asking AI for the answer and start asking it for the tool and the check that make the answer exact — because determinism comes from the tools you force the AI through, not the words you give it.
 
 **15 seconds:**
-Paste a sheet, ask your AI for a total, and you get five different wrong numbers — because it's predicting what a total looks like, not adding. Tool Moves is a puzzle game that teaches you the fix: ask for the formula, make a tool run it, and ask for the check first and prove it can fail. Seven worlds, twenty-three levels, Guesser to Architect — and you leave with a move you can paste into ChatGPT tomorrow.
+Paste a sheet, ask your AI for a total, and you get five different wrong numbers — because it's predicting what a total looks like, not adding. Dt3rmind is a puzzle game that teaches you the fix: ask for the formula, make a tool run it, and ask for the check first and prove it can fail. Seven worlds, twenty-three levels, Guesser to Architect — and you leave with a move you can paste into ChatGPT tomorrow.

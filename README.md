@@ -1,4 +1,4 @@
-# Puzzle Ladder
+# Dt3rmind
 
 A gamified, chess.com-puzzle-style course that takes non-technical adults from "ask the AI
 nicely and hope" to "ask the AI for tools and checks that make the right-answer steps exact —

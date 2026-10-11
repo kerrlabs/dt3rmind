@@ -1,4 +1,6 @@
-# Puzzle Ladder — Product Spec (v0.2)
+# Dt3rmind — Product Spec (v0.2)
+
+*Product name: **Dt3rmind** (said "Determined"; formerly working title "Puzzle Ladder").*
 
 A gamified, chess.com-puzzle-style course that takes non-technical adults from "ask the AI nicely and hope"
 to "ask the AI for tools and checks that make the right-answer steps exact — and prove it."
@@ -236,4 +238,4 @@ then have each do a real task in their own AI. Success = they use M2/M3 and M6 *
    authentication, which is not yet designed.
 4. **Free-text vs. chips in the plain skin:** chips keep early levels reproducible; free text is the real
    skill. Current call: chips in practice levels, free text from W5 and in every boss — confirm.
-5. **Name:** "Puzzle Ladder" is a working title.
+5. **Name:** decided 2026-10-11: **Dt3rmind**. Known risk: spoken it collides with Determined AI (HPE) and Determind AI; always show it spelled.

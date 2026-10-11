@@ -30,9 +30,9 @@ export function WorldMap(): JSX.Element {
     <div className="wrap">
       <header className="top">
         <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-          <div className="badge" aria-hidden="true">PL</div>
+          <div className="badge" aria-hidden="true">D3</div>
           <div>
-            <div className="kicker">Puzzle Ladder</div>
+            <div className="kicker">Dt3rmind</div>
             <h1>Make AI prove its work</h1>
           </div>
         </div>

@@ -30,7 +30,7 @@ interface AppState extends Settings {
   setProgress: (p: Progress) => void;
 }
 
-const SETTINGS_KEY = 'puzzle-ladder:settings:v1';
+const SETTINGS_KEY = 'dt3rmind:settings:v1';
 
 function osReducedMotion(): boolean {
   if (typeof matchMedia === 'undefined') return false;
