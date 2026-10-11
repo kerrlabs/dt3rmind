@@ -13,13 +13,20 @@ const DOERS = ['ai-guessing', 'tool', 'spreadsheet', 'checker', 'source'];
 const KINDS = ['real', 'trick'];
 
 function allConditionIds(c: RuleConditions): string[] {
-  return [...(c.requireAll ?? []), ...(c.requireAny ?? []), ...(c.forbidAny ?? [])];
+  return [
+    ...(c.requireAll ?? []),
+    ...(c.requireAny ?? []),
+    ...(c.forbidAny ?? []),
+    ...(c.atMost?.ids ?? []),
+    ...(c.atLeast?.ids ?? []),
+  ];
 }
 
 describe('packet discovery', () => {
-  it('finds the three wave-1 packets', () => {
-    const ids = packets.map((p) => p.id).sort();
-    expect(ids).toEqual(['w1-l1', 'w2-l3', 'w4-l4']);
+  it('finds the wave-1 packets and every id is unique', () => {
+    const ids = packets.map((p) => p.id);
+    expect(ids).toEqual(expect.arrayContaining(['w1-l1', 'w2-l3', 'w4-l4']));
+    expect(new Set(ids).size).toBe(ids.length);
   });
 });
 

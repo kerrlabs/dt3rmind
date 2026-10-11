@@ -29,6 +29,9 @@ export function conditionsMatch(cond: RuleConditions, picks: Picks): boolean {
   if (cond.forbidAny && cond.forbidAny.some((id) => isOn(picks, id))) {
     return false;
   }
+  const count = (ids: string[]) => ids.filter((id) => isOn(picks, id)).length;
+  if (cond.atMost && count(cond.atMost.ids) > cond.atMost.n) return false;
+  if (cond.atLeast && count(cond.atLeast.ids) < cond.atLeast.n) return false;
   return true;
 }
 

@@ -64,9 +64,13 @@ describe('isLevelUnlocked', () => {
     expect(isLevelUnlocked(w1, packets, emptyProgress())).toBe(true);
   });
   it('later level locked until the prior one is passed', () => {
+    const sorted = [...packets].sort((a, b) =>
+      a.world !== b.world ? a.world - b.world : a.order - b.order,
+    );
+    const prev = sorted[sorted.findIndex((p) => p.id === w2.id) - 1]!;
     const prog = emptyProgress();
     expect(isLevelUnlocked(w2, packets, prog)).toBe(false);
-    const after = recordPass(prog, w1, 2, 35);
+    const after = recordPass(prog, prev, 2, 35);
     expect(isLevelUnlocked(w2, packets, after)).toBe(true);
   });
 });

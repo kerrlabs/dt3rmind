@@ -57,6 +57,10 @@ export interface RuleConditions {
   requireAny?: string[];
   /** None of the ids listed may be picked. */
   forbidAny?: string[];
+  /** At most `n` of these ids may be picked (e.g. tolerate one over-tag). */
+  atMost?: { ids: string[]; n: number };
+  /** At least `n` of these ids must be picked. */
+  atLeast?: { ids: string[]; n: number };
 }
 
 /** The visual renderer that draws a result on the right panel. */
