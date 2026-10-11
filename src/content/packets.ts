@@ -5,13 +5,13 @@
 import type { LevelPacket } from './schema';
 
 // Eagerly import all packets at build time. Vite inlines these.
-const modules = import.meta.glob<LevelPacket>('../../content/levels/*.json', {
+const modules = import.meta.glob('../../content/levels/*.json', {
   eager: true,
   import: 'default',
-});
+}) as Record<string, LevelPacket>;
 
 function loadPackets(): LevelPacket[] {
-  const packets = Object.values(modules);
+  const packets: LevelPacket[] = Object.values(modules);
   packets.sort((a, b) =>
     a.world !== b.world ? a.world - b.world : a.order - b.order,
   );
