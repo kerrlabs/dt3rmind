@@ -61,7 +61,7 @@ Run the app before you start (`npm run dev` in the repo, or `npm run build && np
 |---|---|---|---|
 | 6 | **"Have the AI draft all 8"** (plain, no moves) | 8 draft cards animate in; 4 marked bad (Lena, Chen, Aisha, Sofia); Sofia's "arrives next week" highlighted; FAILED bar | "4 of 8 broke a rule, no warning" (~1:50) |
 | 7 | Add **"Ask for a checker first"**; in the sub-choices tick **a greeting / the customer's name / a next step** (leave tone off). Add **"Run the checker on every draft"**. **Do NOT** add "prove it can fail" yet. Run. | "Checker: 8 of 8 pass" — **false green**; Sofia still broken | "it checked for the word *next* — *next week* matched" (~2:05) |
-| 8 | Add **"Make it prove the checker can fail"**. Run. | Log shows it tested a bad example, found the bug, fixed it; 8 of 8 genuinely pass; PASSED + honest report; rank-up to Checker | "now the green is real" (~2:18) |
+| 8 | Add **"Make it prove the checker can fail"**. Run. | Log shows it tested a bad example, found the bug, fixed it; 8 of 8 genuinely pass; PASSED + honest report; rank-up card appears (on a fresh profile it reads "Tool User", because ranks follow XP; don't say "Checker" on stage) | "now the green is real" (~2:18) |
 
 ### Beat 3 — Jeff's proof — target 2:20–2:40
 
