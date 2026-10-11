@@ -1,0 +1,123 @@
+{
+  "id": "w1-l3",
+  "world": 1,
+  "order": 3,
+  "title": "The field that must be there",
+  "kicker": "World 1 · Shape the Answer · Level 3",
+  "competencies": ["C1"],
+  "movesTaught": ["M1"],
+  "isBoss": false,
+  "job": {
+    "text": "Make <code>price</code> <b>required</b>, so an order can never come back silently priced-unknown. On the item it's unsure about, the AI tends to quietly drop <code>price</code> — and the paragraph still reads fine, so the gap is invisible until you try to total the column.",
+    "preview": {
+      "columns": ["order", "spoken"],
+      "rows": [
+        ["#1", "one large oat latte, four fifty"],
+        ["#2", "a seasonal special — not sure the price"],
+        ["#3", "a small drip, three fifty"]
+      ],
+      "more": "three orders · one unsure"
+    }
+  },
+  "naivePrompt": "Make sure every order has a price.",
+  "basePrompt": "Make sure every order has a price.",
+  "moves": [
+    {
+      "id": "required",
+      "kind": "real",
+      "label": "Make price required",
+      "text": {
+        "plain": "price must be filled on every item. If it's unknown, say 'unknown', never leave it blank.",
+        "tech": "price is a required field; emit a placeholder like \"unknown\", never omit the key."
+      }
+    },
+    {
+      "id": "shape",
+      "kind": "real",
+      "label": "Same shape every time",
+      "text": {
+        "plain": "Keep item, size, price on every item.",
+        "tech": "All three keys on every object."
+      }
+    },
+    {
+      "id": "perfect",
+      "kind": "trick",
+      "label": "Make it perfect",
+      "text": {
+        "plain": "Make sure it's perfect.",
+        "tech": "Make sure it's perfect."
+      }
+    }
+  ],
+  "subChoices": [],
+  "renderer": "table",
+  "rules": [
+    {
+      "id": "pass",
+      "when": { "requireAll": ["required"] },
+      "isPass": true,
+      "claim": "#2 price: \"unknown\" — flagged, not dropped.",
+      "doer": "source",
+      "feedback": "<b>No silent gaps.</b> Now a missing price shows up as 'unknown' instead of just vanishing, so you'd catch it when you scan the column.",
+      "lesson": "'Required' turns an invisible miss into a visible one.",
+      "output": {
+        "columns": ["order", "item", "size", "price"],
+        "rows": [
+          { "cells": ["#1", "oat latte", "large", "4.50"], "pass": true },
+          { "cells": ["#2", "seasonal special", "regular", "unknown"], "pass": true },
+          { "cells": ["#3", "drip", "small", "3.50"], "pass": true }
+        ],
+        "source": "a required price field"
+      }
+    },
+    {
+      "id": "dropped",
+      "when": {},
+      "isPass": false,
+      "claim": "Here are your three orders, all set!",
+      "doer": "ai-guessing",
+      "feedback": "<b>It dropped the price and told you nothing.</b> 'Perfect' and 'same shape' are wishes, not rules — order #2 came back with no price field at all, and nothing warned you. A missing field is the one you never notice.",
+      "lesson": "A silently missing field is the dangerous one.",
+      "output": {
+        "columns": ["order", "item", "size", "price"],
+        "rows": [
+          { "cells": ["#1", "oat latte", "large", "4.50"], "pass": true },
+          { "cells": ["#2", "seasonal special", "regular", "(missing)"], "pass": false },
+          { "cells": ["#3", "drip", "small", "3.50"], "pass": true }
+        ],
+        "source": "a quietly dropped price field"
+      }
+    }
+  ],
+  "attemptBudget": 2,
+  "stars": {
+    "attemptBudget": 2,
+    "showMove": null,
+    "thirdStar": null
+  },
+  "xp": { "level": 20, "seenFailing": 15, "boss": 0 },
+  "hints": {
+    "nudge": "Which field would hurt most if it quietly went missing?",
+    "gap": "One item came back with no price at all — and nothing warned you. Which chip forbids that?",
+    "moves": "Add <b>Make price required</b> so an unknown price shows up as 'unknown' instead of disappearing."
+  },
+  "whatYouDoDifferently": {
+    "naive": "\"make sure every order has a price\" → one silently dropped.",
+    "rewrite": "\"price is required; say 'unknown' if you don't know\" → the gap shows up where you can see it."
+  },
+  "tryIt": {
+    "template": {
+      "plain": "This field is required on every row. If you don't know it, write 'unknown' — never leave it out.",
+      "tech": "This key is required on every record. If the value is unknown, emit \"unknown\" — never omit the key."
+    },
+    "notes": [
+      "<b>ChatGPT:</b> scan the column for blanks; a blank means it ignored \"required\".",
+      "<b>Copilot in Excel:</b> add a rule that flags empty cells in that column.",
+      "<b>A chat AI that can't run code:</b> count the rows and the prices — if they don't match, one went missing. Never accept \"every order has a price\" without counting."
+    ]
+  },
+  "expectPass": {
+    "conditions": { "requireAll": ["required"] }
+  }
+}

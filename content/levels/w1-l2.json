@@ -1,0 +1,124 @@
+{
+  "id": "w1-l2",
+  "world": 1,
+  "order": 2,
+  "title": "One shape, many orders",
+  "kicker": "World 1 · Shape the Answer · Level 2",
+  "competencies": ["C1"],
+  "movesTaught": ["M1"],
+  "isBoss": false,
+  "job": {
+    "text": "The same receipt shape now has to handle three orders at once. One of them has <b>two items</b> — <i>\"a latte and a muffin, nine twenty-five.\"</i> You still need item · size · price for each, so you can total the prices.",
+    "preview": {
+      "columns": ["order", "spoken"],
+      "rows": [
+        ["#1", "one large oat latte, four fifty"],
+        ["#2", "a latte and a muffin, nine twenty-five"],
+        ["#3", "a small drip, three fifty"]
+      ],
+      "more": "three orders"
+    }
+  },
+  "naivePrompt": "Use the same format for these three orders.",
+  "basePrompt": "Use the same format for these three orders.",
+  "moves": [
+    {
+      "id": "list",
+      "kind": "real",
+      "label": "Make item a list",
+      "text": {
+        "plain": "When an order has more than one item, make item a list, one entry per item.",
+        "tech": "item should be an array of strings when there are multiple items."
+      }
+    },
+    {
+      "id": "shape",
+      "kind": "real",
+      "label": "Same shape every time",
+      "text": {
+        "plain": "Keep the same three fields for every order.",
+        "tech": "Same keys on every object."
+      }
+    },
+    {
+      "id": "careful",
+      "kind": "trick",
+      "label": "Be careful",
+      "text": {
+        "plain": "Be careful with orders that have more than one item.",
+        "tech": "Be careful with multi-item orders."
+      }
+    }
+  ],
+  "subChoices": [],
+  "renderer": "table",
+  "rules": [
+    {
+      "id": "pass",
+      "when": { "requireAll": ["list"] },
+      "isPass": true,
+      "claim": "#2 item: [\"latte\", \"muffin\"] — each priced separately.",
+      "doer": "source",
+      "feedback": "<b>The shape bends without breaking.</b> A list holds one item or many, so every order fits the same three columns, and order #2's two items each get their own price.",
+      "lesson": "Design the shape for the hard case, not the easy one.",
+      "output": {
+        "columns": ["order", "item", "size", "price"],
+        "rows": [
+          { "cells": ["#1", "oat latte", "large", "4.50"], "pass": true },
+          { "cells": ["#2", "latte", "regular", "4.50"], "pass": true },
+          { "cells": ["#2", "muffin", "—", "4.75"], "pass": true },
+          { "cells": ["#3", "drip", "small", "3.50"], "pass": true }
+        ],
+        "source": "a list-shaped item field"
+      }
+    },
+    {
+      "id": "glued",
+      "when": {},
+      "isPass": false,
+      "claim": "#2 item: \"latte and muffin\" — size: regular, price: 9.25.",
+      "doer": "ai-guessing",
+      "feedback": "<b>One slot, two items.</b> 'Be careful' and 'same shape' didn't give the AI anywhere to put the second item, so it jammed both into one value — and now you can't price them separately.",
+      "lesson": "A warning isn't a structure.",
+      "output": {
+        "columns": ["order", "item", "size", "price"],
+        "rows": [
+          { "cells": ["#1", "oat latte", "large", "4.50"], "pass": true },
+          { "cells": ["#2", "latte and muffin", "regular", "9.25"], "pass": false },
+          { "cells": ["#3", "drip", "small", "3.50"], "pass": true }
+        ],
+        "source": "one glued-together item field"
+      }
+    }
+  ],
+  "attemptBudget": 2,
+  "stars": {
+    "attemptBudget": 2,
+    "showMove": null,
+    "thirdStar": null
+  },
+  "xp": { "level": 20, "seenFailing": 15, "boss": 0 },
+  "hints": {
+    "nudge": "What happens when someone orders two things at once?",
+    "gap": "Order #2 came back as one glued-together value. Which chip lets one field hold more than one thing?",
+    "moves": "Add <b>Make item a list</b>. 'Be careful' doesn't give the second item anywhere to go."
+  },
+  "whatYouDoDifferently": {
+    "naive": "\"same format\" → two items glued into one value.",
+    "rewrite": "\"make item a list when there's more than one\" → every order fits, each item priced."
+  },
+  "tryIt": {
+    "template": {
+      "plain": "Use this format for all of them. When a field can have more than one value, make it a list so nothing gets glued together.",
+      "tech": "Use these keys for every record. When a field can hold multiple values, make it an array so values aren't concatenated."
+    },
+    "notes": [
+      "<b>ChatGPT:</b> ask for all rows in one table; a cell with \"a; b\" means it ignored the list.",
+      "<b>Copilot in Excel:</b> ask for one row per item so each has its own price.",
+      "<b>A chat AI that can't run code:</b> eyeball order #2 — if two items share one cell, re-ask. Never accept \"I split them all\" without checking."
+    ]
+  },
+  "expectPass": {
+    "conditions": { "requireAll": ["list"] }
+  }
+}

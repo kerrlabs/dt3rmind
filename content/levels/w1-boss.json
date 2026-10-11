@@ -1,0 +1,177 @@
+{
+  "id": "w1-boss",
+  "world": 1,
+  "order": 4,
+  "title": "Boss: shape a help-desk ticket",
+  "kicker": "World 1 · Shape the Answer · Boss",
+  "competencies": ["C1"],
+  "movesTaught": ["M1"],
+  "isBoss": true,
+  "job": {
+    "text": "New domain, no training wheels. Your IT team pastes an outage note and asks the AI to \"turn this into a ticket.\" The ticket system rejects anything missing a <b>priority</b>, and it needs <b>affected systems</b> as a real list, not one glued string. Shape the ask so a malformed ticket can't slip through.<br><br><i>Note: the live tool will add a free-text version of this ask in a later release — for now, pick the moves that pin the shape.</i>",
+    "preview": {
+      "columns": ["field", "pasted note"],
+      "rows": [
+        ["summary", "Email and VPN both down since 9am"],
+        ["priority", "(not stated)"],
+        ["affected systems", "email and VPN"]
+      ],
+      "more": "one outage note → one ticket"
+    }
+  },
+  "naivePrompt": "Turn this outage note into a help-desk ticket.",
+  "basePrompt": "Turn this outage note into a help-desk ticket.",
+  "moves": [
+    {
+      "id": "required",
+      "kind": "real",
+      "label": "Make priority required",
+      "text": {
+        "plain": "priority must be filled on every ticket. If the note doesn't say, set it to 'unspecified', never leave it out.",
+        "tech": "priority is a required field; emit a placeholder when absent, never omit the key."
+      }
+    },
+    {
+      "id": "list",
+      "kind": "real",
+      "label": "Make affected systems a list",
+      "text": {
+        "plain": "When more than one system is affected, make affected_systems a list, one entry per system.",
+        "tech": "affected_systems must be an array of strings, one element per system."
+      }
+    },
+    {
+      "id": "shape",
+      "kind": "real",
+      "label": "Same fields every ticket",
+      "text": {
+        "plain": "Keep summary, priority, affected_systems on every ticket.",
+        "tech": "Same keys on every ticket object."
+      }
+    },
+    {
+      "id": "emoji",
+      "kind": "trick",
+      "label": "Add a severity emoji",
+      "text": {
+        "plain": "Add a severity emoji so it stands out.",
+        "tech": "Add a severity emoji so it stands out."
+      }
+    },
+    {
+      "id": "friendly",
+      "kind": "trick",
+      "label": "Make it friendly",
+      "text": {
+        "plain": "Make the ticket friendly and reassuring.",
+        "tech": "Make the ticket friendly and reassuring."
+      }
+    }
+  ],
+  "subChoices": [],
+  "renderer": "table",
+  "rules": [
+    {
+      "id": "pass",
+      "when": { "requireAll": ["required", "list"] },
+      "isPass": true,
+      "claim": "priority: \"unspecified\" · affected_systems: [\"email\", \"VPN\"]",
+      "doer": "source",
+      "feedback": "<b>A ticket that can't slip through malformed.</b> Priority is always present — 'unspecified' when the note is silent — and affected systems is a real list, so the system accepts it and you can see both outages at a glance.",
+      "lesson": "A shape with a required field and a list field rejects the malformed case.",
+      "output": {
+        "columns": ["field", "value", "ok"],
+        "rows": [
+          { "cells": ["summary", "Email and VPN down since 9am", "accepted"], "pass": true },
+          { "cells": ["priority", "unspecified", "accepted"], "pass": true },
+          { "cells": ["affected_systems", "[\"email\", \"VPN\"]", "accepted"], "pass": true }
+        ],
+        "source": "a required priority + a list of systems"
+      }
+    },
+    {
+      "id": "no_priority",
+      "when": { "requireAll": ["list"], "forbidAny": ["required"] },
+      "isPass": false,
+      "claim": "affected_systems: [\"email\", \"VPN\"] — ticket submitted.",
+      "doer": "ai-guessing",
+      "feedback": "<b>The systems are a list now, but priority is gone.</b> The note never stated a priority, so the AI quietly dropped the field — and the ticket system rejects a ticket with no priority. Make priority required too.",
+      "lesson": "A list field doesn't fix a missing required field.",
+      "output": {
+        "columns": ["field", "value", "ok"],
+        "rows": [
+          { "cells": ["summary", "Email and VPN down since 9am", "accepted"], "pass": true },
+          { "cells": ["priority", "(missing)", "REJECTED"], "pass": false },
+          { "cells": ["affected_systems", "[\"email\", \"VPN\"]", "accepted"], "pass": true }
+        ],
+        "source": "a dropped priority field"
+      }
+    },
+    {
+      "id": "glued_systems",
+      "when": { "requireAll": ["required"], "forbidAny": ["list"] },
+      "isPass": false,
+      "claim": "priority: \"unspecified\" · affected_systems: \"email and VPN\"",
+      "doer": "ai-guessing",
+      "feedback": "<b>Priority is pinned, but two systems are glued into one string.</b> \"email and VPN\" is a single value, so you can't filter or route by system. Make affected systems a real list.",
+      "lesson": "A required field doesn't fix two values crammed into one.",
+      "output": {
+        "columns": ["field", "value", "ok"],
+        "rows": [
+          { "cells": ["summary", "Email and VPN down since 9am", "accepted"], "pass": true },
+          { "cells": ["priority", "unspecified", "accepted"], "pass": true },
+          { "cells": ["affected_systems", "\"email and VPN\"", "REJECTED"], "pass": false }
+        ],
+        "source": "systems glued into one string"
+      }
+    },
+    {
+      "id": "malformed",
+      "when": {},
+      "isPass": false,
+      "claim": "Done! Here's your ticket, with a friendly note. 🔴",
+      "doer": "ai-guessing",
+      "feedback": "<b>Malformed, and it looks fine.</b> A severity emoji and a friendly tone changed the words, not the shape — priority is missing and both systems are jammed into one string, so the ticket system rejects it. Pin the shape instead.",
+      "lesson": "Tone and decoration don't make a ticket accepted.",
+      "output": {
+        "columns": ["field", "value", "ok"],
+        "rows": [
+          { "cells": ["summary", "Email and VPN down 🔴 — hang in there!", "accepted"], "pass": true },
+          { "cells": ["priority", "(missing)", "REJECTED"], "pass": false },
+          { "cells": ["affected_systems", "\"email and VPN\"", "REJECTED"], "pass": false }
+        ],
+        "source": "a friendly, decorated, malformed ticket"
+      }
+    }
+  ],
+  "attemptBudget": 2,
+  "stars": {
+    "attemptBudget": 2,
+    "showMove": null,
+    "thirdStar": { "requireAll": ["required", "list", "shape"] }
+  },
+  "xp": { "level": 20, "seenFailing": 15, "boss": 50 },
+  "hints": {
+    "nudge": "The ticket system rejects a ticket for two reasons. What are the two things every ticket must have?",
+    "gap": "This note never states a priority, and it names two systems. Which chips force a priority to always be present and let affected systems hold more than one?",
+    "moves": "Add <b>Make priority required</b> and <b>Make affected systems a list</b>. The emoji and friendly chips don't change what the system accepts."
+  },
+  "whatYouDoDifferently": {
+    "naive": "\"turn this into a ticket\" → no priority, two systems glued, rejected.",
+    "rewrite": "\"priority required, affected systems as a list\" → a ticket the system accepts."
+  },
+  "tryIt": {
+    "template": {
+      "plain": "Turn this into a ticket with these exact fields. Make [field] required — if it's not stated, write 'unspecified', never leave it out. When a field can have more than one value, make it a list.",
+      "tech": "Emit a ticket object with these exact keys. [key] is required — use a placeholder if absent, never omit it. Multi-value fields must be arrays."
+    },
+    "notes": [
+      "<b>ChatGPT:</b> ask for the ticket as a small table or JSON; a missing field or a glued value means it ignored the shape.",
+      "<b>Copilot in Excel:</b> put each field in its own column and flag any empty required cell.",
+      "<b>A chat AI that can't run code:</b> read the ticket back field by field — a missing priority or two systems in one cell means re-ask. Never accept \"it's all there\" without checking each field."
+    ]
+  },
+  "expectPass": {
+    "conditions": { "requireAll": ["required", "list"] }
+  }
+}
