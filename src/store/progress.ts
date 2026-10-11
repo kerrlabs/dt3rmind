@@ -75,21 +75,59 @@ export function recordPass(
   };
 }
 
-/** A level unlocks when the lowest-order unpassed prerequisite is cleared. */
+/**
+ * Unlock gating (SPEC §5/§6, lead decision):
+ *   - World 1 is open.
+ *   - Within an unlocked world, ALL levels and the boss are playable in any
+ *     order (per-level passes are practice; only the boss gates progression).
+ *   - World N+1 unlocks when World N's boss has been passed.
+ *   - A world may carry more than one boss (the capstone is authored in the
+ *     final world as a second, higher-order boss). A later boss in the same
+ *     world gates on the earlier boss of that world — so the capstone unlocks
+ *     only after the world's regular boss is passed.
+ *
+ * A world with no authored boss cannot gate the next world (there is nothing
+ * to pass); in that case the next world unlocks once ANY level of the current
+ * world is passed, so sparse/in-progress content never hard-locks the ladder.
+ */
 export function isLevelUnlocked(
   packet: LevelPacket,
   all: LevelPacket[],
   progress: Progress,
 ): boolean {
-  // First level is always open. Otherwise require the immediately-prior
-  // level (by sorted order) to have been passed.
-  const sorted = [...all].sort((a, b) =>
-    a.world !== b.world ? a.world - b.world : a.order - b.order,
-  );
-  const idx = sorted.findIndex((p) => p.id === packet.id);
-  if (idx <= 0) return true;
-  const prevLevel = sorted[idx - 1]!;
-  return Boolean(progress.passed[prevLevel.id]);
+  // World 1 (and anything at/below it) is open at the WORLD level. A later
+  // boss inside the same world (the capstone) may still gate on an earlier one.
+  const sameWorld = all.filter((p) => p.world === packet.world);
+  const earlierBossSameWorld = sameWorld
+    .filter((p) => p.isBoss && p.order < packet.order)
+    .sort((a, b) => a.order - b.order)
+    .pop();
+  if (earlierBossSameWorld) {
+    // e.g. the capstone: unlock only after the world's regular boss is passed.
+    return Boolean(progress.passed[earlierBossSameWorld.id]);
+  }
+
+  if (packet.world <= 1) return true;
+
+  // Collect the worlds that have content, ascending.
+  const worlds = Array.from(new Set(all.map((p) => p.world))).sort((a, b) => a - b);
+
+  // Gate on the authored world immediately below this packet's world.
+  const prevWorld = worlds.filter((w) => w < packet.world).pop();
+  if (prevWorld === undefined) return true; // nothing authored below -> open
+
+  const prevWorldLevels = all.filter((p) => p.world === prevWorld);
+  // Gate on the previous world's PRIMARY boss (lowest order). A capstone-style
+  // extra boss in that world is not required to advance to the next world.
+  const prevBoss = prevWorldLevels
+    .filter((p) => p.isBoss)
+    .sort((a, b) => a.order - b.order)[0];
+
+  if (prevBoss) {
+    return Boolean(progress.passed[prevBoss.id]);
+  }
+  // No boss authored in the previous world: unlock once any level there passed.
+  return prevWorldLevels.some((p) => progress.passed[p.id]);
 }
 
 /* ---- persistence (guarded for SSR / disabled storage) ---- */

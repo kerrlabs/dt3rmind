@@ -70,6 +70,7 @@ export function WorldMap(): JSX.Element {
                     {levels.map((p) => {
                       const unlocked = isLevelUnlocked(p, PACKETS, app.progress);
                       const s = app.progress.stars[p.id] ?? 0;
+                      const starMax = p.stars.showMove === null && p.stars.thirdStar === null ? 2 : 3;
                       return (
                         <Link
                           key={p.id}
@@ -83,8 +84,8 @@ export function WorldMap(): JSX.Element {
                             Level {p.order}
                             {p.isBoss ? ' · boss' : ''}
                             {' · '}
-                            <span className="stars" style={{ fontSize: 13 }}>
-                              {[0, 1, 2].map((i) => <span key={i} className={i < s ? 'on' : ''}>★</span>)}
+                            <span className="stars" style={{ fontSize: 13 }} aria-label={`${s} of ${starMax} stars`}>
+                              {Array.from({ length: starMax }, (_, i) => <span key={i} className={i < s ? 'on' : ''}>★</span>)}
                             </span>
                             {!unlocked ? <span className="locktag"> · locked</span> : ''}
                           </div>

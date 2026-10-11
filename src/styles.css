@@ -48,7 +48,8 @@ button {
   cursor: pointer;
 }
 button:focus-visible,
-a:focus-visible {
+a:focus-visible,
+[tabindex]:focus-visible {
   outline: 3px solid var(--sky);
   outline-offset: 2px;
 }
@@ -862,5 +863,19 @@ svg.sc {
   * {
     animation: none !important;
     transition: none !important;
+    scroll-behavior: auto !important;
   }
+}
+
+/* In-app reduced-motion toggle (AppContext applies body.reduce-motion). This
+   mirrors the OS media query so the setting works even when the OS preference
+   is "no preference". Covers every @keyframes (shake, pop), every transition
+   (.move hover), and smooth scrolling. The JS shake timer is also gated in
+   LevelPlayer, so motion-sensitive users get no shake, no pop, no scroll. */
+body.reduce-motion *,
+body.reduce-motion *::before,
+body.reduce-motion *::after {
+  animation: none !important;
+  transition: none !important;
+  scroll-behavior: auto !important;
 }

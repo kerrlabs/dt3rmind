@@ -4,7 +4,7 @@
  * try-it. Phase-1 is the just-ask demo; phase-2 is the rewrite. Pass records
  * progress (first-pass XP, best stars, moves collected, tricks busted).
  */
-import { useMemo, useState, type JSX } from 'react';
+import { useEffect, useMemo, useRef, useState, type JSX } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import { getPacket } from '../content/packets';
 import {
@@ -19,6 +19,7 @@ import { recordPass, rankForXp } from '../store/progress';
 import { useApp } from '../app/AppContext';
 import { ResultRenderer } from '../ui/renderers';
 import { CheckIcon, CrossIcon, moveText, criteriaText, promptText } from '../ui/shared';
+import { sanitizeHtml } from '../ui/sanitizeHtml';
 
 export function LevelPlayer(): JSX.Element {
   const { id = '' } = useParams();
@@ -34,6 +35,32 @@ export function LevelPlayer(): JSX.Element {
   const [stars, setStars] = useState(0);
   const [shake, setShake] = useState(false);
   const [copied, setCopied] = useState(false);
+  const [copyMsg, setCopyMsg] = useState('');
+
+  // A11y focus targets: move focus to the result on run, and to the compare
+  // panel heading on pass, so keyboard/SR users get a reliable cue the outcome
+  // changed (engineering review Finding #5).
+  const checkRef = useRef<HTMLDivElement>(null);
+  const compareHeadingRef = useRef<HTMLHeadingElement>(null);
+  // Bumped on every run so the focus effect fires even on repeated fails.
+  const [runTick, setRunTick] = useState(0);
+
+  // After a run: pass -> focus the compare heading; non-pass/phase-1 -> focus
+  // the check bar (an assertive live region). Scroll is gated on reduced motion.
+  useEffect(() => {
+    if (runTick === 0) return;
+    const smooth: ScrollBehavior = app.reducedMotion ? 'auto' : 'smooth';
+    if (done && compareHeadingRef.current) {
+      compareHeadingRef.current.focus();
+      // scrollIntoView is absent under jsdom; guard so focus still works there.
+      if (typeof compareHeadingRef.current.scrollIntoView === 'function') {
+        compareHeadingRef.current.scrollIntoView({ behavior: smooth, block: 'nearest' });
+      }
+    } else if (checkRef.current) {
+      checkRef.current.focus();
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [runTick]);
 
   const crit = useMemo(() => (packet ? criteriaText(packet, picks) : ''), [packet, picks]);
 
@@ -56,6 +83,14 @@ export function LevelPlayer(): JSX.Element {
     setPicks((p) => ({ ...p, subChoices: { ...p.subChoices, [sid]: !p.subChoices[sid] } }));
   }
 
+  // Shake is a motion cue; skip it entirely under reduced motion (the CSS
+  // override also neutralizes it, but gating the JS avoids the class churn).
+  function triggerShake(): void {
+    if (app.reducedMotion) return;
+    setShake(true);
+    window.setTimeout(() => setShake(false), 500);
+  }
+
   function run(): void {
     if (done || !packet) return;
     const effPicks: Picks = phase === 1 ? emptyPicks(packet) : picks;
@@ -63,17 +98,16 @@ export function LevelPlayer(): JSX.Element {
     const nextAttempts = phase === 2 ? attempts + 1 : attempts;
     setAttempts(nextAttempts);
     setResolved(r);
+    setRunTick((t) => t + 1);
 
     if (phase === 1) {
       setPhase(2);
-      setShake(true);
-      window.setTimeout(() => setShake(false), 500);
+      triggerShake();
       return;
     }
 
     if (!r.isPass) {
-      setShake(true);
-      window.setTimeout(() => setShake(false), 500);
+      triggerShake();
       return;
     }
 
@@ -104,6 +138,18 @@ export function LevelPlayer(): JSX.Element {
     .filter((m) => m.kind === 'real' && picks.moves[m.id])
     .map((m) => m.label);
 
+  // Star ceiling is packet-derived: a level with no show-move and no bonus
+  // third-star condition is ★★-max by design (W1 L1), so SR users must hear
+  // "of 2", not "of 3" (Finding #11).
+  const starMax = packet.stars.showMove === null && packet.stars.thirdStar === null ? 2 : 3;
+
+  // Total chips added to the ask (real moves + trick moves), shown as the
+  // "Add to your ask" counter. Named to avoid a confusing `|| 'pick any'`
+  // short-circuit that mislabeled trick-only selections (Finding #8).
+  const addedCount =
+    realMovesCollected.length +
+    packet.moves.filter((m) => m.kind === 'trick' && picks.moves[m.id]).length;
+
   return (
     <div className="wrap">
       <header className="top">
@@ -119,8 +165,8 @@ export function LevelPlayer(): JSX.Element {
           <div className="belt" aria-label={`Belt progress ${beltPct}%`}>
             <span className="track"><span className="fill" style={{ width: `${beltPct}%` }} /></span>
           </div>
-          <div className="stars" aria-label={`${stars} of 3 stars`}>
-            {[0, 1, 2].map((i) => <span key={i} className={i < stars ? 'on' : ''}>★</span>)}
+          <div className="stars" aria-label={`${stars} of ${starMax} stars`}>
+            {Array.from({ length: starMax }, (_, i) => <span key={i} className={i < stars ? 'on' : ''}>★</span>)}
           </div>
           <div className="tg" role="group" aria-label="Skin and theme">
             <button aria-pressed={skin === 'plain'} onClick={() => app.setSkin('plain')}>{packet.world === 2 ? 'Spreadsheet' : 'Plain'}</button>
@@ -141,7 +187,7 @@ export function LevelPlayer(): JSX.Element {
         {/* LEFT: job + prompt + chips */}
         <section className="panel" aria-labelledby="jobH">
           <div className="ph"><span id="jobH">The job</span><span>{packet.job.preview.more ?? ''}</span></div>
-          <div className="ask" dangerouslySetInnerHTML={{ __html: packet.job.text }} />
+          <div className="ask" dangerouslySetInnerHTML={{ __html: sanitizeHtml(packet.job.text) }} />
           {packet.job.preview.columns ? (
             <>
               <table>
@@ -173,7 +219,7 @@ export function LevelPlayer(): JSX.Element {
             <div>
               <div className="ph" style={{ marginTop: 14 }}>
                 <span>Add to your ask</span>
-                <span>{realMovesCollected.length + packet.moves.filter((m) => m.kind === 'trick' && picks.moves[m.id]).length || 'pick any'}{realMovesCollected.length ? ' added' : ''}</span>
+                <span>{addedCount > 0 ? `${addedCount} added` : 'pick any'}</span>
               </div>
               <div className="moves">
                 {packet.moves.map((m) => (
@@ -207,7 +253,7 @@ export function LevelPlayer(): JSX.Element {
               </button>
             ) : null}
           </div>
-          {hints > 0 ? <div className="hint" aria-live="polite" dangerouslySetInnerHTML={{ __html: `<b>Hint ${hints}.</b> ${hintTexts[hints - 1]}` }} /> : null}
+          {hints > 0 ? <div className="hint" aria-live="polite" dangerouslySetInnerHTML={{ __html: sanitizeHtml(`<b>Hint ${hints}.</b> ${hintTexts[hints - 1]}`) }} /> : null}
         </section>
 
         {/* RIGHT: what comes back */}
@@ -216,11 +262,17 @@ export function LevelPlayer(): JSX.Element {
           {resolved ? (
             <>
               <ResultRenderer renderer={packet.renderer} resolved={resolved} skin={skin} showFormula={showFormula} />
-              <div className={'check' + (checkPass === null ? '' : checkPass ? ' pass' : ' fail') + (shake ? ' shake' : '')}>
+              <div
+                ref={checkRef}
+                tabIndex={-1}
+                role="status"
+                aria-live="assertive"
+                aria-label={checkPass === null ? 'Run to see the check' : checkPass ? 'Result: passed' : 'Result: failed'}
+                className={'check' + (checkPass === null ? '' : checkPass ? ' pass' : ' fail') + (shake ? ' shake' : '')}>
                 {checkPass === null ? 'Run to see the check' : checkPass ? <><CheckIcon />PASSED</> : <><CrossIcon />FAILED</>}
               </div>
               <div className={'fb ' + (resolved.isPass ? 'good' : phase === 1 ? 'bad' : feedbackTone(resolved))} role="status" aria-live="polite"
-                dangerouslySetInnerHTML={{ __html: resolved.feedback }} />
+                dangerouslySetInnerHTML={{ __html: sanitizeHtml(resolved.feedback) }} />
               <p style={{ fontSize: 12, color: 'var(--muted)', marginTop: 8 }}>{resolved.lesson}</p>
             </>
           ) : (
@@ -231,19 +283,19 @@ export function LevelPlayer(): JSX.Element {
 
       {done && resolved ? (
         <section className="compare" style={{ marginTop: 16 }} aria-labelledby="cmpH">
-          <div className="ph"><span id="cmpH">What you do differently</span></div>
+          <div className="ph"><h2 id="cmpH" ref={compareHeadingRef} tabIndex={-1} style={{ font: 'inherit', margin: 0 }}>What you do differently</h2></div>
           <div className="cols">
             <div className="colA"><h3>Just prompting</h3><div className="q">“{packet.naivePrompt}”</div>
-              <p style={{ fontSize: 13, marginTop: 8 }} dangerouslySetInnerHTML={{ __html: packet.whatYouDoDifferently.naive }} /></div>
+              <p style={{ fontSize: 13, marginTop: 8 }} dangerouslySetInnerHTML={{ __html: sanitizeHtml(packet.whatYouDoDifferently.naive) }} /></div>
             <div className="colB"><h3>Your rewrite</h3><div className="q">“{promptText(packet, picks, skin)}”</div>
-              <p style={{ fontSize: 13, marginTop: 8 }} dangerouslySetInnerHTML={{ __html: packet.whatYouDoDifferently.rewrite }} /></div>
+              <p style={{ fontSize: 13, marginTop: 8 }} dangerouslySetInnerHTML={{ __html: sanitizeHtml(packet.whatYouDoDifferently.rewrite) }} /></div>
           </div>
 
           {packet.isBoss ? (
             <div className="rankup">
               <div className="crest"><svg viewBox="0 0 24 24"><path d="M12 3l7 3v6c0 4-3 7-7 9-4-2-7-5-7-9V6z" /><path d="M9 12l2 2 4-4" /></svg></div>
               <div><div className="kicker">Rank up</div><div style={{ fontSize: 18, fontWeight: 900 }}>You’re a {rankForXp(app.progress.xp).name}</div>
-                <div style={{ fontSize: 13, color: 'var(--muted)' }}>+{packet.xp.level} level · +{packet.xp.seenFailing} seen failing · +{packet.xp.boss} keystone · {stars} of 3 stars</div></div>
+                <div style={{ fontSize: 13, color: 'var(--muted)' }}>+{packet.xp.level} level · +{packet.xp.seenFailing} seen failing · +{packet.xp.boss} keystone · {stars} of {starMax} stars</div></div>
             </div>
           ) : null}
 
@@ -256,9 +308,10 @@ export function LevelPlayer(): JSX.Element {
             <div className="kicker">Try it in your AI</div>
             <pre>{skin === 'tech' && packet.tryIt.template.tech ? packet.tryIt.template.tech : packet.tryIt.template.plain}</pre>
             <div className="actions" style={{ marginTop: 4 }}>
-              <button className="btn ghost" onClick={() => copyTemplate(packet, skin, setCopied)}>{copied ? 'Copied' : 'Copy the pattern'}</button>
+              <button className="btn ghost" onClick={() => copyTemplate(packet, skin, setCopied, setCopyMsg)}>{copied ? 'Copied' : 'Copy the pattern'}</button>
             </div>
-            <ul>{packet.tryIt.notes.map((n, i) => <li key={i} dangerouslySetInnerHTML={{ __html: n }} />)}</ul>
+            {copyMsg ? <p className="more" role="status" aria-live="polite" style={{ marginTop: 6 }}>{copyMsg}</p> : null}
+            <ul>{packet.tryIt.notes.map((n, i) => <li key={i} dangerouslySetInnerHTML={{ __html: sanitizeHtml(n) }} />)}</ul>
           </div>
         </section>
       ) : null}
@@ -276,9 +329,54 @@ function copyTemplate(
   packet: ReturnType<typeof getPacket> & object,
   skin: 'plain' | 'tech',
   setCopied: (v: boolean) => void,
+  setCopyMsg: (v: string) => void,
 ): void {
   const t = skin === 'tech' && packet.tryIt.template.tech ? packet.tryIt.template.tech : packet.tryIt.template.plain;
-  if (navigator.clipboard) {
-    navigator.clipboard.writeText(t).then(() => setCopied(true), () => setCopied(false));
+
+  const onOk = (): void => {
+    setCopied(true);
+    setCopyMsg('Copied to your clipboard.');
+  };
+  const onFail = (): void => {
+    setCopied(false);
+    setCopyMsg('Couldn’t copy automatically — the text is selected, press Ctrl/Cmd+C.');
+  };
+
+  // Preferred path: async Clipboard API (secure contexts only).
+  if (typeof navigator !== 'undefined' && navigator.clipboard?.writeText) {
+    navigator.clipboard.writeText(t).then(onOk, () => execCommandFallback(t, onOk, onFail));
+    return;
+  }
+  // Fallback for insecure contexts / older browsers.
+  execCommandFallback(t, onOk, onFail);
+}
+
+/**
+ * Clipboard fallback: drop the text into an offscreen textarea, select it, and
+ * try `document.execCommand('copy')`. If that is unavailable or fails, leave the
+ * text selected and tell the user to copy manually (Finding #7).
+ */
+function execCommandFallback(text: string, onOk: () => void, onFail: () => void): void {
+  if (typeof document === 'undefined') {
+    onFail();
+    return;
+  }
+  const ta = document.createElement('textarea');
+  ta.value = text;
+  ta.setAttribute('readonly', '');
+  ta.style.position = 'fixed';
+  ta.style.top = '-1000px';
+  ta.style.opacity = '0';
+  document.body.appendChild(ta);
+  ta.focus();
+  ta.select();
+  try {
+    const ok = typeof document.execCommand === 'function' && document.execCommand('copy');
+    if (ok) onOk();
+    else onFail();
+  } catch {
+    onFail();
+  } finally {
+    document.body.removeChild(ta);
   }
 }

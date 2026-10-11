@@ -28,6 +28,12 @@ Every level runs the same shape (SPEC §4):
 Your job is to encode: the job, the chips, every distinct consequence, the pass condition,
 hints, stars, and the transfer template.
 
+> **Rich text is sanitized.** Every author string rendered as HTML (`job.text`, rule
+> `feedback`, `whatYouDoDifferently.*`, `tryIt.notes`, hints, simulator `log` lines) passes
+> through `src/ui/sanitizeHtml.ts` before display. Only `b i em strong br code mark` survive
+> and **all attributes are stripped** — no `href`, `style`, `on*`, `src`, or `<a>`/`<img>`.
+> Author formatting only; anything else is silently dropped (its text is kept and escaped).
+
 ---
 
 ## Every field
@@ -47,7 +53,7 @@ hints, stars, and the transfer template.
 ### The job
 ```json
 "job": {
-  "text": "The scenario the learner reads (HTML-safe: <b>, <i>, <br> allowed).",
+  "text": "The scenario the learner reads (HTML-safe: only <b> <i> <em> <strong> <br> <code> <mark> survive; all attributes are stripped).",
   "preview": {
     "columns": ["order_id", "date", "..."],   // table preview, OR
     "rows": [["10001", "2025-07-03", "..."]],
@@ -164,6 +170,14 @@ Then:
 The W4 simulator (`src/content/simulators/w4-check.ts`) is the reference. It reads its
 8-customer fixtures from the catch-all rule's `output` (`customers`, `baseDrafts`,
 `remindedDrafts`), so the content stays data-first.
+
+> **Keep the simulator's criteria in sync with the packet's sub-choices.** If your simulator
+> hard-codes criteria ids (like W4's `REAL_CRITERIA`/`VAGUE_CRITERIA`), **export them** and
+> register them in `tests/simulatorCriteria.test.ts`. That guard asserts every id the
+> simulator relies on is actually declared as a sub-choice in each packet that uses it, so a
+> renamed or dropped sub-choice fails the build loudly instead of silently desyncing the
+> *feedback* path (the combination test only cross-checks the *pass* set). A simulator with no
+> registered criteria is reported as skipped, not failed — register it when you add it.
 
 ### Attempt budget, stars, XP
 ```json

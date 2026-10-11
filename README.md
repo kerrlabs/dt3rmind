@@ -5,7 +5,10 @@ nicely and hope" to "ask the AI for tools and checks that make the right-answer 
 and prove it." See `docs/spec/SPEC.md` (v0.2) for the product spec.
 
 This repo is the **wave-1 foundation**: the level-packet schema, a pure engine, four result
-renderers, the app shell (world map + level player + settings), and three reference levels.
+renderers, the app shell (world map + level player + settings), plus the full set of authored
+level packets. `content/levels/` holds **31 packets** — all seven worlds, their bosses, and the
+capstone (the capstone's live free-text/grading engine is Phase 2). The three load-bearing
+reference levels are called out below; the rest are wave-2 content on the same contract.
 Wave-2 authors add level content on top — see `docs/AUTHORING.md`.
 
 ## Stack
@@ -30,7 +33,7 @@ npm run typecheck  # tsc project typecheck only
 ## What's here
 
 ```
-content/levels/        level packets (JSON) — w1-l1, w2-l3, w4-l4
+content/levels/        level packets (JSON) — 31 packets (W1–W7 + bosses + capstone)
 src/content/           schema.ts (the contract), packets loader, simulators/, worlds.ts
 src/engine/            pure engine: rule resolution, stars, XP, pass oracle
 src/store/             progress store (XP, stars, ranks, move deck) + localStorage
@@ -57,3 +60,37 @@ combination; the combination test proves it.
 WCAG 2.1 AA target: Okabe–Ito palette (color always paired with icon/shape/label), keyboard
 play, reduced-motion respected (OS preference + manual toggle in Settings), live-region
 narration of results.
+
+Specifics wired in the engineering pass:
+
+- The run result is announced via an **`aria-live="assertive"`** check bar; focus moves to the
+  result on every run and to the "What you do differently" heading on a pass.
+- **Reduced motion** is honored two ways — the OS `prefers-reduced-motion` media query *and* an
+  in-app `body.reduce-motion` toggle both zero every `@keyframes`/`transition` and smooth
+  scroll; the JS shake timer is also gated so motion-sensitive users get no shake.
+- Star counts are **packet-derived**: a ★★-max level announces "of 2 stars", not "of 3".
+
+## Security
+
+- **All author/packet HTML is sanitized** before it reaches `dangerouslySetInnerHTML`
+  (`src/ui/sanitizeHtml.ts`): a dependency-free allowlist permits only
+  `b i em strong br code mark` and strips every attribute. This closes the door before SPEC §8
+  wires live model / learner free-text through those surfaces in Phase 2. Covered by
+  `tests/sanitizeHtml.test.ts` (includes an inert `<img onerror>` / `<script>` payload).
+
+## Dependencies & security advisories
+
+Runtime deps are pinned to exact versions. `react-router-dom` is pinned to **6.30.6**, which
+cleared the three **high**-severity runtime advisories flagged in the engineering review
+(open-redirect / protocol-relative redirect in `@remix-run/router`).
+
+Current `npm audit` posture:
+
+- **`npm audit --omit=dev` (runtime, shipped):** **no high or critical advisories.** Two
+  **moderate** advisories remain in `react-router` (open-redirect via backslash in `<Link>`
+  CVE-2025-68470 bypass, and `deserializeErrors()` constructor injection in SSR hydration).
+  Both are only fixed in **react-router 7.x**, a breaking major migration, so they are
+  **deliberately deferred** — this app uses `HashRouter` with three static routes, no redirect
+  logic, and no SSR, so neither advisory is exploitable here. Revisit with the v7 upgrade.
+- **`npm audit` (all, incl. dev):** the remaining **1 high + 2 critical** are **dev-only**
+  (`vitest` / `vite` / `esbuild` / `tinypool`) and never ship in the production bundle.

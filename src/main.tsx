@@ -8,7 +8,11 @@ import { Settings } from './pages/Settings';
 import './styles.css';
 
 // HashRouter so the built static app works from any path (no server rewrites).
-createRoot(document.getElementById('root')!).render(
+const rootEl = document.getElementById('root');
+if (!rootEl) {
+  throw new Error('Mount node #root not found in index.html — cannot start the app.');
+}
+createRoot(rootEl).render(
   <StrictMode>
     <AppProvider>
       <HashRouter>

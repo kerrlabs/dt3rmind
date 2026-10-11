@@ -59,19 +59,56 @@ describe('rankForXp', () => {
   });
 });
 
-describe('isLevelUnlocked', () => {
-  it('first level is always unlocked', () => {
-    expect(isLevelUnlocked(w1, packets, emptyProgress())).toBe(true);
-  });
-  it('later level locked until the prior one is passed', () => {
-    const sorted = [...packets].sort((a, b) =>
-      a.world !== b.world ? a.world - b.world : a.order - b.order,
-    );
-    const prev = sorted[sorted.findIndex((p) => p.id === w2.id) - 1]!;
+describe('isLevelUnlocked (boss-gated, SPEC §5/§6)', () => {
+  const w1boss = packets.find((p) => p.id === 'w1-boss')!;
+  const w2l1 = packets.find((p) => p.id === 'w2-l1')!;
+  const w2boss = packets.find((p) => p.id === 'w2-boss')!;
+  const w3l1 = packets.find((p) => p.id === 'w3-l1')!;
+  const capstone = packets.find((p) => p.id === 'capstone')!;
+  const w7boss = packets.find((p) => p.id === 'w7-boss')!;
+
+  it('World 1 is fully open (all levels + boss) with no progress', () => {
     const prog = emptyProgress();
-    expect(isLevelUnlocked(w2, packets, prog)).toBe(false);
-    const after = recordPass(prog, prev, 2, 35);
-    expect(isLevelUnlocked(w2, packets, after)).toBe(true);
+    for (const p of packets.filter((x) => x.world === 1)) {
+      expect(isLevelUnlocked(p, packets, prog)).toBe(true);
+    }
+  });
+
+  it('every level AND the boss of an unlocked world is playable in any order', () => {
+    // W2 unlocked by passing the W1 boss; then all W2 levels + its boss open,
+    // without passing any W2 practice level first.
+    const prog = recordPass(emptyProgress(), w1boss, 2, 85);
+    for (const p of packets.filter((x) => x.world === 2)) {
+      expect(isLevelUnlocked(p, packets, prog)).toBe(true);
+    }
+  });
+
+  it('a later world stays locked until the previous world BOSS is passed', () => {
+    const prog = emptyProgress();
+    expect(isLevelUnlocked(w2l1, packets, prog)).toBe(false); // W1 boss not passed
+    // Passing a W1 practice level is NOT enough — only the boss advances.
+    const afterPractice = recordPass(prog, packets.find((p) => p.id === 'w1-l1')!, 2, 35);
+    expect(isLevelUnlocked(w2l1, packets, afterPractice)).toBe(false);
+    const afterBoss = recordPass(afterPractice, w1boss, 2, 85);
+    expect(isLevelUnlocked(w2l1, packets, afterBoss)).toBe(true);
+  });
+
+  it('W3 unlocks on the W2 boss, not on the last W2 practice level', () => {
+    const prog = recordPass(emptyProgress(), w1boss, 2, 85);
+    expect(isLevelUnlocked(w3l1, packets, prog)).toBe(false);
+    const afterW2Boss = recordPass(prog, w2boss, 2, 85);
+    expect(isLevelUnlocked(w3l1, packets, afterW2Boss)).toBe(true);
+  });
+
+  it('the capstone unlocks only after the W7 boss is passed', () => {
+    // Build progress with every boss EXCEPT the W7 boss passed.
+    let prog = emptyProgress();
+    for (const b of packets.filter((p) => p.isBoss && p.id !== 'capstone' && p.id !== 'w7-boss')) {
+      prog = recordPass(prog, b, 2, 85);
+    }
+    expect(isLevelUnlocked(capstone, packets, prog)).toBe(false);
+    const afterW7 = recordPass(prog, w7boss, 2, 85);
+    expect(isLevelUnlocked(capstone, packets, afterW7)).toBe(true);
   });
 });
 

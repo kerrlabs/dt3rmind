@@ -7,6 +7,7 @@ import type { JSX } from 'react';
 import type { RendererType } from '../content/schema';
 import type { Resolved } from '../engine/engine';
 import { CheckIcon, CrossIcon, doerLabel } from './shared';
+import { sanitizeHtml } from './sanitizeHtml';
 
 const TRUTH_EPS = 0.005;
 
@@ -116,7 +117,7 @@ function ItemGrid({ r }: { r: Resolved }): JSX.Element {
       </div>
       {o.log && o.log.length ? (
         <div className="log"><b>What the AI did:</b><br />
-          {o.log.map((line, i) => <span key={i} dangerouslySetInnerHTML={{ __html: line }} />)}
+          {o.log.map((line, i) => <span key={i} dangerouslySetInnerHTML={{ __html: sanitizeHtml(line) }} />)}
         </div>
       ) : null}
       <div className="drafts">

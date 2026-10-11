@@ -149,3 +149,50 @@ These are **expected** omissions (SPEC phases W5–W7 to Phase 2/3), listed so s
 - `tests/review/vitest.review.config.ts` — review-only config that includes `.tsx` so the harness can run (demonstrating Finding #1). Does not alter project behavior.
 
 Run them with: `npx vitest run --config tests/review/vitest.review.config.ts`
+
+---
+
+## Fixes applied (engineering fixer)
+
+Date: 2026-10-11. Owner: engineering fixer (owns `src/`, `tests/`, build config,
+`docs/AUTHORING.md`, `README.md`). Did **not** touch `content/levels/*.json` or
+`src/content/simulators/*` (concurrent fixers own those).
+
+Verification after all changes: `npx vitest run` → **508 passed (8 files)**, exit 0;
+`npm run build` (`tsc -b && vite build`) → **exit 0**, 79 modules, `index.js` 413 kB
+(gzip 117 kB).
+
+| Finding # | Change |
+|---|---|
+| **#1** (vitest `.tsx` gap) | `vite.config.ts` `test.include` now adds `tests/**/*.test.tsx`. The review harness `tests/review/levelPlayer.render.test.tsx` is **folded into the normal suite** (its header comment updated); the review-only `tests/review/vitest.review.config.ts` is **deleted** as redundant. The harness grew 6 new assertions (aria-live bar, focus-to-compare, star denominator ×2, sanitized feedback). |
+| **#2** (XSS sinks) | New dependency-free allowlist sanitizer `src/ui/sanitizeHtml.ts` — permits only `b i em strong br code mark`, strips **all** attributes, discards `<script>`/`<style>` contents. **All 7 `dangerouslySetInnerHTML` sinks** routed through it (6 in `LevelPlayer.tsx`, 1 in `renderers.tsx`). New `tests/sanitizeHtml.test.ts` (8 tests) with inert `<img onerror>` + `<script>` + `javascript:` payloads. |
+| **#3** (react-router highs) | `react-router-dom` bumped **6.26.2 → 6.30.6** (`--save-exact`). `npm audit --omit=dev` now shows **no high/critical runtime advisories** (the 3 highs cleared). Two **moderate** runtime advisories remain (fixed only in breaking v7); documented in `README.md` with the non-exploitability rationale (HashRouter, 3 static routes, no redirects/SSR). Dev-only highs/criticals (vitest/vite/esbuild/tinypool) also documented as non-shipping. |
+| **#4** (stars/XP state coverage) | New `tests/starsXp.test.ts` (45 tests): full `{attempts ≤/> budget} × {hints <3/=3} × {show-move on/off}` sweep for a non-boss (w2-l3) **and** a boss (w4-l4), exact star assertions; ★★-max cap (w1-l1); boss vs non-boss XP; first-pass-only XP via `recordPass`; plus the previously-untested `atMost`/`atLeast` conditions (**Finding #14**). |
+| **#5** (result a11y) | Check bar is now `role="status" aria-live="assertive"`, focusable (`tabIndex=-1`) with an explicit `aria-label`. Focus moves to the check bar on every run and to the "What you do differently" heading (now an `<h2 tabIndex=-1>`) on pass; scroll is gated on `reducedMotion` and `scrollIntoView` is feature-detected (jsdom-safe). Visible focus: `[tabindex]:focus-visible` added to `styles.css`. |
+| **#6** (unlock gating) | `isLevelUnlocked` rewritten to the **lead decision**: World 1 open; within an unlocked world ALL levels + the boss are playable in any order; World N+1 unlocks when World N's **primary boss** is passed; the capstone (authored as a second boss in W7) gates on the W7 boss. Old linear per-level chain removed. `tests/progress.test.ts` `isLevelUnlocked` block **replaced** with pinning tests (the old test asserted the now-removed, spec-contradicting behavior). |
+| **#7** (star denominator) | Denominator is packet-derived (`showMove===null && thirdStar===null ? 2 : 3`) in `LevelPlayer` (top-bar `aria-label` + glyph count + boss rank-up line) and `WorldMap` (per-level stars + new `aria-label`). ★★-max levels now say "of 2". |
+| **#8** (clipboard fallback) | `copyTemplate` rewritten: async Clipboard API → `document.execCommand('copy')` via an offscreen textarea → leave text selected + a `role="status"` message telling the user to press Ctrl/Cmd+C. Also fixed the confusing `|| 'pick any'` counter short-circuit (review's Finding #8 text) with a named `addedCount`. |
+| **#9** (simulator/packet drift) | New `tests/simulatorCriteria.test.ts`: asserts every criteria id a simulator depends on ⊆ the packet's declared sub-choices, reading packets via the existing loader and importing each simulator's own exported criteria constants (`w4-check`, `w4-l4-check`, `w4-boss-refund`). Simulators with no registered criteria are reported as skipped, not failed, so the concurrent simulator fixer's work does not collide. |
+| **#10** (reduced motion) | `styles.css`: the in-app `body.reduce-motion` toggle now has its own override (mirroring the OS media query) zeroing every `@keyframes`/`transition`/`scroll-behavior` incl. `::before`/`::after` — previously only the OS media query neutralized motion, so the manual toggle did nothing on an OS with no preference. The JS shake timer is also gated on `reducedMotion` in `LevelPlayer` (`triggerShake`). |
+| #11 (also #7) | Covered under #7. |
+| #12 (root mount guard) | `main.tsx` guards `#root` with a clear thrown error instead of a bare non-null assertion. |
+| #14 (atMost/atLeast untested) | Covered under #4 (`tests/starsXp.test.ts`). |
+| #15 (README understates content) | `README.md` corrected to **29 packets** (all worlds + bosses + capstone), with the three reference levels still called out. |
+
+**Spec-gap items requested if small:** both already present — the Workshop seam renders on the
+map (`WorldMap` via `SEAM_TEXT`), and busted tricks render on the move deck
+(`app.progress.bustedTricks` → "Busted: …"). No change needed.
+
+**Not done (out of scope / deferred, with reasons):**
+- **Finding #13 (bundle code-split):** left as-is. The review itself marks it "not needed for
+  MVP sign-off"; lazy-loading packets is a Phase-2 concern and would change the loader contract.
+- **Two residual moderate runtime advisories (react-router):** not patched — the only fix is a
+  **breaking react-router v7 major**, which is a migration, not a bump, and the advisories are
+  not exploitable in this app (HashRouter, static routes, no SSR/redirects). Documented in
+  `README.md` instead.
+- **`content/levels/*.json` and `src/content/simulators/*`:** untouched by design (owned by the
+  content/simulator fixers). I registered the three in-use simulators' criteria in the new
+  drift-guard test by **reading** their exported constants only.
+
+No failures were attributable to the content fixer's in-progress JSON during the final runs
+(all 29 packets passed schema + combination tests).

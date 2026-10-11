@@ -1,15 +1,16 @@
 /**
- * REVIEW-ONLY UI render tests (added by the code-review agent, under tests/review/).
+ * LevelPlayer UI render tests. Drives the real LevelPlayer through the full
+ * rewrite-the-ask loop (just-ask -> add moves -> run) via native DOM events and
+ * asserts on rendered text, the compare panel, and the try-it card.
  *
  * @testing-library is NOT installed (package.json has no @testing-library/*),
- * and the review brief forbids `npm install`. These tests therefore use ONLY
- * already-installed deps: react, react-dom/client, and the jsdom environment
- * vitest already runs. They drive the real LevelPlayer through the full
- * rewrite-the-ask loop (just-ask -> add moves -> run) via native DOM events and
- * assert on rendered text, the compare panel, and the try-it card.
+ * so these use ONLY already-installed deps: react, react-dom/client, and the
+ * jsdom environment vitest runs. If @testing-library is added later, these can
+ * be rewritten with it.
  *
- * This is a lightweight substitute for @testing-library; if that dep is added
- * later these should be rewritten with it.
+ * Collected by the project vitest config (`tests/**\/*.test.tsx` is in the
+ * include glob). Originally added under tests/review/ by the code-review agent;
+ * folded into the normal suite as part of the engineering fixes.
  */
 import { describe, it, expect, beforeEach, afterEach } from 'vitest';
 import { act } from 'react';
@@ -142,5 +143,53 @@ describe('LevelPlayer render · w4-l4 (item-grid simulator)', () => {
     expect(text()).toContain('PASSED');
     expect(text()).toContain('What you do differently');
     expect(text()).toContain('Try it in your AI');
+  });
+});
+
+describe('LevelPlayer a11y + fixes', () => {
+  it('check bar is an assertive live region and is focusable', () => {
+    renderLevel('w2-l3');
+    click(button('Ask the AI 5 times'));
+    const bar = container.querySelector('.check') as HTMLElement;
+    expect(bar).toBeTruthy();
+    expect(bar.getAttribute('aria-live')).toBe('assertive');
+    expect(bar.getAttribute('role')).toBe('status');
+    expect(bar.getAttribute('tabindex')).toBe('-1');
+  });
+
+  it('focus moves to the compare heading on pass', () => {
+    renderLevel('w2-l3');
+    click(button('Ask the AI 5 times'));
+    click(button('Ask for a formula, not the number'));
+    click(button('Make it run the formula'));
+    click(button('Run my rewrite'));
+    const heading = container.querySelector('#cmpH') as HTMLElement;
+    expect(heading).toBeTruthy();
+    expect(heading.tagName).toBe('H2');
+    expect(document.activeElement).toBe(heading);
+  });
+
+  it('star denominator is packet-derived ("of 2" on a ★★-max level)', () => {
+    renderLevel('w1-l1');
+    const stars = container.querySelector('.stars') as HTMLElement;
+    expect(stars.getAttribute('aria-label')).toContain('of 2 stars');
+    // and only two glyphs are rendered
+    expect(stars.querySelectorAll('span').length).toBe(2);
+  });
+
+  it('star denominator is "of 3" on a three-star level', () => {
+    renderLevel('w2-l3');
+    const stars = container.querySelector('.stars') as HTMLElement;
+    expect(stars.getAttribute('aria-label')).toContain('of 3 stars');
+    expect(stars.querySelectorAll('span').length).toBe(3);
+  });
+
+  it('feedback HTML is sanitized (no script tag reaches the DOM)', () => {
+    renderLevel('w2-l3');
+    click(button('Ask the AI 5 times'));
+    // The feedback region exists and carries no <script> element.
+    const fb = container.querySelector('.fb') as HTMLElement;
+    expect(fb).toBeTruthy();
+    expect(fb.querySelector('script')).toBeNull();
   });
 });
