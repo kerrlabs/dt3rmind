@@ -1,0 +1,233 @@
+{
+  "id": "w5-boss",
+  "world": 5,
+  "order": 4,
+  "title": "Build it and prove it: average order value by weekday",
+  "kicker": "World 5 · Have AI Build the Tool · Boss",
+  "competencies": ["C8", "C9", "C10"],
+  "movesTaught": ["M7", "M2", "M6"],
+  "isBoss": true,
+  "job": {
+    "text": "<b>Boss — a new metric you haven't built.</b> Direct the AI to build a tool for the <b>average order value for a given weekday</b> on this data, commit an exact check <i>before</i> you see the output, and prove it on a case set with a boundary and an adversarial case. There's a hidden ground truth you won't see until you submit, and it's scored by the data, never by the AI. <i>In your own words you would type the whole ask; here you assemble it from the checklist and the committed check.</i><br><br>The hidden cases include a weekday with <b>a single order</b> (boundary) and a weekday that includes a <b>refund</b> (adversarial).",
+    "preview": {
+      "columns": ["date", "weekday", "amount"],
+      "rows": [
+        ["2025-03-03", "Monday", "128.00"],
+        ["2025-03-04", "Tuesday", "54.50"],
+        ["2025-03-05", "Wednesday", "-120.00"],
+        ["2025-03-10", "Monday", "212.75"]
+      ],
+      "more": "seed-42 sales · hidden case set"
+    }
+  },
+  "naivePrompt": "What's the average order value on Mondays?",
+  "basePrompt": "What's the average order value on Mondays?",
+  "renderer": "table",
+  "moves": [
+    {
+      "id": "spec",
+      "kind": "real",
+      "label": "Spec the tool (input, output, rule)",
+      "text": {
+        "plain": "Write a reusable tool: it takes a weekday and returns the average order value — total amount divided by the number of orders on that weekday, for any weekday I pass it.",
+        "tech": "Build a parameterized tool: input = weekday, output = AVG(amount) over orders on that weekday; keep it reusable."
+      }
+    },
+    {
+      "id": "exactcheck",
+      "kind": "real",
+      "label": "Commit the exact check first",
+      "text": {
+        "plain": "Before I see the output, I commit the exact average each weekday must equal.",
+        "tech": "Lock the exact expected average per case before output is revealed."
+      }
+    },
+    {
+      "id": "proveset",
+      "kind": "real",
+      "label": "Prove it on the case set",
+      "text": {
+        "plain": "Run it on a normal weekday, a weekday with a single order, and a weekday that includes a refund.",
+        "tech": "Run the tool over three cases: a normal weekday, a single-order weekday (boundary), and a refund weekday (adversarial)."
+      }
+    },
+    {
+      "id": "run",
+      "kind": "real",
+      "label": "Run it on my data",
+      "text": {
+        "plain": "Build it, run it on my data, and compare each result to my committed average.",
+        "tech": "Execute the tool on the seeded data and compare each output to the committed value."
+      }
+    },
+    {
+      "id": "shipit",
+      "kind": "trick",
+      "label": "Looks right, ship it",
+      "text": {
+        "plain": "The Monday number looks right, so ship it.",
+        "tech": "The Monday number looks right, so ship it."
+      }
+    },
+    {
+      "id": "round",
+      "kind": "trick",
+      "label": "Round to the nearest dollar",
+      "text": {
+        "plain": "Just round the average to the nearest dollar, that's close enough.",
+        "tech": "Round the average to the nearest dollar; close enough."
+      }
+    }
+  ],
+  "subChoiceGroup": "Commit your success check before you see the output (locks it):",
+  "subChoices": [
+    { "id": "exact", "kind": "real", "label": "each weekday's average equals what the data actually computes" },
+    { "id": "shiplooks", "kind": "trick", "label": "the Monday average looks about right" }
+  ],
+  "rules": [
+    {
+      "id": "pass",
+      "when": {
+        "requireAll": ["spec", "exactcheck", "proveset", "run", "exact"],
+        "forbidAny": ["round", "shiplooks", "shipit"]
+      },
+      "isPass": true,
+      "claim": "3 of 3 hidden cases match the committed average.",
+      "doer": "tool",
+      "feedback": "<b>Built, committed, and proven.</b> You specced the tool, locked the exact average before the output, and it matched on a normal weekday, a single-order weekday, and a refund weekday. That's the whole world in one move.",
+      "lesson": "Spec the tool, commit the exact check first, prove it on a boundary and an adversarial case.",
+      "output": {
+        "columns": ["weekday case", "committed average", "tool output"],
+        "rows": [
+          { "cells": ["normal (Monday)", "170.38", "170.38"], "pass": true },
+          { "cells": ["single order (Thursday)", "309.00", "309.00"], "pass": true },
+          { "cells": ["refund (Wednesday)", "61.25", "61.25"], "pass": true }
+        ],
+        "source": "a tool proven on the hidden case set"
+      }
+    },
+    {
+      "id": "round_trick",
+      "when": { "requireAny": ["round"], "forbidAny": ["shiplooks"] },
+      "isPass": false,
+      "claim": "Rounded averages — off by cents on every weekday.",
+      "doer": "ai-guessing",
+      "feedback": "<b>Rounding threw the match.</b> An average isn't a whole dollar — rounding to the nearest dollar makes every case miss the committed value by cents. Keep the exact average.",
+      "lesson": "Rounding an exact metric manufactures a wrong answer.",
+      "output": {
+        "columns": ["weekday case", "committed average", "rounded output"],
+        "rows": [
+          { "cells": ["normal (Monday)", "170.38", "170.00"], "pass": false },
+          { "cells": ["single order (Thursday)", "309.00", "309.00"], "pass": true },
+          { "cells": ["refund (Wednesday)", "61.25", "61.00"], "pass": false }
+        ],
+        "source": "a tool that rounded the average"
+      }
+    },
+    {
+      "id": "ship_trick",
+      "when": { "requireAny": ["shipit", "shiplooks"], "forbidAny": ["exact"] },
+      "isPass": false,
+      "claim": "Shipped on one weekday that looked right.",
+      "doer": "ai-guessing",
+      "feedback": "<b>One weekday that looks right isn't proof.</b> \"Looks right, ship it\" never tested the single-order weekday or the refund weekday — the two places this breaks. Commit the exact check and run the case set.",
+      "lesson": "A boss metric needs a committed check and a case set, not a vibe.",
+      "output": {
+        "columns": ["weekday case", "committed average", "tool output"],
+        "rows": [
+          { "cells": ["normal (Monday)", "(none)", "170.38"], "pass": false },
+          { "cells": ["single order (Thursday)", "not tested", "—"], "pass": false },
+          { "cells": ["refund (Wednesday)", "not tested", "—"], "pass": false }
+        ],
+        "source": "a shipped guess, no case set"
+      }
+    },
+    {
+      "id": "no_prove",
+      "when": { "requireAll": ["spec", "exactcheck", "run"], "forbidAny": ["proveset"] },
+      "isPass": false,
+      "claim": "Monday matched; the hidden cases weren't run.",
+      "doer": "tool",
+      "feedback": "<b>Right on Monday, untested where it breaks.</b> You committed an exact check but only on the easy weekday. The single-order weekday and the refund weekday are where an average tool goes wrong — prove it on those.",
+      "lesson": "An exact check on one case is still one case.",
+      "output": {
+        "columns": ["weekday case", "committed average", "tool output"],
+        "rows": [
+          { "cells": ["normal (Monday)", "170.38", "170.38"], "pass": true },
+          { "cells": ["single order (Thursday)", "not tested", "—"], "pass": false },
+          { "cells": ["refund (Wednesday)", "not tested", "—"], "pass": false }
+        ],
+        "source": "an exact check on a single case"
+      }
+    },
+    {
+      "id": "no_commit",
+      "when": { "requireAll": ["spec", "proveset", "run"], "forbidAny": ["exactcheck", "exact"] },
+      "isPass": false,
+      "claim": "Ran the cases, but graded them after seeing each output.",
+      "doer": "ai-guessing",
+      "feedback": "<b>You ran the cases but never committed what correct was.</b> Without a locked average per case you grade to match whatever runs. Commit the exact averages before the output.",
+      "lesson": "Running cases without committed values is still eyeballing.",
+      "output": {
+        "columns": ["weekday case", "committed average", "tool output"],
+        "rows": [
+          { "cells": ["normal (Monday)", "(none)", "170.38"], "pass": false },
+          { "cells": ["single order (Thursday)", "(none)", "309.00"], "pass": false },
+          { "cells": ["refund (Wednesday)", "(none)", "61.25"], "pass": false }
+        ],
+        "source": "cases run with no committed check"
+      }
+    },
+    {
+      "id": "naive",
+      "when": {},
+      "isPass": false,
+      "claim": "Monday average is about 182.",
+      "doer": "ai-guessing",
+      "feedback": "<b>That's the guesser.</b> You asked for the average, so it eyeballed one. Spec the tool, commit an exact check before the output, and prove it on the case set — including the single-order and refund weekdays.",
+      "lesson": "A boss metric still starts by taking the math out of the AI's hands.",
+      "output": {
+        "columns": ["weekday case", "AI said", "data actually computes"],
+        "rows": [
+          { "cells": ["normal (Monday)", "182.00", "170.38"], "pass": false }
+        ],
+        "source": "the AI eyeballing the weekday"
+      }
+    }
+  ],
+  "attemptBudget": 3,
+  "stars": {
+    "attemptBudget": 3,
+    "showMove": null,
+    "thirdStar": { "requireAll": ["proveset"] }
+  },
+  "xp": { "level": 20, "seenFailing": 15, "boss": 50 },
+  "hints": {
+    "nudge": "What does the tool take in, what does it return, and what's the one rule for an average?",
+    "gap": "Average = total amount over number of orders. The two places it breaks: a weekday with one order, and a weekday with a refund pulling the total down.",
+    "moves": "Add <b>Spec the tool</b>, <b>Commit the exact check first</b>, <b>Prove it on the case set</b>, and <b>Run it on my data</b>. Commit the <b>exact</b> averages; skip \"looks right\" and \"round it.\""
+  },
+  "whatYouDoDifferently": {
+    "naive": "\"what's the Monday average?\" → an eyeballed guess on one weekday.",
+    "rewrite": "spec a reusable average tool, commit the exact average per case, prove it on a single-order and a refund weekday → a metric you can trust on any weekday."
+  },
+  "tryIt": {
+    "template": {
+      "plain": "Don't compute this. Build me a reusable tool: it takes a [category], returns the average [value] for it, by [the one rule]. First tell me the exact average each case must equal, before you show output. Then run it on a normal case, a tiny case, and a tricky case, and compare to my numbers.",
+      "tech": "Build a parameterized tool: input [key], output AVG([value]), rule [aggregation]. Commit exact expected averages before output. Then run normal, boundary (single item), adversarial (a negative) cases and compare to committed values."
+    },
+    "notes": [
+      "<b>ChatGPT:</b> upload the data, commit your expected averages in the chat first, then have it build, run and compare.",
+      "<b>Copilot in Excel:</b> put each committed average in a cell and compare the formula's output to it.",
+      "<b>A chat AI that can't run code:</b> ask for the formula, write your expected averages down first, then run it yourself. Never accept \"I checked, it looks right.\""
+    ]
+  },
+  "expectPass": {
+    "conditions": {
+      "requireAll": ["spec", "exactcheck", "proveset", "run"],
+      "forbidAny": ["round", "shiplooks", "shipit"]
+    },
+    "requireSubChoicesAll": ["exact"],
+    "forbidSubChoicesAny": ["shiplooks"]
+  }
+}

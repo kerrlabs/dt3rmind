@@ -1,0 +1,183 @@
+{
+  "id": "w5-l3",
+  "world": 5,
+  "order": 3,
+  "title": "The check you can't peek past",
+  "kicker": "World 5 · Have AI Build the Tool · Level 3",
+  "competencies": ["C10"],
+  "movesTaught": ["M6"],
+  "isBoss": false,
+  "job": {
+    "text": "Decide what \"correct\" means <b>before</b> you see the AI's answer. Commit the check, lock it, then build and run. A green then means <i>your</i> check held — not \"the machine said yes.\" The trap: a tempting output that looks right but is off by a rounding error, and \"looks about right\" can't catch it. <i>In your own words you would tell the AI not to show its output until your check is written; here you build that ask from the checklist and the box locks on commit.</i>",
+    "preview": {
+      "columns": ["step", "when it happens"],
+      "rows": [
+        ["you commit the exact check", "before output"],
+        ["the box locks", "on commit"],
+        ["AI builds and runs", "after the lock"]
+      ],
+      "more": "check-before-output, enforced"
+    }
+  },
+  "naivePrompt": "Build it, then I'll check if it looks right.",
+  "basePrompt": "Build it, then I'll check if it looks right.",
+  "renderer": "table",
+  "moves": [
+    {
+      "id": "lockfirst",
+      "kind": "real",
+      "label": "Write the check first and lock it",
+      "text": {
+        "plain": "Here's the exact number it must equal. Don't show me the output until the check is set.",
+        "tech": "Commit the expected value; withhold the tool's output until the check is locked."
+      }
+    },
+    {
+      "id": "exactval",
+      "kind": "real",
+      "label": "Make the check exact",
+      "text": {
+        "plain": "The check is a specific value, not \"about right\".",
+        "tech": "Assert equality to a precise value, not an approximate band."
+      }
+    },
+    {
+      "id": "buildrun",
+      "kind": "real",
+      "label": "Build and run against the locked check",
+      "text": {
+        "plain": "Now build the tool, run it, and compare its output to my locked number.",
+        "tech": "Build, execute, and compare output to the committed value."
+      }
+    },
+    {
+      "id": "after",
+      "kind": "trick",
+      "label": "I'll check after I see it",
+      "text": {
+        "plain": "Show me the output first, then I'll decide if it's right.",
+        "tech": "Reveal the output first, then grade it."
+      }
+    },
+    {
+      "id": "looks",
+      "kind": "trick",
+      "label": "Looks right is fine",
+      "text": {
+        "plain": "If it looks about right, that's good enough.",
+        "tech": "An approximate match is good enough."
+      }
+    }
+  ],
+  "subChoiceGroup": "Pick how the output is revealed:",
+  "subChoices": [
+    { "id": "locked", "kind": "real", "label": "lock my check first, then reveal the output" },
+    { "id": "peek", "kind": "trick", "label": "let me peek at the output, then write my check" }
+  ],
+  "rules": [
+    {
+      "id": "pass",
+      "when": {
+        "requireAll": ["lockfirst", "exactval", "buildrun", "locked"],
+        "forbidAny": ["after", "peek", "looks"]
+      },
+      "isPass": true,
+      "claim": "First build failed your locked check; the fixed build matches it exactly.",
+      "doer": "checker",
+      "feedback": "<b>Your check held.</b> You said the exact number first, locked it, and the first build failed it — then a fixed build passed. That green is yours, not the machine's.",
+      "lesson": "Commit the exact check before you look, and a green means something.",
+      "output": {
+        "columns": ["build", "your locked check", "output", "verdict"],
+        "rows": [
+          { "cells": ["first", "48,210.60", "48,210.59 (rounding error)", "caught it"], "pass": false },
+          { "cells": ["fixed", "48,210.60", "48,210.60", "match"], "pass": true }
+        ],
+        "source": "a check locked before the output was revealed"
+      }
+    },
+    {
+      "id": "peeked",
+      "when": { "requireAny": ["after", "peek"], "forbidAny": ["locked"] },
+      "isPass": false,
+      "claim": "You saw the output, then wrote a check that happened to pass it.",
+      "doer": "ai-guessing",
+      "feedback": "<b>You checked after seeing the answer — so you graded to match it.</b> Decide what correct means first, then the answer can't talk you into it.",
+      "lesson": "Peeking turns a check into a rubber stamp.",
+      "output": {
+        "columns": ["step", "value", "verdict"],
+        "rows": [
+          { "cells": ["output revealed first", "48,210.59", "—"], "pass": false },
+          { "cells": ["check written to match", "~48,210", "rubber-stamped"], "pass": false }
+        ],
+        "source": "a check written after peeking"
+      }
+    },
+    {
+      "id": "fuzzy",
+      "when": { "requireAny": ["looks"], "forbidAny": ["exactval"] },
+      "isPass": false,
+      "claim": "'About right' waved the rounding error through.",
+      "doer": "ai-guessing",
+      "feedback": "<b>\"About right\" can't run.</b> The output is off by a rounding error and your check waved it through. Commit the exact number.",
+      "lesson": "A fuzzy check passes a precise error.",
+      "output": {
+        "columns": ["build", "your check", "output", "verdict"],
+        "rows": [
+          { "cells": ["only build", "about right", "48,210.59 (rounding error)", "passed a wrong answer"], "pass": false }
+        ],
+        "source": "a fuzzy, un-runnable check"
+      }
+    },
+    {
+      "id": "naive",
+      "when": {},
+      "isPass": false,
+      "claim": "Built first, no committed check.",
+      "doer": "ai-guessing",
+      "feedback": "<b>You built it, then eyeballed it.</b> With no exact check locked before the output, a green only means you agreed with whatever it showed you. Write the exact check first and lock it.",
+      "lesson": "A green you can't trace to a locked check means nothing.",
+      "output": {
+        "columns": ["build", "your check", "output", "verdict"],
+        "rows": [
+          { "cells": ["only build", "(none, eyeballed)", "48,210.59 (rounding error)", "looked fine, wasn't"], "pass": false }
+        ],
+        "source": "no locked check"
+      }
+    }
+  ],
+  "attemptBudget": 3,
+  "stars": {
+    "attemptBudget": 3,
+    "showMove": null,
+    "thirdStar": { "requireAll": ["exactval"] }
+  },
+  "xp": { "level": 20, "seenFailing": 15, "boss": 0 },
+  "hints": {
+    "nudge": "Decide what 'correct' means before you see the answer — what exact number must it equal?",
+    "gap": "The output is off by a rounding error. 'About right' slips right past that; and if you look before you write the check, you'll just agree with the output.",
+    "moves": "Add <b>Write the check first and lock it</b>, <b>Make the check exact</b>, and <b>Build and run against the locked check</b>. Lock before you reveal; skip \"looks right.\""
+  },
+  "whatYouDoDifferently": {
+    "naive": "build, then eyeball → you grade to match.",
+    "rewrite": "commit the exact check and lock it first → a green you can trust."
+  },
+  "tryIt": {
+    "template": {
+      "plain": "First, tell me exactly what the right answer must be — the precise value. Don't show me your output until I've written that down. Then build it and check against my number.",
+      "tech": "State the exact expected value first; withhold output until it's committed. Then build, run, and assert equality to the committed value."
+    },
+    "notes": [
+      "<b>ChatGPT:</b> write your expected value in the chat first; then ask it to build and compare.",
+      "<b>Copilot in Excel:</b> put the expected value in a cell and compare the formula to it.",
+      "<b>A chat AI that can't run code:</b> write the expected number down before you read its answer; compare, don't trust. Never accept \"I checked, it looks right.\""
+    ]
+  },
+  "expectPass": {
+    "conditions": {
+      "requireAll": ["lockfirst", "exactval", "buildrun"],
+      "forbidAny": ["after", "looks"]
+    },
+    "requireSubChoicesAll": ["locked"],
+    "forbidSubChoicesAny": ["peek"]
+  }
+}

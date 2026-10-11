@@ -1,0 +1,186 @@
+{
+  "id": "w5-l2",
+  "world": 5,
+  "order": 2,
+  "title": "Prove it on more than one month",
+  "kicker": "World 5 · Have AI Build the Tool · Level 2",
+  "competencies": ["C9", "C10"],
+  "movesTaught": ["M6"],
+  "isBoss": false,
+  "job": {
+    "text": "Your month-total tool just went green on March. One green is a smoke test, not proof. Run it against a <b>case set</b>: a normal month, a month with <b>zero</b> sales (the boundary), and a month that includes a <b>refund</b> — a negative amount (the adversarial case). <i>In your own words you would ask the AI to run these cases; here you build the ask from the checklist and commit each expected value before running.</i>",
+    "preview": {
+      "columns": ["case", "month", "what's special"],
+      "rows": [
+        ["normal", "March", "ordinary month"],
+        ["boundary", "January", "no sales at all"],
+        ["adversarial", "May", "includes a refund (−$120)"]
+      ],
+      "more": "seed-42 sales · 3 cases"
+    }
+  },
+  "naivePrompt": "Looks right, ship it.",
+  "basePrompt": "Looks right, ship it.",
+  "renderer": "table",
+  "moves": [
+    {
+      "id": "proveset",
+      "kind": "real",
+      "label": "Prove it on a case set",
+      "text": {
+        "plain": "Run it on a normal month, an empty month, and a month with a refund.",
+        "tech": "Run the tool over three cases: a normal month, an empty month, and a month containing a negative amount."
+      }
+    },
+    {
+      "id": "expected",
+      "kind": "real",
+      "label": "Say the expected value for each",
+      "text": {
+        "plain": "Normal = the usual total, empty = 0, refund month = the net after the refund.",
+        "tech": "Expected: normal = canonical, empty = 0, refund-month = net of the negative amount."
+      }
+    },
+    {
+      "id": "fixrule",
+      "kind": "real",
+      "label": "Fix the rule, not the case",
+      "text": {
+        "plain": "If a month has no rows, return 0; subtract refunds instead of counting them as sales.",
+        "tech": "Rule: no rows -> 0; sum signed amounts so negatives subtract."
+      }
+    },
+    {
+      "id": "ship",
+      "kind": "trick",
+      "label": "Ship it, it's green",
+      "text": {
+        "plain": "It passed one month, so ship it.",
+        "tech": "It passed one month, so ship it."
+      }
+    },
+    {
+      "id": "careful",
+      "kind": "trick",
+      "label": "Be extra careful",
+      "text": {
+        "plain": "Just be extra careful with the tricky months.",
+        "tech": "Just be extra careful with the tricky months."
+      }
+    }
+  ],
+  "subChoiceGroup": "Commit the expected value for each case before you run (locks the check):",
+  "subChoices": [
+    { "id": "commit", "kind": "real", "label": "normal = usual total, empty = 0, refund month = net" },
+    { "id": "eyeball", "kind": "trick", "label": "I'll eyeball each result after it runs" }
+  ],
+  "rules": [
+    {
+      "id": "pass",
+      "when": {
+        "requireAll": ["proveset", "expected", "fixrule", "commit"],
+        "forbidAny": ["eyeball"]
+      },
+      "isPass": true,
+      "claim": "3 of 3 cases match their committed expected value.",
+      "doer": "tool",
+      "feedback": "<b>Proven, not hoped.</b> Normal, empty and refund months all match. Now you'd trust it on a month you haven't seen.",
+      "lesson": "A case set with a boundary and an adversarial case is proof.",
+      "output": {
+        "columns": ["case", "expected", "tool output"],
+        "rows": [
+          { "cells": ["normal (March)", "48,210.60", "48,210.60"], "pass": true },
+          { "cells": ["empty (January)", "0.00", "0.00"], "pass": true },
+          { "cells": ["refund (May)", "46,235.80", "46,235.80"], "pass": true }
+        ],
+        "source": "a tool proven on a boundary and an adversarial case"
+      }
+    },
+    {
+      "id": "eyeball_check",
+      "when": { "requireAny": ["eyeball"], "forbidAny": ["commit"] },
+      "isPass": false,
+      "claim": "No committed values — graded by eye after the fact.",
+      "doer": "ai-guessing",
+      "feedback": "<b>You're grading after you see the answer.</b> Without a committed value per case you'll talk yourself into whatever it returns. Commit the three expected values first.",
+      "lesson": "A check you write after the output is a rubber stamp.",
+      "output": {
+        "columns": ["case", "committed value", "tool output"],
+        "rows": [
+          { "cells": ["normal (March)", "(none)", "48,210.60"], "pass": false },
+          { "cells": ["empty (January)", "(none)", "null"], "pass": false },
+          { "cells": ["refund (May)", "(none)", "46,475.80"], "pass": false }
+        ],
+        "source": "no committed expectations"
+      }
+    },
+    {
+      "id": "no_fix_empty",
+      "when": { "requireAll": ["proveset", "expected"], "forbidAny": ["fixrule"] },
+      "isPass": false,
+      "claim": "2 of 3 cases match. Empty month returned nothing.",
+      "doer": "tool",
+      "feedback": "<b>The empty month broke it.</b> Your tool returned nothing for a month with no sales — a total of \"nothing\" isn't 0. And the refund month over-counted. Fix the rule: no rows -> 0, subtract refunds.",
+      "lesson": "A boundary case is where tools quietly break.",
+      "output": {
+        "columns": ["case", "expected", "tool output"],
+        "rows": [
+          { "cells": ["normal (March)", "48,210.60", "48,210.60"], "pass": true },
+          { "cells": ["empty (January)", "0.00", "null"], "pass": false },
+          { "cells": ["refund (May)", "46,235.80", "46,475.80"], "pass": false }
+        ],
+        "source": "an unfixed tool on the hard cases"
+      }
+    },
+    {
+      "id": "one_case",
+      "when": {},
+      "isPass": false,
+      "claim": "Only one month was ever tested.",
+      "doer": "ai-guessing",
+      "feedback": "<b>One green is a smoke test, not proof.</b> You've tested one easy month. What happens on a month with no sales, or a month with a refund? Run the case set.",
+      "lesson": "Proof needs more than the happy path.",
+      "output": {
+        "columns": ["case", "expected", "tool output"],
+        "rows": [
+          { "cells": ["normal (March)", "48,210.60", "48,210.60"], "pass": true },
+          { "cells": ["empty (January)", "not tested", "—"], "pass": false },
+          { "cells": ["refund (May)", "not tested", "—"], "pass": false }
+        ],
+        "source": "a single happy-path run"
+      }
+    }
+  ],
+  "attemptBudget": 3,
+  "stars": {
+    "attemptBudget": 3,
+    "showMove": null,
+    "thirdStar": { "requireAll": ["fixrule"] }
+  },
+  "xp": { "level": 20, "seenFailing": 15, "boss": 0 },
+  "hints": {
+    "nudge": "What should the total be for a month with no sales?",
+    "gap": "The empty month comes back as nothing, not 0 — and a refund gets counted as a sale. Those are two different bugs the case set exposes.",
+    "moves": "Add <b>Prove it on a case set</b>, <b>Say the expected value for each</b>, and <b>Fix the rule, not the case</b> (no rows -> 0, subtract refunds). Commit the expected values first."
+  },
+  "whatYouDoDifferently": {
+    "naive": "one green → ship.",
+    "rewrite": "a normal, an empty and a refund month, each with an expected value → caught two bugs before shipping."
+  },
+  "tryIt": {
+    "template": {
+      "plain": "Before we trust this, run it on three cases: a normal one, an edge case (empty / zero), and a tricky one (a refund / a negative). Tell me the expected result for each and show me all three.",
+      "tech": "Before trusting it, run three cases: normal, boundary (empty), adversarial (a negative amount). State the expected value for each and show all three results."
+    },
+    "notes": [
+      "<b>ChatGPT:</b> have it build a tiny test with the three cases and run them.",
+      "<b>Copilot in Excel:</b> make three test rows with known answers and check the formula on each.",
+      "<b>A chat AI that can't run code:</b> work the three cases by hand and compare. Never accept \"I checked, they all pass\" — don't let it self-report \"all fine.\""
+    ]
+  },
+  "expectPass": {
+    "conditions": { "requireAll": ["proveset", "expected", "fixrule"] },
+    "requireSubChoicesAll": ["commit"],
+    "forbidSubChoicesAny": ["eyeball"]
+  }
+}

@@ -1,0 +1,214 @@
+{
+  "id": "w5-l1",
+  "world": 5,
+  "order": 1,
+  "title": "Describe the tool",
+  "kicker": "World 5 · Have AI Build the Tool · Level 1",
+  "competencies": ["C8", "C10"],
+  "movesTaught": ["M2", "M7"],
+  "isBoss": false,
+  "job": {
+    "text": "<b>You've been writing the ask. Now the AI builds real tools you keep.</b><br><br>Up to now the AI's outputs were recorded so a puzzle could never flake. From here it runs live: you describe the tool in your own words, the AI writes it, and a safe runner runs it on real data. The wait is the model thinking, not you failing.<br><br>You need a tool that gives <b>total sales for any month</b> from this data — not just this month, every month, without re-asking. <i>In your own words you would type the ask; here you build it from the checklist and commit a success check before you see the output.</i>",
+    "preview": {
+      "columns": ["date", "amount", "channel"],
+      "rows": [
+        ["2025-03-02", "128.00", "web"],
+        ["2025-03-02", "54.50", "store"],
+        ["2025-03-11", "212.75", "web"],
+        ["2025-02-27", "90.00", "store"]
+      ],
+      "more": "… seed-42 sales · 1,000+ rows"
+    }
+  },
+  "naivePrompt": "What were March sales?",
+  "basePrompt": "What were March sales?",
+  "renderer": "table",
+  "moves": [
+    {
+      "id": "tool",
+      "kind": "real",
+      "label": "Ask for the tool, not the answer",
+      "text": {
+        "plain": "Don't compute it yourself. Write me a tool that gives the total, don't just tell me a number.",
+        "tech": "Don't compute it inline. Write a function/query that returns the total; don't emit a literal."
+      }
+    },
+    {
+      "id": "shape",
+      "kind": "real",
+      "label": "Say the shape of the tool",
+      "text": {
+        "plain": "It takes a month and gives back one dollar total: add up the amount for every row in that month.",
+        "tech": "Input: a month. Output: one numeric total. Rule: SUM(amount) over rows whose date is in that month."
+      }
+    },
+    {
+      "id": "reuse",
+      "kind": "real",
+      "label": "Make it reusable",
+      "text": {
+        "plain": "Build it so I can run it for any month next time, not just March.",
+        "tech": "Parameterize the month; don't hard-code March."
+      }
+    },
+    {
+      "id": "run",
+      "kind": "real",
+      "label": "Run it on my data",
+      "text": {
+        "plain": "Run it on my data and give me the number it produces.",
+        "tech": "Execute it on the seeded data and report the value it outputs."
+      }
+    },
+    {
+      "id": "care",
+      "kind": "trick",
+      "label": "Be careful",
+      "text": {
+        "plain": "Please be very careful and double-check your math.",
+        "tech": "Please be very careful and double-check your math."
+      }
+    },
+    {
+      "id": "expert",
+      "kind": "trick",
+      "label": "You are an expert",
+      "text": {
+        "plain": "You are an expert data analyst.",
+        "tech": "You are an expert data analyst."
+      }
+    },
+    {
+      "id": "just",
+      "kind": "trick",
+      "label": "Just the number",
+      "text": {
+        "plain": "Reply with just the number.",
+        "tech": "Reply with just the number."
+      }
+    }
+  ],
+  "subChoiceGroup": "Commit your success check before you see the output (you can't change it after):",
+  "subChoices": [
+    { "id": "exact", "kind": "real", "label": "the total equals what the data actually sums to for that month" },
+    { "id": "about", "kind": "trick", "label": "the total is about right" }
+  ],
+  "rules": [
+    {
+      "id": "pass",
+      "when": {
+        "requireAll": ["tool", "shape", "reuse", "run", "exact"],
+        "forbidAny": ["about"]
+      },
+      "isPass": true,
+      "claim": "Tool output for March: 48,210.60 (matches your committed check).",
+      "doer": "tool",
+      "feedback": "<b>The tool does the math, and it's reusable.</b> You described it, the AI built it, the runner ran it, and it matches the data exactly — for any month you pass it.",
+      "lesson": "Describe the tool well and the AI builds something you keep.",
+      "output": {
+        "columns": ["month", "tool output", "data actually sums to"],
+        "rows": [
+          { "cells": ["March", "48,210.60", "48,210.60"], "pass": true }
+        ],
+        "source": "a reusable tool the runner executed on your data"
+      }
+    },
+    {
+      "id": "about_check",
+      "when": { "requireAny": ["about"], "forbidAny": ["exact"] },
+      "isPass": false,
+      "claim": "No value to check against — 'about right' can't be run.",
+      "doer": "ai-guessing",
+      "feedback": "<b>That check can't run.</b> \"About right\" has no number to compare to, so a wrong answer never fails it. Commit the exact total instead.",
+      "lesson": "A check needs a value, not a vibe.",
+      "output": {
+        "columns": ["month", "tool output", "your check said"],
+        "rows": [
+          { "cells": ["March", "51,980.00", "looks about right"], "pass": false }
+        ],
+        "source": "a check with nothing to compare to"
+      }
+    },
+    {
+      "id": "no_reuse",
+      "when": { "requireAll": ["tool", "shape", "run"], "forbidAny": ["reuse"] },
+      "isPass": false,
+      "claim": "Tool output for March: 48,210.60 (hard-coded to March).",
+      "doer": "tool",
+      "feedback": "<b>Right once, useless next month.</b> It built a March-only tool. Say \"for any month\" so you keep it.",
+      "lesson": "A one-off answer isn't a tool.",
+      "output": {
+        "columns": ["month", "tool output", "data actually sums to"],
+        "rows": [
+          { "cells": ["March", "48,210.60", "48,210.60"], "pass": false },
+          { "cells": ["April", "error: month not supported", "46,355.80"], "pass": false }
+        ],
+        "source": "a tool hard-coded to March"
+      }
+    },
+    {
+      "id": "no_shape",
+      "when": { "requireAll": ["tool"], "forbidAny": ["shape"] },
+      "isPass": false,
+      "claim": "Tool output for March: 61,044.25 (summed the wrong column).",
+      "doer": "tool",
+      "feedback": "<b>The tool runs but computes the wrong thing.</b> You didn't say what goes in, what comes out, or the rule — so it summed the wrong column. A tool is only as right as the spec you gave it.",
+      "lesson": "A build is only as good as its spec.",
+      "output": {
+        "columns": ["month", "tool output", "data actually sums to"],
+        "rows": [
+          { "cells": ["March", "61,044.25", "48,210.60"], "pass": false }
+        ],
+        "source": "a vague build with no spec"
+      }
+    },
+    {
+      "id": "naive",
+      "when": {},
+      "isPass": false,
+      "claim": "March sales were about 51,980.",
+      "doer": "ai-guessing",
+      "feedback": "<b>That's the guesser again.</b> You asked for the answer, so it predicted one by eyeballing rows. Ask for the <i>tool</i> that produces it.",
+      "lesson": "A number without a tool is a guess, even live.",
+      "output": {
+        "columns": ["month", "AI said", "data actually sums to"],
+        "rows": [
+          { "cells": ["March", "51,980.00", "48,210.60"], "pass": false }
+        ],
+        "source": "the AI eyeballing the rows"
+      }
+    }
+  ],
+  "attemptBudget": 3,
+  "stars": {
+    "attemptBudget": 3,
+    "showMove": null,
+    "thirdStar": null
+  },
+  "xp": { "level": 20, "seenFailing": 15, "boss": 0 },
+  "hints": {
+    "nudge": "What does the tool take in, and what single number should it give back?",
+    "gap": "Think of it as input = a month, output = the total. Now say the rule in one line, and say you'll want it again next month.",
+    "moves": "Add <b>Ask for the tool, not the answer</b>, <b>Say the shape of the tool</b>, <b>Make it reusable</b>, and <b>Run it on my data</b>. Commit the <b>exact</b> check, not \"about right\"."
+  },
+  "whatYouDoDifferently": {
+    "naive": "\"What were March sales?\" → an eyeballed guess.",
+    "rewrite": "\"build me a reusable tool: input a month, output the total, sum amount for that month, run it\" → an exact total you can rerun for any month."
+  },
+  "tryIt": {
+    "template": {
+      "plain": "Don't compute this. Build me a reusable tool: it takes [input], returns [one output], by [the one rule]. Run it on my data and give me the result. I'll want to run it again next month.",
+      "tech": "Don't inline this. Write a parameterized function/query: input [param], output [one value], rule [the aggregation]. Execute it on my data and report the result; I'll re-run it with other inputs."
+    },
+    "notes": [
+      "<b>ChatGPT:</b> upload the data; it writes and runs the code, and you can save the code.",
+      "<b>Copilot in Excel:</b> ask for a formula that takes the month from a cell, so you change one cell next month.",
+      "<b>A chat AI that can't run code:</b> ask for the formula or query and run it yourself; keep it for reuse. Never accept \"I checked, it's about right.\""
+    ]
+  },
+  "expectPass": {
+    "conditions": { "requireAll": ["tool", "shape", "reuse", "run"] },
+    "requireSubChoicesAll": ["exact"],
+    "forbidSubChoicesAny": ["about"]
+  }
+}
