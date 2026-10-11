@@ -83,7 +83,7 @@ The prototypes are **self-contained HTML with recorded outputs** — no network,
 2. Level 2 — rewritten, 5 green squares on 227,421.36, "Who did the math: the spreadsheet."
 3. World 4 — plain ask, 4 bad drafts, Sofia's "arrives next week" highlighted.
 4. World 4 — false green: "Checker: 8 of 8 pass" with Sofia still broken.
-5. World 4 — real pass after "prove it can fail," rank-up to Checker.
+5. World 4 — real pass after "prove it can fail," with the rank-up card.
 6. Jeff's terminal output: 0/10 vs 10/10.
 
 **What to say if it's screenshots:** "I'm going to walk you through this on screenshots so I don't burn your time fighting a projector — the live version is on my laptop right after and you're welcome to drive it yourself." Then narrate the same six beats in the same order. The story doesn't need the animation; it needs the two numbers (five wrong vs. one right) and the false green.
