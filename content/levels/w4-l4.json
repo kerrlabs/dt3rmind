@@ -1,0 +1,240 @@
+{
+  "id": "w4-l4",
+  "world": 4,
+  "order": 4,
+  "title": "Ask for the check first",
+  "kicker": "World 4 · Name the Check · Level 4 (keystone)",
+  "competencies": ["C5", "C6", "C7"],
+  "movesTaught": ["M6", "M4"],
+  "isBoss": true,
+  "job": {
+    "text": "Your team has 8 customer emails to answer today. You have the AI draft the replies. Every reply must have: a greeting, the customer's name, and a clear next step. You don't have time to read all 8. How do you know they're right?",
+    "preview": {
+      "text": "8 customers waiting (Maria … Sofia). The trap is Sofia's draft, where \"A replacement arrives next week\" looks like a next step but tells her nothing to do.",
+      "more": "graded against the 3 rules"
+    }
+  },
+  "naivePrompt": "Draft replies to these 8 customer emails.",
+  "basePrompt": "Draft replies to these 8 customer emails.",
+  "simulatorId": "w4-check",
+  "renderer": "item-grid",
+  "moves": [
+    {
+      "id": "check",
+      "kind": "real",
+      "label": "Ask for a checker first",
+      "text": {
+        "plain": "Before you write anything, write a checker that fails any draft missing {criteria}.",
+        "tech": "Before drafting, write a Python function check(draft, customer) that returns False if the draft is missing {criteria}."
+      }
+    },
+    {
+      "id": "prove",
+      "kind": "real",
+      "label": "Make it prove the checker can fail",
+      "text": {
+        "plain": "Test the checker on a bad example first and show me it fails.",
+        "tech": "Run check() on a known-bad draft first and show me it returns False."
+      }
+    },
+    {
+      "id": "run",
+      "kind": "real",
+      "label": "Run the checker on every draft",
+      "text": {
+        "plain": "Then run the checker on every draft and rewrite any that fail until they pass.",
+        "tech": "Execute check() on every draft, regenerate any that fail, and report the final pass/fail for each."
+      }
+    },
+    {
+      "id": "show",
+      "kind": "real",
+      "label": "Show me the checker",
+      "text": {
+        "plain": "Show me the checker and the results.",
+        "tech": "Show me the code and the results table."
+      }
+    },
+    {
+      "id": "remind",
+      "kind": "trick",
+      "label": "Remind it of the rules",
+      "text": {
+        "plain": "Remember: always include a greeting, the customer's name, and a next step.",
+        "tech": null
+      }
+    },
+    {
+      "id": "perfect",
+      "kind": "trick",
+      "label": "Make sure they're perfect",
+      "text": { "plain": "Make sure every email is perfect.", "tech": null }
+    },
+    {
+      "id": "double",
+      "kind": "trick",
+      "label": "Double-check your work",
+      "text": { "plain": "Double-check your work before answering.", "tech": null }
+    }
+  ],
+  "subChoiceGroup": "What should the checker test? (it fails any draft that misses one)",
+  "subChoices": [
+    { "id": "greet", "kind": "real", "label": "a greeting" },
+    { "id": "name", "kind": "real", "label": "the customer's name" },
+    { "id": "step", "kind": "real", "label": "a next step" },
+    { "id": "friendly", "kind": "trick", "label": "a friendly tone" },
+    { "id": "pro", "kind": "trick", "label": "a professional tone" }
+  ],
+  "rules": [
+    {
+      "id": "pass",
+      "when": {
+        "requireAll": ["check", "prove", "run", "greet", "name", "step"]
+      },
+      "isPass": true,
+      "claim": "Checker: 8 of 8 pass",
+      "doer": "checker",
+      "feedback": "<b>8 of 8 correct, and the AI's report matches reality.</b> The checker proved it could fail, caught the broken drafts, and they were rewritten. You can trust this without reading all 8.",
+      "lesson": "Ask for the check first, prove it can fail, run it — then a green is real.",
+      "output": {}
+    },
+    {
+      "id": "bug",
+      "when": {
+        "requireAll": ["check", "run", "greet", "name", "step"],
+        "forbidAny": ["prove"]
+      },
+      "isPass": false,
+      "claim": "Checker: 8 of 8 pass",
+      "doer": "checker",
+      "feedback": "<b>False green.</b> The checker said 8 of 8 pass, but Sofia's draft has no real next step. The AI's checker just looked for the word \"next\", and \"arrives <i>next</i> week\" matched. Your checker never failed anything, so nobody noticed it was broken.<br><br>What move would have caught a broken checker <i>before</i> you trusted it?",
+      "lesson": "A check never seen failing can be silently broken.",
+      "output": {}
+    },
+    {
+      "id": "vague",
+      "when": {
+        "requireAll": ["check", "run"],
+        "forbidAny": ["greet", "name", "step"]
+      },
+      "isPass": false,
+      "claim": "Checker: 8 of 8 pass",
+      "doer": "checker",
+      "feedback": "<b>Your checker can't fail.</b> \"Friendly tone\" and \"professional tone\" aren't things a checker can measure, so it passed all 8, including the broken ones. A check has to test something that's clearly there or not there.",
+      "lesson": "A vacuous criterion can't catch anything.",
+      "output": {}
+    },
+    {
+      "id": "partial",
+      "when": { "requireAll": ["check", "run"], "requireAny": ["greet", "name", "step"] },
+      "isPass": false,
+      "claim": "Checker: some pass",
+      "doer": "checker",
+      "feedback": "<b>The checker said some pass, but a draft still breaks a rule.</b> Your checker never tests for every rule. A check only proves what it actually checks.",
+      "lesson": "A check only covers what it tests.",
+      "output": {}
+    },
+    {
+      "id": "notRun",
+      "when": { "requireAll": ["check"], "forbidAny": ["run"] },
+      "isPass": false,
+      "claim": "\"I checked them. All 8 pass.\" (It never ran the checker.)",
+      "doer": "checker",
+      "feedback": "<b>It wrote a checker, then said \"all pass\" without running it.</b> A checker nobody runs is just a promise. Make it <b>run</b> the checker on every draft.",
+      "lesson": "A checker that isn't run proves nothing.",
+      "output": {}
+    },
+    {
+      "id": "remind",
+      "when": { "requireAny": ["remind"], "forbidAny": ["check"] },
+      "isPass": false,
+      "claim": "Nothing. It just handed them over.",
+      "doer": "ai-guessing",
+      "feedback": "<b>Better, but still 1 broken, and you'd only know by reading all 8.</b> Telling the AI the rule isn't the same as <i>checking</i> the rule. What would actually catch the one that slipped?",
+      "lesson": "Reminding isn't checking.",
+      "output": {}
+    },
+    {
+      "id": "tricks",
+      "when": { "requireAny": ["perfect", "double"], "forbidAny": ["check"] },
+      "isPass": false,
+      "claim": "\"All 8 are perfect.\"",
+      "doer": "ai-guessing",
+      "feedback": "<b>\"Make sure they're perfect\" and \"double-check\" just got you a confident claim.</b> It said all 8 are fine. Several aren't. Asking it to try harder doesn't give you a way to <i>know</i>.",
+      "lesson": "Effort isn't evidence.",
+      "output": {}
+    },
+    {
+      "id": "naive",
+      "when": {},
+      "isPass": false,
+      "claim": "Nothing. It just handed them over.",
+      "doer": "ai-guessing",
+      "feedback": "<b>4 of 8 broke a rule</b> (Lena, Chen, Aisha, Sofia), and the AI didn't mention it. Look at Sofia's: \"arrives next week\" <i>sounds</i> like a next step, but it gives her nothing to do.<br><br>Asking more nicely won't tell you which drafts are wrong. <b>Your move:</b> change what you ask for.",
+      "lesson": "A rule you don't check is a rule you don't know was broken.",
+      "output": {
+        "customers": [
+          { "name": "Maria", "topic": "Sorry your order is late. It ships today.", "step": "Please reply to confirm your address and we'll send tracking." },
+          { "name": "James", "topic": "We refunded the duplicate $42 charge.", "step": "Please check your statement in 3 to 5 days." },
+          { "name": "Aisha", "topic": "Your laptop repair is finished.", "step": "Please book a pickup time in your account." },
+          { "name": "Tom", "topic": "Your password reset link has expired.", "step": "Please click 'Forgot password' to get a new one." },
+          { "name": "Lena", "topic": "We received your returned jacket.", "step": "Please choose refund or exchange in the link below." },
+          { "name": "Raj", "topic": "Your plan renews on the 14th.", "step": "Please reply if you want to switch to yearly billing." },
+          { "name": "Chen", "topic": "One item was missing from your box.", "step": "Please reply with a photo of the packing slip." },
+          { "name": "Sofia", "topic": "Your blender is covered by warranty.", "step": "Please call us at 555-0142 to start the claim.", "fake": "A replacement arrives next week." }
+        ],
+        "baseDrafts": [
+          { "greet": true, "name": true, "step": true },
+          { "greet": true, "name": true, "step": true },
+          { "greet": true, "name": true, "step": false },
+          { "greet": true, "name": true, "step": true },
+          { "greet": true, "name": false, "step": true },
+          { "greet": true, "name": true, "step": true },
+          { "greet": false, "name": true, "step": true },
+          { "greet": true, "name": true, "step": false, "fakeStep": true }
+        ],
+        "remindedDrafts": [
+          { "greet": true, "name": true, "step": true },
+          { "greet": true, "name": true, "step": true },
+          { "greet": true, "name": true, "step": true },
+          { "greet": true, "name": true, "step": true },
+          { "greet": true, "name": true, "step": true },
+          { "greet": true, "name": true, "step": true },
+          { "greet": true, "name": true, "step": true },
+          { "greet": true, "name": true, "step": false, "fakeStep": true }
+        ]
+      }
+    }
+  ],
+  "attemptBudget": 3,
+  "stars": {
+    "attemptBudget": 3,
+    "showMove": "show",
+    "thirdStar": null
+  },
+  "xp": { "level": 20, "seenFailing": 15, "boss": 50 },
+  "hints": {
+    "nudge": "You can't read all 8. What if the AI built something that reads them for you, and that you could see go wrong?",
+    "gap": "Ask for a <b>checker first</b> that tests the three rules, and make it <b>run</b> on every draft. Skip the tone rules: a checker can't measure \"friendly\".",
+    "moves": "Add <b>Ask for a checker first</b> (greeting, name, next step), <b>Run the checker on every draft</b>, and <b>Make it prove the checker can fail</b>. That last one catches a checker that's quietly broken."
+  },
+  "whatYouDoDifferently": {
+    "naive": "\"draft replies to these 8\" → 4 broke a rule, no warning, read all 8 to find out.",
+    "rewrite": "\"write a checker, prove it can fail, run it on every draft, show it\" → read one short checker instead of 8 emails."
+  },
+  "tryIt": {
+    "template": {
+      "plain": "Before you write anything, write a checker that fails any [draft / summary / row] missing [rule 1], [rule 2] or [rule 3]. Test it on a bad example first and show me it fails. Then do the work, run the checker on every result, and redo any that fail. Show me the checker and the results.",
+      "tech": "Before generating, write a function check(item) that returns False if [rules]. Run it on a known-bad example and show it returns False. Then generate, execute check() on every item, regenerate failures, and show me the code and the pass/fail table."
+    },
+    "notes": [
+      "<b>ChatGPT with file or code tools:</b> it can write and run the checker itself, so \"run it\" really happens.",
+      "<b>Copilot in Excel:</b> put the drafts in a column and ask for checker formulas, e.g. =ISNUMBER(SEARCH(B2, A2)) for \"uses the name\".",
+      "<b>A chat AI that can't run code:</b> it can't truly check its own work. Ask for the checker, then run it yourself in a spreadsheet. Never accept \"I checked, they all pass.\""
+    ]
+  },
+  "expectPass": {
+    "conditions": { "requireAll": ["check", "prove", "run"] },
+    "requireSubChoicesAll": ["greet", "name", "step"]
+  }
+}
