@@ -2,7 +2,7 @@ import { StrictMode } from 'react';
 import { createRoot } from 'react-dom/client';
 import { HashRouter, Routes, Route } from 'react-router-dom';
 import { AppProvider } from './app/AppContext';
-import { WorldMap } from './pages/WorldMap';
+import { CircuitMap } from './pages/CircuitMap';
 import { KeyedLevelPlayer } from './pages/LevelPlayer';
 import { Settings } from './pages/Settings';
 import './styles.css';
@@ -18,7 +18,8 @@ createRoot(rootEl).render(
     <AppProvider>
       <HashRouter>
         <Routes>
-          <Route path="/" element={<WorldMap />} />
+          <Route path="/" element={<CircuitMap />} />
+          <Route path="/world/:n" element={<CircuitMap />} />
           <Route path="/level/:id" element={<KeyedLevelPlayer />} />
           <Route path="/settings" element={<Settings />} />
         </Routes>

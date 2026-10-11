@@ -787,65 +787,12 @@ svg.sc {
   stroke-width: 1.8;
 }
 
-/* ---- world map ---- */
-.map-worlds {
-  display: flex;
-  flex-direction: column;
-  gap: 14px;
-  margin-top: 16px;
-}
+/* ---- moves deck panel (reuses .world as a plain panel) ---- */
 .world {
   background: var(--bg-elev);
   border: 1px solid var(--border);
   border-radius: 14px;
   padding: 14px 16px;
-}
-.world.locked {
-  opacity: 0.55;
-}
-.world h2 {
-  font-size: 15px;
-  margin: 0;
-}
-.world .theme {
-  font-size: 12px;
-  color: var(--muted);
-}
-.levels {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 10px;
-  margin-top: 10px;
-}
-.lvl {
-  display: block;
-  min-width: 180px;
-  text-decoration: none;
-  color: var(--text);
-  background: var(--card);
-  border: 1px solid var(--border);
-  border-radius: 10px;
-  padding: 10px 12px;
-}
-.lvl[aria-disabled='true'] {
-  opacity: 0.5;
-  pointer-events: none;
-}
-.lvl .lt {
-  font-weight: 700;
-  font-size: 13px;
-}
-.lvl .lk {
-  font-size: 11px;
-  color: var(--muted);
-}
-.seam {
-  border: 1px dashed var(--sky);
-  border-radius: 14px;
-  padding: 12px 16px;
-  font-size: 13px;
-  color: var(--muted);
-  background: var(--accent-sub);
 }
 .deck {
   display: flex;
@@ -853,10 +800,517 @@ svg.sc {
   gap: 8px;
   margin-top: 8px;
 }
-.locktag {
-  font-size: 11px;
-  color: var(--warn);
+
+/* ===================================================================
+   Circuit Hybrid world map — two-tier board (world view + level view)
+   =================================================================== */
+
+.wrap-map {
+  max-width: 1360px;
+}
+
+/* breadcrumb + view controls */
+.bar2 {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  flex-wrap: wrap;
+  margin: 14px 0 6px;
+}
+.crumb {
+  font-size: 13px;
+  color: var(--muted);
+  font-weight: 600;
+}
+.crumb .sep {
+  opacity: 0.6;
+  margin: 0 6px;
+}
+.crumb b {
+  color: var(--text);
+}
+.crumb .here {
+  color: var(--sky);
+}
+.nav-ctl {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+  flex-wrap: wrap;
+}
+.nav-ctl .btn {
+  padding: 7px 12px;
+  font-size: 12.5px;
   font-weight: 700;
+  border-radius: 9px;
+  border: 1px solid var(--border);
+  background: var(--card);
+  color: var(--text);
+}
+.nav-ctl .btn.primary {
+  border-color: var(--accent);
+  background: var(--accent-sub);
+  color: var(--sky);
+}
+.nav-ctl .btn:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+/* legend */
+.legend {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px 16px;
+  align-items: center;
+  margin: 6px 0 0;
+  padding: 9px 14px;
+  background: var(--bg-elev);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  font-size: 12px;
+  color: var(--muted);
+}
+.legend .li {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+.legend b {
+  color: var(--text);
+  font-weight: 700;
+}
+/* legend swatches — shape conveys state, not colour alone */
+.legend .sw {
+  width: 16px;
+  height: 16px;
+  flex: none;
+  border: 2px solid var(--muted);
+  border-radius: 4px;
+}
+.legend .sw-passed {
+  border-color: var(--ok);
+}
+.legend .sw-current {
+  border-color: var(--warn);
+}
+.legend .sw-locked {
+  border-style: dashed;
+  border-color: var(--muted);
+}
+.legend .sw-boss {
+  border-color: var(--purple);
+  clip-path: polygon(25% 3%, 75% 3%, 100% 50%, 75% 97%, 25% 97%, 0 50%);
+  border-radius: 0;
+}
+.legend .sw-keystone {
+  border-color: var(--sky);
+  clip-path: polygon(50% 0, 100% 14%, 100% 60%, 50% 100%, 0 60%, 0 14%);
+  border-radius: 0;
+}
+.legend .sw-capstone {
+  border-color: var(--sky);
+  border-radius: 999px;
+  width: 22px;
+}
+
+/* the board (both views share it) */
+.board {
+  position: relative;
+  margin-top: 10px;
+  background:
+    radial-gradient(1100px 460px at 50% -10%, var(--accent-sub), transparent 70%),
+    var(--bg-elev);
+  border: 1px solid var(--border);
+  border-radius: 18px;
+  overflow: hidden;
+  height: 640px;
+}
+.board::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background-image:
+    linear-gradient(var(--border) 1px, transparent 1px),
+    linear-gradient(90deg, var(--border) 1px, transparent 1px);
+  background-size: 44px 44px;
+  opacity: 0.14;
+  mask-image: radial-gradient(85% 80% at 50% 40%, #000, transparent 90%);
+}
+.circuit {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  display: block;
+}
+
+/* view (zoom transition; instant under reduced motion) */
+.view {
+  position: absolute;
+  inset: 0;
+  opacity: 1;
+}
+.view.active {
+  animation: zoomin 0.3s ease;
+}
+@keyframes zoomin {
+  from {
+    opacity: 0;
+    transform: scale(0.985);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+/* node list (real DOM over the SVG) */
+.nodes {
+  position: absolute;
+  inset: 0;
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+.node-li {
+  display: contents;
+}
+.node {
+  position: absolute;
+  transform: translate(-50%, -50%);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  text-align: center;
+  width: 160px;
+  text-decoration: none;
+  color: var(--text);
+}
+/* no underlines on node labels — hover/focus use the tile ring instead */
+.node:hover,
+.node:focus,
+.node:focus-visible {
+  text-decoration: none;
+}
+.node .tile {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 58px;
+  height: 58px;
+  border-radius: 15px;
+  font-weight: 900;
+  font-size: 19px;
+  border: 2px solid var(--border);
+  background: var(--card);
+  color: var(--text);
+}
+.node:hover .tile {
+  border-color: var(--sky);
+}
+.node.boss .tile {
+  width: 74px;
+  height: 74px;
+  border-radius: 10px;
+  clip-path: polygon(25% 3%, 75% 3%, 100% 50%, 75% 97%, 25% 97%, 0 50%);
+  font-size: 15px;
+}
+.node.keystone .tile {
+  width: 68px;
+  height: 74px;
+  border-radius: 10px 10px 20px 20px;
+  clip-path: polygon(50% 0, 100% 14%, 100% 60%, 50% 100%, 0 60%, 0 14%);
+}
+.node.capstone .tile {
+  width: 100px;
+  height: 60px;
+  border-radius: 30px;
+}
+
+/* state styling — colour is NEVER the only signal (shape + icon + sr label) */
+.node.passed .tile {
+  border-color: var(--ok);
+  background: var(--ok-sub);
+  color: var(--text);
+}
+.node.current .tile {
+  border-color: var(--warn);
+  background: var(--card);
+  color: var(--text);
+  box-shadow: 0 0 0 4px color-mix(in srgb, var(--warn) 35%, transparent);
+}
+.node.locked .tile {
+  border-style: dashed;
+  border-color: var(--border);
+  background: color-mix(in srgb, var(--card) 60%, var(--bg));
+  color: var(--muted);
+}
+.node.boss .tile {
+  border-color: var(--purple);
+}
+.node.boss.passed .tile {
+  background: color-mix(in srgb, var(--purple) 18%, var(--card));
+}
+.node.boss.locked .tile {
+  border-color: var(--border);
+}
+.node.keystone .tile {
+  border-color: var(--sky);
+}
+.node.keystone.locked .tile {
+  border-color: var(--border);
+}
+.node[aria-disabled='true'] {
+  cursor: not-allowed;
+}
+
+.node .glyph {
+  position: absolute;
+  top: -8px;
+  right: -8px;
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--bg-elev);
+  border: 1px solid var(--border);
+}
+.node .label {
+  font-size: 12.5px;
+  font-weight: 600;
+  color: var(--text);
+  max-width: 160px;
+  line-height: 1.25;
+}
+.node.locked .label {
+  color: var(--muted);
+}
+.node .sub {
+  font-size: 10px;
+  color: var(--muted);
+  font-weight: 700;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+}
+.node .cap-sub {
+  text-transform: none;
+  letter-spacing: 0;
+  font-size: 10.5px;
+  max-width: 150px;
+}
+.node .wname {
+  font-size: 11px;
+  font-weight: 800;
+  color: var(--sky);
+  letter-spacing: 0.02em;
+  max-width: 160px;
+  line-height: 1.2;
+}
+.node.locked .wname {
+  color: var(--muted);
+}
+.node .starline {
+  font-size: 12px;
+  letter-spacing: 2px;
+  color: var(--border);
+  min-height: 14px;
+}
+.node .starline .on {
+  color: var(--warn);
+}
+.node.locked .starline,
+.node.current .starline {
+  color: var(--muted);
+  letter-spacing: normal;
+}
+.node .yah {
+  font-size: 10px;
+  font-weight: 900;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--bg);
+  background: var(--warn);
+  padding: 2px 7px;
+  border-radius: 999px;
+}
+.node .rankpill {
+  font-size: 10px;
+  font-weight: 800;
+  letter-spacing: 0.04em;
+  color: var(--sky);
+  background: var(--accent-sub);
+  border: 1px solid var(--accent);
+  padding: 1px 7px;
+  border-radius: 999px;
+}
+.node.locked .rankpill {
+  color: var(--muted);
+  background: transparent;
+  border-color: var(--border);
+}
+
+/* seam gate — a switch drawn ON the line, not a floating box */
+.seam-gate {
+  position: absolute;
+  transform: translate(-50%, -50%);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+  width: 150px;
+  text-align: center;
+}
+.seam-gate .seam-sw {
+  width: 30px;
+  height: 30px;
+  border-radius: 7px;
+  border: 2px solid var(--danger);
+  background: var(--danger-sub);
+  position: relative;
+}
+.seam-gate .seam-sw::before {
+  content: '';
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  width: 12px;
+  height: 2px;
+  background: var(--danger);
+  transform: translate(-50%, -50%) rotate(-30deg);
+}
+.seam-gate .seam-txt {
+  font-size: 10.5px;
+  color: var(--text);
+  line-height: 1.25;
+}
+.seam-gate .seam-txt b {
+  display: block;
+  font-size: 9.5px;
+  letter-spacing: 0.09em;
+  text-transform: uppercase;
+  color: var(--danger);
+  margin-bottom: 2px;
+}
+
+/* level-view entry/exit rail labels */
+.railtag {
+  position: absolute;
+  transform: translate(-50%, -50%);
+  font-size: 10.5px;
+  font-weight: 800;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  color: var(--muted);
+  background: var(--bg);
+  border: 1px solid var(--border);
+  padding: 3px 9px;
+  border-radius: 999px;
+  white-space: nowrap;
+}
+.railtag.in {
+  color: var(--sky);
+  border-color: var(--accent);
+}
+
+/* animated flow on lit segments */
+.flow {
+  stroke-dasharray: 3 10;
+  animation: dash 2.6s linear infinite;
+}
+@keyframes dash {
+  to {
+    stroke-dashoffset: -52;
+  }
+}
+
+/* ---- mobile: single-column rail (same DOM, SVG + absolute pos reset) ---- */
+@media (max-width: 640px) {
+  .board {
+    height: auto;
+    overflow: visible;
+    padding: 10px 14px 16px 34px;
+  }
+  .board::before {
+    display: none;
+  }
+  .circuit {
+    display: none;
+  }
+  .view {
+    position: static;
+  }
+  .view.active {
+    animation: none;
+  }
+  .nodes {
+    position: static;
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+    padding: 4px 0;
+  }
+  /* the climbing spine on the left */
+  .nodes::before {
+    content: '';
+    position: absolute;
+    left: 20px;
+    top: 20px;
+    bottom: 20px;
+    width: 3px;
+    background: linear-gradient(var(--ok), var(--warn) 40%, var(--border) 46%);
+    border-radius: 3px;
+  }
+  .node-li {
+    display: block;
+  }
+  .node {
+    position: static;
+    transform: none;
+    flex-direction: row;
+    align-items: center;
+    gap: 12px;
+    width: auto;
+    text-align: left;
+  }
+  .node .tile,
+  .node.boss .tile,
+  .node.keystone .tile,
+  .node.capstone .tile {
+    width: 46px;
+    height: 46px;
+    font-size: 14px;
+    flex: none;
+  }
+  .node .wname,
+  .node .label,
+  .node .sub,
+  .node .starline,
+  .node .yah,
+  .node .rankpill {
+    max-width: none;
+    text-align: left;
+  }
+  .seam-gate,
+  .railtag {
+    position: static;
+    transform: none;
+    width: auto;
+    flex-direction: row;
+    align-items: center;
+    gap: 10px;
+    white-space: normal;
+    text-align: left;
+  }
+  .railtag {
+    align-self: flex-start;
+  }
 }
 
 @media (prefers-reduced-motion: reduce) {
