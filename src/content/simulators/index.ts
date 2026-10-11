@@ -23,15 +23,27 @@ export type Simulator = (
   matchedRule: OutcomeRule,
 ) => SimulatorResult;
 
-const REGISTRY: Record<string, Simulator> = {
-  'w4-check': w4CheckSimulator,
-};
+/**
+ * Auto-discovered simulators: any file `src/content/simulators/<id>.ts` that
+ * exports `simulator: Simulator` is registered under `<id>` (the filename stem).
+ * No edit to this file is needed to add one, so parallel authors never collide.
+ */
+const DISCOVERED = import.meta.glob<{ simulator?: Simulator }>(
+  ['./*.ts', '!./index.ts'],
+  { eager: true },
+);
+
+const REGISTRY: Record<string, Simulator> = { 'w4-check': w4CheckSimulator };
+for (const [path, mod] of Object.entries(DISCOVERED)) {
+  const id = path.replace(/^\.\//, '').replace(/\.ts$/, '');
+  if (mod.simulator) REGISTRY[id] = mod.simulator;
+}
 
 export function getSimulator(id: string): Simulator {
   const sim = REGISTRY[id];
   if (!sim) {
     throw new Error(
-      `Unknown simulatorId "${id}". Register it in src/content/simulators/index.ts.`,
+      `Unknown simulatorId "${id}". Add src/content/simulators/${id}.ts exporting \`simulator\`.`,
     );
   }
   return sim;

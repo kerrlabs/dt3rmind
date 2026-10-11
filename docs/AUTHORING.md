@@ -156,7 +156,7 @@ fail" move exposed a checker bug — add a named simulator:
 Then:
 1. Implement the simulator in `src/content/simulators/<name>.ts` as a pure function
    `(packet, picks, matchedRule) => { isPass, output, claim?, doer? }`.
-2. Register it in `src/content/simulators/index.ts` (`REGISTRY`).
+2. Name the file `src/content/simulators/<simulatorId>.ts` and `export const simulator: Simulator`. It is auto-discovered by filename; do NOT edit `index.ts`.
 3. Still author full rules — the engine matches a rule for **feedback + lesson** even when a
    simulator decides pass/output. Order rules so the first match corresponds to the simulator's
    outcome for that combination.
