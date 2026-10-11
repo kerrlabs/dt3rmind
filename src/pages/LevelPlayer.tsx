@@ -380,3 +380,13 @@ function execCommandFallback(text: string, onOk: () => void, onFail: () => void)
     document.body.removeChild(ta);
   }
 }
+
+/**
+ * Route element: remount the player per level id so no state from the previous
+ * level (picks, last outcome, renderer payload) carries into the next one.
+ * Without the key, switching levels in one tab crashed the result renderer.
+ */
+export function KeyedLevelPlayer(): JSX.Element {
+  const { id = '' } = useParams();
+  return <LevelPlayer key={id} />;
+}
