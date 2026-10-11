@@ -1,0 +1,139 @@
+{
+  "id": "w1-l1",
+  "world": 1,
+  "order": 1,
+  "title": "The receipt",
+  "kicker": "World 1 · Shape the Answer · Level 1",
+  "competencies": ["C1"],
+  "movesTaught": ["M1"],
+  "isBoss": false,
+  "job": {
+    "text": "You pasted a coffee order into your AI and asked it to \"summarize this order.\" You need to drop the result into a spreadsheet with columns item · size · price.",
+    "preview": {
+      "text": "one large oat latte, four fifty",
+      "more": "a one-line order"
+    }
+  },
+  "naivePrompt": "Summarize this coffee order.",
+  "basePrompt": "Summarize this coffee order.",
+  "moves": [
+    {
+      "id": "shape",
+      "kind": "real",
+      "label": "Name the shape",
+      "text": {
+        "plain": "Answer in exactly this format: item, size, price — one value each.",
+        "tech": "Return JSON with exactly these keys: item (string), size (string), price (number)."
+      }
+    },
+    {
+      "id": "price_num",
+      "kind": "real",
+      "label": "Make price a number",
+      "text": {
+        "plain": "Write price as a number like 4.50, not words.",
+        "tech": "price must be a numeric type, not a string."
+      }
+    },
+    {
+      "id": "polite",
+      "kind": "trick",
+      "label": "Make it friendly",
+      "text": {
+        "plain": "Please make it nice and friendly.",
+        "tech": "Please make it nice and friendly."
+      }
+    },
+    {
+      "id": "expert",
+      "kind": "trick",
+      "label": "You are an expert",
+      "text": {
+        "plain": "You are an expert barista.",
+        "tech": "You are an expert barista."
+      }
+    }
+  ],
+  "subChoices": [],
+  "renderer": "text-answer",
+  "rules": [
+    {
+      "id": "pass",
+      "when": { "requireAll": ["shape", "price_num"] },
+      "isPass": true,
+      "claim": "item: oat latte · size: large · price: 4.50",
+      "doer": "ai-guessing",
+      "feedback": "<b>That's a receipt.</b> Three named fields, and a price you can add up. You could paste this straight into a sheet.",
+      "lesson": "A fixed shape is what makes an answer checkable.",
+      "output": {
+        "fields": [
+          { "key": "item", "value": "oat latte" },
+          { "key": "size", "value": "large" },
+          { "key": "price", "value": "4.50", "numeric": true }
+        ],
+        "source": "the shape you asked for"
+      }
+    },
+    {
+      "id": "shape_no_num",
+      "when": { "requireAll": ["shape"], "forbidAny": ["price_num"] },
+      "isPass": false,
+      "claim": "item: oat latte · size: large · price: four fifty",
+      "doer": "ai-guessing",
+      "feedback": "<b>Almost — the shape is right, but price is still words.</b> A column of 'four fifty' can't be summed. Pin price to a number.",
+      "lesson": "A field being present isn't the same as being usable.",
+      "output": {
+        "fields": [
+          { "key": "item", "value": "oat latte" },
+          { "key": "size", "value": "large" },
+          { "key": "price", "value": "four fifty", "numeric": false }
+        ],
+        "source": "the shape you asked for"
+      }
+    },
+    {
+      "id": "naive",
+      "when": {},
+      "isPass": false,
+      "claim": "Sure! You got a large oat latte, and that comes to four fifty. Enjoy!",
+      "doer": "ai-guessing",
+      "feedback": "<b>Still a sentence.</b> 'Friendly' and 'expert' changed the words, not the shape. You still can't paste this into three columns.",
+      "lesson": "Tone doesn't make an answer checkable.",
+      "output": {
+        "answer": "Sure! You got a large oat latte, and that comes to four fifty. Enjoy!",
+        "highlights": ["four fifty"],
+        "source": "a friendly paragraph"
+      }
+    }
+  ],
+  "attemptBudget": 2,
+  "stars": {
+    "attemptBudget": 2,
+    "showMove": null,
+    "thirdStar": null
+  },
+  "xp": { "level": 20, "seenFailing": 15, "boss": 0 },
+  "hints": {
+    "nudge": "A receipt always lists the same few things. What are they?",
+    "gap": "The AI gave you the words but not the shape. Which chip asks for item, size and price as separate values?",
+    "moves": "Add <b>Name the shape</b> and <b>Make price a number</b>. Leave the friendly/expert chips out."
+  },
+  "whatYouDoDifferently": {
+    "naive": "\"Summarize this order\" → a sentence you can't check.",
+    "rewrite": "\"Answer in exactly this format…\" → three fields you can paste and add."
+  },
+  "tryIt": {
+    "template": {
+      "plain": "Give me the answer in exactly this format: [field 1], [field 2], [field 3] — one value each. Write any amount as a number like 4.50, not words.",
+      "tech": "Return JSON with exactly these keys: [key 1], [key 2], [key 3]. Numeric fields must be numbers, not strings."
+    },
+    "notes": [
+      "<b>ChatGPT:</b> paste your text, it returns the fields; ask for a table and copy it.",
+      "<b>Copilot in Excel:</b> ask it to put each field in its own column so you can total price.",
+      "<b>A chat AI that can't run code:</b> still works — a shape is just how you tell it to answer; copy the fields into your sheet."
+    ]
+  },
+  "expectPass": {
+    "conditions": { "requireAll": ["shape", "price_num"] }
+  }
+}
