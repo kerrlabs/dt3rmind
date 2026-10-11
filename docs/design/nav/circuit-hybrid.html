@@ -1,0 +1,753 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Dt3rmind — world map concept: Circuit Hybrid</title>
+<style>
+  /* ---- Okabe–Ito tokens, lifted verbatim from the app (src/styles.css) + circuit.html ---- */
+  :root {
+    --bg: #0d1117;
+    --bg-elev: #161c2b;
+    --card: #1a2130;
+    --border: #2a3444;
+    --text: #e8ecf4;
+    --muted: #8a97ab;
+    --ok: #009e73;
+    --ok-sub: #0b2a22;
+    --danger: #d55e00;
+    --danger-sub: #2e1a0d;
+    --accent: #0072b2;
+    --accent-sub: #0b2238;
+    --sky: #56b4e9;
+    --warn: #e69f00;
+    --purple: #cc79a7;
+    --yellow: #f0e442;
+  }
+  body.light {
+    --bg: #f6f7f9;
+    --bg-elev: #fff;
+    --card: #fff;
+    --border: #d5dae2;
+    --text: #1d2433;
+    --muted: #5b6578;
+    --ok-sub: #e3f4ee;
+    --danger-sub: #fbeadf;
+    --accent-sub: #e2eef7;
+  }
+  * { box-sizing: border-box; }
+  html, body { height: 100%; }
+  body {
+    margin: 0;
+    background: var(--bg);
+    color: var(--text);
+    font-family: Inter, system-ui, -apple-system, 'Segoe UI', sans-serif;
+    line-height: 1.4;
+  }
+  a { color: var(--sky); }
+  button { font: inherit; cursor: pointer; }
+  button:focus-visible, a:focus-visible, [tabindex]:focus-visible {
+    outline: 3px solid var(--sky);
+    outline-offset: 2px;
+    border-radius: 6px;
+  }
+  .wrap { max-width: 1360px; margin: 0 auto; padding: 14px 20px 18px; }
+
+  /* ---- top bar (matches app .top) ---- */
+  .top {
+    display: flex; align-items: center; justify-content: space-between;
+    gap: 16px; flex-wrap: wrap;
+    background: var(--bg-elev); border: 1px solid var(--border);
+    border-radius: 14px; padding: 12px 18px;
+  }
+  .brandrow { display: flex; align-items: center; gap: 12px; }
+  .badge {
+    width: 42px; height: 42px; border-radius: 11px; background: var(--accent);
+    color: #fff; display: flex; align-items: center; justify-content: center;
+    font-weight: 900; font-size: 18px;
+  }
+  .kicker {
+    font-size: 11px; letter-spacing: 0.1em; text-transform: uppercase;
+    color: var(--sky); font-weight: 800;
+  }
+  h1 { font-size: 19px; margin: 2px 0 0; }
+  .meta { display: flex; align-items: center; gap: 16px; flex-wrap: wrap; }
+  .xp { font-size: 12px; color: var(--muted); }
+  .xp b { color: var(--text); }
+  .rank-chip {
+    font-size: 12px; font-weight: 800; color: var(--text);
+    background: var(--accent-sub); border: 1px solid var(--accent);
+    padding: 5px 10px; border-radius: 999px;
+  }
+  .tg button {
+    font-size: 12px; padding: 6px 11px; background: var(--card);
+    color: var(--text); border: 1px solid var(--border); border-radius: 9px;
+  }
+
+  /* ---- breadcrumb + view controls ---- */
+  .bar2 {
+    display: flex; align-items: center; justify-content: space-between;
+    gap: 12px; flex-wrap: wrap; margin: 12px 0 6px;
+  }
+  .crumb { font-size: 13px; color: var(--muted); font-weight: 600; }
+  .crumb .sep { opacity: 0.6; margin: 0 6px; }
+  .crumb b { color: var(--text); }
+  .crumb .here { color: var(--sky); }
+  .nav-ctl { display: flex; gap: 8px; align-items: center; }
+  .btn {
+    font-size: 12.5px; padding: 7px 12px; background: var(--card); color: var(--text);
+    border: 1px solid var(--border); border-radius: 9px; display: inline-flex;
+    align-items: center; gap: 6px;
+  }
+  .btn[disabled] { opacity: 0.4; cursor: not-allowed; }
+  .btn.primary { border-color: var(--accent); background: var(--accent-sub); color: var(--sky); font-weight: 700; }
+
+  /* ---- legend ---- */
+  .legend {
+    display: flex; flex-wrap: wrap; gap: 10px 16px; align-items: center;
+    margin: 6px 0 0; padding: 9px 14px;
+    background: var(--bg-elev); border: 1px solid var(--border); border-radius: 12px;
+    font-size: 12px; color: var(--muted);
+  }
+  .legend .li { display: flex; align-items: center; gap: 6px; }
+  .legend svg { flex: none; }
+  .legend b { color: var(--text); font-weight: 700; }
+
+  /* ---- the board (both views share it) ---- */
+  .board {
+    position: relative; margin-top: 10px;
+    background:
+      radial-gradient(1100px 460px at 50% -10%, var(--accent-sub), transparent 70%),
+      var(--bg-elev);
+    border: 1px solid var(--border); border-radius: 18px;
+    overflow: hidden;
+    height: 620px;
+  }
+  .board::before {
+    content: ""; position: absolute; inset: 0; pointer-events: none;
+    background-image:
+      linear-gradient(var(--border) 1px, transparent 1px),
+      linear-gradient(90deg, var(--border) 1px, transparent 1px);
+    background-size: 44px 44px;
+    opacity: 0.14;
+    mask-image: radial-gradient(85% 80% at 50% 40%, #000, transparent 90%);
+  }
+  .circuit { position: absolute; inset: 0; width: 100%; height: 100%; display: block; }
+
+  /* ---- view switching (CSS transition; instant under reduced motion) ---- */
+  .view { position: absolute; inset: 0; opacity: 0; visibility: hidden;
+          transform: scale(0.985); transition: opacity 0.32s ease, transform 0.32s ease; }
+  .view.active { opacity: 1; visibility: visible; transform: scale(1); }
+  @media (prefers-reduced-motion: reduce) {
+    .view { transition: none; }
+  }
+
+  /* ---- node list (real DOM over SVG) ---- */
+  .nodes { position: absolute; inset: 0; list-style: none; margin: 0; padding: 0; }
+  .node {
+    position: absolute; transform: translate(-50%, -50%);
+    display: flex; flex-direction: column; align-items: center; gap: 4px;
+    text-align: center; width: 158px;
+  }
+  .tile {
+    position: relative; display: flex; align-items: center; justify-content: center;
+    width: 58px; height: 58px; border-radius: 15px;
+    font-weight: 900; font-size: 20px;
+    border: 2px solid var(--border); background: var(--card); color: var(--text);
+    text-decoration: none;
+  }
+  .tile .tool-ic { position: absolute; }
+  .node.boss .tile {
+    width: 76px; height: 76px; border-radius: 10px;
+    clip-path: polygon(25% 3%, 75% 3%, 100% 50%, 75% 97%, 25% 97%, 0 50%);
+    font-size: 15px;
+  }
+  .node.keystone .tile {
+    width: 70px; height: 76px; border-radius: 10px 10px 20px 20px;
+    clip-path: polygon(50% 0, 100% 14%, 100% 60%, 50% 100%, 0 60%, 0 14%);
+  }
+  .node.capstone .tile {
+    width: 102px; height: 62px; border-radius: 30px;
+    font-size: 14px; letter-spacing: 0.02em;
+  }
+
+  /* ---- state styling — colour is NEVER the only signal (shape+icon+sr label) ---- */
+  .node.passed .tile { border-color: var(--ok); background: var(--ok-sub); color: var(--text); }
+  .node.current .tile {
+    border-color: var(--warn); background: var(--card); color: var(--text);
+    box-shadow: 0 0 0 4px color-mix(in srgb, var(--warn) 35%, transparent);
+  }
+  .node.locked .tile {
+    border-style: dashed; border-color: var(--border);
+    background: color-mix(in srgb, var(--card) 60%, var(--bg));
+    color: var(--muted); cursor: not-allowed;
+  }
+  .node.boss .tile { border-color: var(--purple); }
+  .node.boss.passed .tile { background: color-mix(in srgb, var(--purple) 18%, var(--card)); }
+  .node.boss.locked .tile { border-color: var(--border); }
+  .node.keystone .tile { border-color: var(--sky); }
+  .node.keystone.locked .tile { border-color: var(--border); }
+
+  .glyph {
+    position: absolute; top: -8px; right: -8px; width: 20px; height: 20px;
+    border-radius: 50%; display: flex; align-items: center; justify-content: center;
+    background: var(--bg-elev); border: 1px solid var(--border);
+  }
+  .label { font-size: 12.5px; font-weight: 600; color: var(--text); max-width: 158px; }
+  .node.locked .label { color: var(--muted); }
+  .sub { font-size: 10px; color: var(--muted); font-weight: 700; letter-spacing: 0.05em; text-transform: uppercase; }
+  .wname { font-size: 11px; font-weight: 800; color: var(--sky); letter-spacing: 0.02em; }
+  .node.locked .wname { color: var(--muted); }
+
+  .starline { font-size: 12px; letter-spacing: 2px; color: var(--border); height: 14px; }
+  .starline .on { color: var(--warn); }
+
+  .yah {
+    font-size: 10px; font-weight: 900; letter-spacing: 0.06em; text-transform: uppercase;
+    color: var(--bg); background: var(--warn); padding: 2px 7px; border-radius: 999px;
+  }
+  .rankpill {
+    font-size: 10px; font-weight: 800; letter-spacing: 0.04em;
+    color: var(--sky); background: var(--accent-sub); border: 1px solid var(--accent);
+    padding: 1px 7px; border-radius: 999px;
+  }
+  .node.locked .rankpill { color: var(--muted); background: transparent; border-color: var(--border); }
+
+  /* seam gate chip on the line */
+  .seam {
+    position: absolute; transform: translate(-50%, -50%);
+    max-width: 230px; text-align: center;
+    background: var(--danger-sub); border: 1px dashed var(--danger); color: var(--text);
+    padding: 7px 11px; border-radius: 12px; font-size: 11px; font-weight: 600;
+  }
+  .seam b { display: block; font-size: 9.5px; letter-spacing: 0.09em; text-transform: uppercase; color: var(--danger); margin-bottom: 2px; }
+
+  /* level-view entry/exit rail labels */
+  .railtag {
+    position: absolute; transform: translate(-50%, -50%);
+    font-size: 10.5px; font-weight: 800; letter-spacing: 0.05em; text-transform: uppercase;
+    color: var(--muted); background: var(--bg); border: 1px solid var(--border);
+    padding: 3px 9px; border-radius: 999px; white-space: nowrap;
+  }
+  .railtag.in { color: var(--sky); border-color: var(--accent); }
+
+  /* animated flow on lit segments */
+  .flow { stroke-dasharray: 3 10; animation: dash 2.6s linear infinite; }
+  @keyframes dash { to { stroke-dashoffset: -52; } }
+  @media (prefers-reduced-motion: reduce) { .flow { animation: none; } }
+
+  .foot { margin-top: 14px; font-size: 12px; color: var(--muted); }
+  .sr-only {
+    position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px;
+    overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; border: 0;
+  }
+
+  /* ---- mobile: single-column rail, SVG hidden ---- */
+  .mobile { display: none; }
+  @media (max-width: 640px) {
+    .board { display: none; }
+    .mobile { display: block; }
+    .legend { font-size: 11px; }
+  }
+  .mrail { position: relative; margin: 10px 0 0 30px; list-style: none; padding: 0; }
+  .mrail::before {
+    content: ""; position: absolute; left: -14px; top: 12px; bottom: 12px; width: 3px;
+    background: var(--mspine, linear-gradient(var(--ok), var(--warn) 42%, var(--border) 46%));
+    border-radius: 3px;
+  }
+  .mrow { display: flex; align-items: center; gap: 12px; padding: 8px 0; position: relative; }
+  .mrow .dot {
+    position: absolute; left: -19px; width: 13px; height: 13px; border-radius: 50%;
+    background: var(--card); border: 2px solid var(--border);
+  }
+  .mrow.passed .dot { background: var(--ok); border-color: var(--ok); }
+  .mrow.current .dot { background: var(--warn); border-color: var(--warn); box-shadow: 0 0 0 4px color-mix(in srgb, var(--warn) 30%, transparent); }
+  .mtile {
+    flex: none; width: 44px; height: 44px; border-radius: 12px; display: flex;
+    align-items: center; justify-content: center; font-weight: 900;
+    border: 2px solid var(--border); background: var(--card); color: var(--text);
+    text-decoration: none; font-size: 16px;
+  }
+  .mrow.passed .mtile { border-color: var(--ok); background: var(--ok-sub); }
+  .mrow.current .mtile { border-color: var(--warn); box-shadow: 0 0 0 3px color-mix(in srgb, var(--warn) 30%, transparent); }
+  .mrow.locked .mtile { border-style: dashed; color: var(--muted); }
+  .mrow.boss .mtile { border-radius: 8px; clip-path: polygon(25% 3%, 75% 3%, 100% 50%, 75% 97%, 25% 97%, 0 50%); border-color: var(--purple); }
+  .mrow.keystone .mtile { clip-path: polygon(50% 0, 100% 14%, 100% 60%, 50% 100%, 0 60%, 0 14%); border-color: var(--sky); }
+  .mrow.capstone .mtile { width: 60px; border-radius: 22px; font-size: 12px; }
+  .mbody { min-width: 0; }
+  .mbody .label { display: block; }
+  .mbody .sub { display: block; }
+  .mworld {
+    font-size: 11px; letter-spacing: 0.08em; text-transform: uppercase; font-weight: 800;
+    color: var(--sky); margin: 14px 0 2px -26px;
+  }
+  .mseam {
+    background: var(--danger-sub); border: 1px dashed var(--danger); color: var(--text);
+    padding: 8px 11px; border-radius: 10px; font-size: 11px; margin: 12px 0 2px -26px;
+  }
+  .mseam b { color: var(--danger); display: block; font-size: 9.5px; text-transform: uppercase; letter-spacing: 0.08em; }
+  .mopen { font-size: 11px; color: var(--sky); font-weight: 700; }
+</style>
+</head>
+<body class="dark">
+<main class="wrap">
+  <!-- top bar -->
+  <header class="top">
+    <div class="brandrow">
+      <div class="badge" aria-hidden="true">D3</div>
+      <div>
+        <div class="kicker">World map · circuit hybrid</div>
+        <h1>The Circuit</h1>
+      </div>
+    </div>
+    <div class="meta">
+      <span class="rank-chip" title="Current rank">Rank: Shaper</span>
+      <span class="xp"><b>420</b> XP · <b>8</b>/82 stars</span>
+      <div class="tg">
+        <button id="themeBtn" type="button" aria-pressed="false">Light theme</button>
+      </div>
+    </div>
+  </header>
+
+  <!-- breadcrumb + view controls -->
+  <div class="bar2">
+    <nav class="crumb" id="crumb" aria-label="Breadcrumb">
+      <b class="here">Worlds</b>
+    </nav>
+    <div class="nav-ctl" id="navctl"><!-- Back / prev / next injected per view --></div>
+  </div>
+
+  <!-- legend -->
+  <section class="legend" aria-label="Legend">
+    <span class="li"><svg width="18" height="18" aria-hidden="true"><rect x="2" y="2" width="14" height="14" rx="4" fill="none" stroke="var(--ok)" stroke-width="2"/><path d="M5 9l2.5 2.5L13 6" fill="none" stroke="var(--ok)" stroke-width="2"/></svg> <b>Passed</b> (line glows)</span>
+    <span class="li"><svg width="18" height="18" aria-hidden="true"><rect x="2" y="2" width="14" height="14" rx="4" fill="none" stroke="var(--warn)" stroke-width="2.5"/></svg> <b>Current</b></span>
+    <span class="li"><svg width="18" height="18" aria-hidden="true"><rect x="2" y="2" width="14" height="14" rx="4" fill="none" stroke="var(--muted)" stroke-width="2" stroke-dasharray="3 2"/></svg> <b>Locked</b> (line dim)</span>
+    <span class="li"><svg width="20" height="18" aria-hidden="true"><path d="M10 2 L18 6 L18 12 L10 17 L2 12 L2 6 Z" fill="none" stroke="var(--purple)" stroke-width="2"/></svg> <b>Boss gate</b></span>
+    <span class="li"><svg width="18" height="18" aria-hidden="true"><path d="M9 2 L16 4 L16 10 L9 16 L2 10 L2 4 Z" fill="none" stroke="var(--sky)" stroke-width="2"/></svg> <b>Keystone</b></span>
+    <span class="li"><svg width="22" height="14" aria-hidden="true"><rect x="2" y="3" width="18" height="8" rx="4" fill="none" stroke="var(--sky)" stroke-width="2"/></svg> <b>Capstone</b></span>
+    <span class="li">★ = stars · Enter opens a world · Esc returns</span>
+  </section>
+
+  <!-- =================== BOARD =================== -->
+  <section class="board" id="board">
+
+    <!-- ---------- WORLD VIEW ---------- -->
+    <div class="view active" id="view-worlds" role="group" aria-label="World view">
+      <svg class="circuit" viewBox="0 0 1320 620" preserveAspectRatio="none" aria-hidden="true">
+        <defs>
+          <linearGradient id="glowW" x1="0" y1="1" x2="0" y2="0">
+            <stop offset="0" stop-color="var(--ok)"/>
+            <stop offset="1" stop-color="var(--sky)"/>
+          </linearGradient>
+        </defs>
+        <!-- backbone: climbs bottom->top, serpentine across 9 big nodes.
+             node x positions (viewBox units): W1 160, W2 440, W3 720, W4 1000(keystone), SEAM 1160,
+             W5 1000, W6 720, W7 440, CAP 160 — but we lay them on a rising zigzag.
+             y: bottom row ~540 up to ~70. -->
+        <path id="wbone" d="M 160 548
+             C 300 548 300 430 440 430
+             C 580 430 580 548 720 548
+             C 860 548 860 430 960 430
+             L 1180 430
+             C 1270 430 1270 320 1180 320
+             L 960 320
+             C 820 320 820 210 720 210
+             C 580 210 580 320 440 320
+             C 300 320 300 210 160 210
+             L 160 95"
+          fill="none" stroke="var(--border)" stroke-width="7" stroke-linecap="round" stroke-dasharray="2 11" opacity="0.85"/>
+        <!-- lit: W1 fully passed, pulses into W2 (current world). Lit from node1(160,548) up to W2(440,430). -->
+        <path d="M 160 548 C 300 548 300 430 440 430"
+          fill="none" stroke="var(--ok)" stroke-width="14" stroke-linecap="round" opacity="0.18"/>
+        <path d="M 160 548 C 300 548 300 430 440 430"
+          fill="none" stroke="url(#glowW)" stroke-width="7" stroke-linecap="round" class="flow"/>
+      </svg>
+
+      <ol class="nodes" aria-label="Worlds, in order from first to last">
+        <!-- W1 — form/shape, passed -->
+        <li><a class="node passed world-node" href="#" data-world="1"
+               style="left:12.1%; top:88.4%;" aria-label="World 1, Shape the Answer. Tool: form and shape. Complete: 3 of 3 levels passed and boss passed. Rank earned: Shaper. 8 stars. Press Enter to open.">
+          <span class="wname">World 1 · Shape the Answer</span>
+          <span class="tile" aria-hidden="true">
+            <svg width="26" height="26"><rect x="4" y="4" width="18" height="18" rx="3" fill="none" stroke="var(--ok)" stroke-width="2.2"/><path d="M8 13h10" stroke="var(--ok)" stroke-width="2.2"/></svg>
+            <span class="glyph"><svg width="12" height="12"><path d="M2 6l3 3 5-6" fill="none" stroke="var(--ok)" stroke-width="2"/></svg></span>
+          </span>
+          <span class="sub">Form / shape</span>
+          <span class="starline" aria-hidden="true"><span class="on">★★★</span> complete</span>
+          <span class="rankpill">Rank: Shaper</span>
+        </a></li>
+
+        <!-- W2 — calculator, current world -->
+        <li><a class="node current world-node" href="#" data-world="2" aria-current="step"
+               style="left:33.3%; top:69.4%;" aria-label="World 2, Spot the Guess. Tool: calculator, who did the math. In progress: 2 of 4 levels passed, boss locked. Current level: Ask for the tool, not the answer. You are here. Press Enter to open.">
+          <span class="yah">You are here</span>
+          <span class="wname">World 2 · Spot the Guess</span>
+          <span class="tile" aria-hidden="true">
+            <svg width="22" height="26"><rect x="3" y="2" width="16" height="22" rx="2" fill="none" stroke="var(--warn)" stroke-width="2"/><rect x="6" y="5" width="10" height="4" fill="var(--warn)"/><circle cx="8" cy="13" r="1.3" fill="var(--warn)"/><circle cx="14" cy="13" r="1.3" fill="var(--warn)"/><circle cx="8" cy="18" r="1.3" fill="var(--warn)"/><circle cx="14" cy="18" r="1.3" fill="var(--warn)"/></svg>
+          </span>
+          <span class="sub">Calculator · who did the math</span>
+          <span class="starline" aria-hidden="true"><span class="on">★★</span>·· 2/4 levels, boss locked</span>
+        </a></li>
+
+        <!-- W3 — source/magnifier, locked -->
+        <li><a class="node locked world-node" href="#" data-world="3" aria-disabled="true"
+               style="left:54.5%; top:88.4%;" aria-label="World 3, Answer from the Source. Tool: source and magnifier. Locked. Clear the World 2 boss to unlock. Rank at completion: Tool User.">
+          <span class="wname">World 3 · Answer from the Source</span>
+          <span class="tile" aria-hidden="true">
+            <svg width="24" height="24"><circle cx="10" cy="10" r="6" fill="none" stroke="var(--muted)" stroke-width="2"/><path d="M14.5 14.5l5 5" stroke="var(--muted)" stroke-width="2.2"/></svg>
+          </span>
+          <span class="sub">Source · magnifier</span>
+          <span class="starline" aria-hidden="true">Locked · unlocks after W2 boss</span>
+        </a></li>
+
+        <!-- W4 — checker shield KEYSTONE, locked -->
+        <li><a class="node keystone locked world-node" href="#" data-world="4" aria-disabled="true"
+               style="left:72.7%; top:69.4%;" aria-label="World 4, Name the Check. This is the keystone world: a shield on the line. Tool: checker shield. Locked. Rank at completion: Checker.">
+          <span class="wname">World 4 · Name the Check</span>
+          <span class="tile" aria-hidden="true">
+            <svg width="22" height="24"><path d="M11 2 L19 5 L19 12 C19 17 15 20 11 22 C7 20 3 17 3 12 L3 5 Z" fill="none" stroke="var(--muted)" stroke-width="2"/><path d="M7 12l3 3 5-6" fill="none" stroke="var(--muted)" stroke-width="2"/></svg>
+          </span>
+          <span class="sub">Keystone · checker shield</span>
+          <span class="starline" aria-hidden="true">Locked</span>
+        </a></li>
+
+        <!-- SEAM gate between W4 and W5, on the far-right vertical turn of the line -->
+        <li class="seam" style="left:91%; top:60.5%; max-width:150px;">
+          <b>Workshop seam</b>
+          Gate in the line. Past it, the AI builds tools you keep.
+          <span class="sr-only">The Workshop seam is a gate in the line after World 4, before World 5.</span>
+        </li>
+
+        <!-- W5 — wrench/build, locked -->
+        <li><a class="node locked world-node" href="#" data-world="5" aria-disabled="true"
+               style="left:72.7%; top:51.6%;" aria-label="World 5, Have AI Build the Tool. Tool: wrench, build. Locked.">
+          <span class="wname">World 5 · Have AI Build the Tool</span>
+          <span class="tile" aria-hidden="true">
+            <svg width="24" height="24"><path d="M14 4a4 4 0 00-5 5l-6 6 3 3 6-6a4 4 0 005-5l-3 3-3-3z" fill="none" stroke="var(--muted)" stroke-width="2"/></svg>
+          </span>
+          <span class="sub">Wrench · build</span>
+          <span class="starline" aria-hidden="true">Locked</span>
+        </a></li>
+
+        <!-- W6 — fix / green that lied, locked -->
+        <li><a class="node locked world-node" href="#" data-world="6" aria-disabled="true"
+               style="left:54.5%; top:33.9%;" aria-label="World 6, Prove It and Fix It. Tool: fix, the green that lied. Locked. Rank at completion: Builder.">
+          <span class="wname">World 6 · Prove It &amp; Fix It</span>
+          <span class="tile" aria-hidden="true">
+            <svg width="24" height="24"><path d="M4 16l8-8" stroke="var(--muted)" stroke-width="2"/><path d="M9 5l6 6" stroke="var(--muted)" stroke-width="2"/><path d="M13 3l4 4-2 2-4-4z" fill="none" stroke="var(--muted)" stroke-width="2"/><path d="M3 15l3 3" stroke="var(--muted)" stroke-width="2"/></svg>
+          </span>
+          <span class="sub">Fix · the green that lied</span>
+          <span class="starline" aria-hidden="true">Locked</span>
+        </a></li>
+
+        <!-- W7 — risk dial, locked -->
+        <li><a class="node locked world-node" href="#" data-world="7" aria-disabled="true"
+               style="left:33.3%; top:33.9%;" aria-label="World 7, Decide Where It Matters. Tool: risk dial. Locked. Rank at completion: Architect.">
+          <span class="wname">World 7 · Decide Where It Matters</span>
+          <span class="tile" aria-hidden="true">
+            <svg width="24" height="24"><path d="M4 16a8 8 0 1116 0" fill="none" stroke="var(--muted)" stroke-width="2"/><path d="M12 15l5-4" stroke="var(--muted)" stroke-width="2"/><circle cx="12" cy="16" r="1.6" fill="var(--muted)"/></svg>
+          </span>
+          <span class="sub">Risk dial</span>
+          <span class="starline" aria-hidden="true">Locked</span>
+        </a></li>
+
+        <!-- CAPSTONE terminal -->
+        <li><a class="node capstone locked world-node" href="#" data-world="cap" aria-disabled="true"
+               style="left:12.1%; top:15.3%;" aria-label="Capstone terminal: the volunteer-shift scheduler. An unseen cross-domain job. Locked until the World 7 boss is passed. Earns Certified Practitioner.">
+          <span class="wname">Capstone · terminal</span>
+          <span class="tile" aria-hidden="true">
+            <svg width="26" height="18"><rect x="2" y="3" width="22" height="12" rx="6" fill="none" stroke="var(--muted)" stroke-width="2"/><circle cx="8" cy="9" r="1.4" fill="var(--muted)"/><circle cx="13" cy="9" r="1.4" fill="var(--muted)"/><circle cx="18" cy="9" r="1.4" fill="var(--muted)"/></svg>
+          </span>
+          <span class="sub">The volunteer-shift scheduler</span>
+          <span class="starline" aria-hidden="true">Locked · earns Certified Practitioner</span>
+        </a></li>
+      </ol>
+    </div>
+
+    <!-- ---------- LEVEL VIEWS (one per world; populated by JS) ---------- -->
+    <div class="view" id="view-levels" role="group" aria-label="Level view">
+      <svg class="circuit" id="lv-svg" viewBox="0 0 1320 620" preserveAspectRatio="none" aria-hidden="true">
+        <defs>
+          <linearGradient id="glowL" x1="0" y1="1" x2="0" y2="0">
+            <stop offset="0" stop-color="var(--ok)"/>
+            <stop offset="1" stop-color="var(--sky)"/>
+          </linearGradient>
+        </defs>
+        <g id="lv-paths"></g>
+      </svg>
+      <ol class="nodes" id="lv-nodes" aria-label="Levels in this world"></ol>
+    </div>
+  </section>
+
+  <!-- ---------- MOBILE (single-column rail) ---------- -->
+  <nav class="mobile" id="mobile" aria-label="Level path (mobile)"></nav>
+
+  <p class="foot">
+    Circuit Hybrid — a two-tier board. The <b>world view</b> is one climbing data line through all seven
+    worlds, the Workshop seam gate, and the capstone terminal; each world node is its tool. Opening a
+    world zooms into its own sub-circuit of level nodes feeding the boss gate. Full write-up and React
+    plan in <a href="#">circuit-hybrid.md</a>.
+  </p>
+</main>
+
+<script>
+  // ---- data: real titles + sample state --------------------------------
+  var WORLDS = [
+    { w:1, name:'Shape the Answer', tool:'Form / shape', rank:'Shaper',
+      levels:[
+        {id:'1', title:'The receipt', state:'passed', stars:3, max:3},
+        {id:'2', title:'One shape, many orders', state:'passed', stars:2, max:3},
+        {id:'3', title:'The field that must be there', state:'passed', stars:3, max:3}],
+      boss:{title:'Shape a help-desk ticket', state:'passed', stars:2, max:3} },
+    { w:2, name:'Spot the Guess', tool:'Calculator · who did the math', rank:null,
+      levels:[
+        {id:'1', title:'Why it guesses', state:'passed', stars:2, max:3},
+        {id:'2', title:'Highlight the guess', state:'passed', stars:3, max:3},
+        {id:'3', title:'Ask for the tool, not the answer', state:'current', stars:0, max:3},
+        {id:'4', title:'Right-answer or open?', state:'locked', stars:0, max:3}],
+      boss:{title:'Triage the clinic\u2019s monthly note', state:'locked', stars:0, max:3} },
+    { w:3, name:'Answer from the Source', tool:'Source · magnifier', rank:'Tool User',
+      levels:[
+        {id:'1', title:'Only from the sheet', state:'locked', stars:0, max:3},
+        {id:'2', title:'When the answer isn\u2019t there', state:'locked', stars:0, max:3},
+        {id:'3', title:'Cite it or it didn\u2019t happen', state:'locked', stars:0, max:3}],
+      boss:{title:'The zone that isn\u2019t on the table', state:'locked', stars:0, max:3} },
+    { w:4, name:'Name the Check', tool:'Keystone · checker shield', rank:'Checker', keystoneLevel:'4',
+      levels:[
+        {id:'1', title:'Can this check even fail?', state:'locked', stars:0, max:3},
+        {id:'2', title:'Which check is stronger?', state:'locked', stars:0, max:3},
+        {id:'3', title:'Fix the check that lets a bad one through', state:'locked', stars:0, max:3},
+        {id:'4', title:'Ask for the check first', state:'locked', stars:0, max:3, keystone:true}],
+      boss:{title:'The refund promise with no ticket', state:'locked', stars:0, max:3} },
+    { w:5, name:'Have AI Build the Tool', tool:'Wrench · build', rank:null,
+      levels:[
+        {id:'1', title:'Describe the tool', state:'locked', stars:0, max:3},
+        {id:'2', title:'Prove it on more than one month', state:'locked', stars:0, max:3},
+        {id:'3', title:'The check you can\u2019t peek past', state:'locked', stars:0, max:3}],
+      boss:{title:'Build it and prove it: average order value by weekday', state:'locked', stars:0, max:3} },
+    { w:6, name:'Prove It & Fix It', tool:'Fix · the green that lied', rank:'Builder',
+      levels:[
+        {id:'1', title:'The green that lied', state:'locked', stars:0, max:3},
+        {id:'2', title:'Point at the broken case', state:'locked', stars:0, max:3},
+        {id:'3', title:'Prove it like you mean it', state:'locked', stars:0, max:3}],
+      boss:{title:'The timezone that dropped the orders', state:'locked', stars:0, max:3} },
+    { w:7, name:'Decide Where It Matters', tool:'Risk dial', rank:'Architect',
+      levels:[
+        {id:'1', title:'What does it cost to be wrong?', state:'locked', stars:0, max:3},
+        {id:'2', title:'The gate that was too expensive', state:'locked', stars:0, max:3},
+        {id:'3', title:'Your call, defended', state:'locked', stars:0, max:3}],
+      boss:{title:'The loan-approval assistant', state:'locked', stars:0, max:3} }
+  ];
+  var CAP = { title:'The volunteer-shift scheduler', state:'locked' };
+
+  // ---- helpers ----------------------------------------------------------
+  function stars(s){
+    if(s.state==='locked') return 'Locked';
+    if(s.state==='current') return 'Current';
+    var on=''; for(var i=0;i<s.max;i++) on += (i<s.stars?'1':'0');
+    return on;
+  }
+  function starHTML(s){
+    if(s.state==='locked') return '<span class="starline" aria-hidden="true">Locked</span>';
+    if(s.state==='current') return '<span class="starline" aria-hidden="true">\u2605\u2605\u2605 in progress</span>';
+    var h=''; for(var i=0;i<s.max;i++) h += (i<s.stars? '<span class="on">\u2605</span>':'\u2605');
+    return '<span class="starline" aria-hidden="true">'+h+'</span>';
+  }
+  function lockIcon(){ return '<svg width="18" height="18"><rect x="4" y="8" width="10" height="7" rx="1.5" fill="none" stroke="var(--muted)" stroke-width="1.6"/><path d="M6 8V6a3 3 0 016 0v2" fill="none" stroke="var(--muted)" stroke-width="1.6"/></svg>'; }
+  function checkGlyph(){ return '<span class="glyph"><svg width="12" height="12"><path d="M2 6l3 3 5-6" fill="none" stroke="var(--ok)" stroke-width="2"/></svg></span>'; }
+
+  // ---- LEVEL VIEW builder ----------------------------------------------
+  // Layout: entry rail bottom-left -> levels fan out as parallel branches
+  // (any order within an unlocked world) -> all feed the boss gate -> exit up.
+  var lvSvg = document.getElementById('lv-paths');
+  var lvNodes = document.getElementById('lv-nodes');
+  var crumb = document.getElementById('crumb');
+  var navctl = document.getElementById('navctl');
+
+  function esc(str){ return (str||'').replace(/&/g,'&amp;').replace(/</g,'&lt;'); }
+
+  function buildLevelView(wi){
+    var W = WORLDS[wi];
+    var n = W.levels.length;
+    // branch rail geometry (viewBox 1320x620)
+    var entryX=180, entryY=540, bossX=1120, bossY=310, capY=90;
+    var colStart=430, colGap=(bossX-120-colStart)/(Math.max(n-1,1));
+    var rowTop=140, rowBot=500;
+    var paths='', nodesHTML='';
+
+    // entry rail label
+    nodesHTML += '<li class="railtag in" style="left:13.6%; top:'+(entryY/620*100)+'%;" aria-hidden="true">Enter from '+(W.w>1?('World '+(W.w-1)):'start')+'</li>';
+
+    // level branch points
+    var pts=[];
+    for(var i=0;i<n;i++){
+      var lx=colStart + i*colGap;
+      var ly = (n===1)? (rowTop+rowBot)/2 : rowTop + (rowBot-rowTop)*(i/(n-1));
+      pts.push({x:lx,y:ly});
+    }
+    // backbone branches: entry -> each level -> boss (dim), lit where passed
+    for(var i=0;i<n;i++){
+      var p=pts[i], L=W.levels[i];
+      var lit = (L.state==='passed');
+      var dIn = 'M '+entryX+' '+entryY+' C '+(entryX+150)+' '+entryY+' '+(p.x-120)+' '+p.y+' '+p.x+' '+p.y;
+      var dOut= 'M '+p.x+' '+p.y+' C '+(p.x+150)+' '+p.y+' '+(bossX-150)+' '+bossY+' '+bossX+' '+bossY;
+      paths += '<path d="'+dIn+'" fill="none" stroke="var(--border)" stroke-width="6" stroke-linecap="round" stroke-dasharray="2 11" opacity="0.8"/>';
+      paths += '<path d="'+dOut+'" fill="none" stroke="var(--border)" stroke-width="6" stroke-linecap="round" stroke-dasharray="2 11" opacity="0.55"/>';
+      if(lit){
+        paths += '<path d="'+dIn+'" fill="none" stroke="var(--ok)" stroke-width="12" stroke-linecap="round" opacity="0.16"/>';
+        paths += '<path d="'+dIn+'" fill="none" stroke="url(#glowL)" stroke-width="6" stroke-linecap="round" class="flow"/>';
+      }
+    }
+    // boss -> exit up (lit only if boss passed)
+    var dExit='M '+bossX+' '+bossY+' C '+bossX+' '+(bossY-120)+' '+entryX+' '+(capY+120)+' '+entryX+' '+capY;
+    paths += '<path d="'+dExit+'" fill="none" stroke="var(--border)" stroke-width="6" stroke-linecap="round" stroke-dasharray="2 11" opacity="0.6"/>';
+    if(W.boss.state==='passed'){
+      paths += '<path d="'+dExit+'" fill="none" stroke="url(#glowL)" stroke-width="6" stroke-linecap="round" class="flow"/>';
+    }
+
+    // level nodes
+    for(var i=0;i<n;i++){
+      var p=pts[i], L=W.levels[i];
+      var cls='node '+L.state + (L.keystone?' keystone':'');
+      var tileInner = (L.state==='locked')? lockIcon() : (W.w)+'.'+L.id;
+      var glyph = (L.state==='passed')? checkGlyph() : '';
+      var yah = (L.state==='current')? '<span class="yah">You are here</span>' : '';
+      var ks = L.keystone? '<span class="sub">Keystone</span>' : '';
+      var srState = L.state==='passed'? ('passed, '+L.stars+' of '+L.max+' stars') : (L.state==='current'? 'current level, you are here, not yet passed' : 'locked');
+      nodesHTML += '<li><a class="'+cls+'" href="#" '+(L.state==='locked'?'aria-disabled="true"':'')+' style="left:'+(p.x/1320*100)+'%; top:'+(p.y/620*100)+'%;" '+
+        'aria-label="World '+W.w+', level '+L.id+', '+esc(L.title)+(L.keystone?', keystone':'')+', '+srState+'.">'+
+        yah+'<span class="tile">'+tileInner+glyph+'</span>'+ks+
+        '<span class="label">'+esc(L.title)+'</span>'+starHTML(L)+'</a></li>';
+    }
+    // boss gate node
+    var bcls='node boss '+W.boss.state;
+    var btile=(W.boss.state==='locked')? lockIcon() : 'B';
+    var bglyph=(W.boss.state==='passed')? checkGlyph() : '';
+    var bsr = W.boss.state==='passed'? ('passed, '+W.boss.stars+' of '+W.boss.max+' stars'+(W.rank?', rank earned '+W.rank:'')) : 'locked, pass it to continue to the next world';
+    nodesHTML += '<li><a class="'+bcls+'" href="#" '+(W.boss.state==='locked'?'aria-disabled="true"':'')+' style="left:'+(bossX/1320*100)+'%; top:'+(bossY/620*100)+'%;" '+
+      'aria-label="World '+W.w+' boss gate, '+esc(W.boss.title)+', '+bsr+'.">'+
+      '<span class="sub">Boss gate</span><span class="tile">'+btile+bglyph+'</span>'+
+      '<span class="label">'+esc(W.boss.title)+'</span>'+starHTML(W.boss)+
+      (W.rank?'<span class="rankpill">Rank: '+W.rank+'</span>':'')+'</a></li>';
+    // exit rail label
+    var nextLabel = (W.w<7)? ('World '+(W.w+1)) : 'Capstone';
+    nodesHTML += '<li class="railtag" style="left:13.6%; top:'+(capY/620*100)+'%;" aria-hidden="true">Boss opens '+nextLabel+'</li>';
+
+    lvSvg.innerHTML = paths;
+    lvNodes.innerHTML = nodesHTML;
+
+    // breadcrumb + nav controls
+    crumb.innerHTML = '<a href="#" id="crumbRoot">Worlds</a><span class="sep">\u203a</span>'+
+      '<b class="here">World '+W.w+' · '+esc(W.name)+'</b>';
+    document.getElementById('crumbRoot').addEventListener('click', function(e){e.preventDefault(); showWorlds();});
+    navctl.innerHTML =
+      '<button class="btn" id="prevW" '+(wi<=0?'disabled':'')+'>\u2190 Prev world</button>'+
+      '<button class="btn" id="nextW" '+(wi>=WORLDS.length-1?'disabled':'')+'>Next world \u2192</button>'+
+      '<button class="btn primary" id="backW">\u2191 Back to worlds (Esc)</button>';
+    if(wi>0) document.getElementById('prevW').addEventListener('click', function(){ openWorld(wi-1); });
+    if(wi<WORLDS.length-1) document.getElementById('nextW').addEventListener('click', function(){ openWorld(wi+1); });
+    document.getElementById('backW').addEventListener('click', showWorlds);
+  }
+
+  // ---- view switching ---------------------------------------------------
+  var vWorlds=document.getElementById('view-worlds');
+  var vLevels=document.getElementById('view-levels');
+  var curWorld=null;
+
+  function openWorld(wi){
+    curWorld=wi;
+    buildLevelView(wi);
+    vWorlds.classList.remove('active');
+    vLevels.classList.add('active');
+    buildMobile(wi);
+    var first=lvNodes.querySelector('a:not([aria-disabled])') || lvNodes.querySelector('a');
+    if(first) first.focus();
+  }
+  function showWorlds(){
+    curWorld=null;
+    vLevels.classList.remove('active');
+    vWorlds.classList.add('active');
+    crumb.innerHTML='<b class="here">Worlds</b>';
+    navctl.innerHTML='';
+    buildMobile(null);
+    var cur=vWorlds.querySelector('.node.current') || vWorlds.querySelector('.world-node');
+    if(cur) cur.focus();
+  }
+
+  // clicking/Enter on a world node opens it (locked worlds still open to preview, read-only state)
+  document.querySelectorAll('.world-node').forEach(function(a){
+    a.addEventListener('click', function(e){
+      e.preventDefault();
+      var dw=a.getAttribute('data-world');
+      if(dw==='cap') return; // capstone has no sub-levels
+      openWorld(parseInt(dw,10)-1);
+    });
+  });
+  // Escape returns to worlds
+  document.addEventListener('keydown', function(e){
+    if(e.key==='Escape' && curWorld!==null) showWorlds();
+  });
+
+  // ---- MOBILE builder (mirrors active view) -----------------------------
+  var mobile=document.getElementById('mobile');
+  function buildMobile(wi){
+    if(wi===null){
+      // world list
+      var h='<ol class="mrail">';
+      WORLDS.forEach(function(W){
+        var st = W.boss.state==='passed'?'passed': (W.levels.some(function(l){return l.state==='current'||l.state==='passed';})?'current':'locked');
+        var cls = st;
+        var tile = st==='locked'? '\u25cf' : W.w;
+        var prog = W.boss.state==='passed'? 'Complete · '+(W.rank?('rank '+W.rank):''):
+          (st==='current'? (W.levels.filter(function(l){return l.state==='passed';}).length+'/'+W.levels.length+' levels · boss locked') : 'Locked');
+        h+='<li class="mrow '+cls+'"><span class="dot"></span><a class="mtile" href="#" data-mw="'+W.w+'">'+tile+'</a>'+
+           '<span class="mbody"><span class="label">World '+W.w+' · '+esc(W.name)+'</span>'+
+           '<span class="sub">'+W.tool+'</span><span class="sub">'+prog+' · <span class="mopen">Open \u203a</span></span></span></li>';
+        if(W.w===4){
+          h+='<li class="mseam"><b>Workshop seam · gate</b>Past this switch the AI builds real tools you keep.</li>';
+        }
+      });
+      h+='<li class="mrow capstone locked"><span class="dot"></span><span class="mtile">Cap</span>'+
+         '<span class="mbody"><span class="label">Capstone · '+esc(CAP.title)+'</span><span class="sub">Locked · earns Certified Practitioner</span></span></li>';
+      h+='</ol>';
+      mobile.innerHTML=h;
+      mobile.querySelectorAll('[data-mw]').forEach(function(a){
+        a.addEventListener('click',function(e){e.preventDefault(); openWorld(parseInt(a.getAttribute('data-mw'),10)-1);});
+      });
+    } else {
+      var W=WORLDS[wi];
+      var h='<div style="margin:0 0 8px"><button class="btn primary" id="mBack">\u2191 Back to worlds</button> '+
+            '<span class="crumb">Worlds <span class="sep">\u203a</span> <b>W'+W.w+' · '+esc(W.name)+'</b></span></div>';
+      h+='<ol class="mrail" style="--mspine:linear-gradient(var(--ok),var(--warn) 50%,var(--border) 54%)">';
+      h+='<li class="mworld">World '+W.w+' · '+W.tool+'</li>';
+      W.levels.forEach(function(L){
+        var tile=L.state==='locked'?'\u25cf':(W.w+'.'+L.id);
+        var sub=L.state==='passed'?('Passed · '+'\u2605'.repeat(L.stars)):(L.state==='current'?'Current · you are here':'Locked');
+        h+='<li class="mrow '+L.state+(L.keystone?' keystone':'')+'"><span class="dot"></span><a class="mtile" href="#">'+tile+'</a>'+
+           '<span class="mbody"><span class="label">'+esc(L.title)+(L.keystone?' (keystone)':'')+'</span><span class="sub">'+sub+'</span></span></li>';
+      });
+      var bsub=W.boss.state==='passed'?('Passed'+(W.rank?' · rank '+W.rank:'')):'Locked · opens '+(W.w<7?('World '+(W.w+1)):'Capstone');
+      h+='<li class="mrow boss '+W.boss.state+'"><span class="dot"></span><a class="mtile" href="#">B</a>'+
+         '<span class="mbody"><span class="label">Boss gate · '+esc(W.boss.title)+'</span><span class="sub">'+bsub+'</span></span></li>';
+      h+='</ol>';
+      mobile.innerHTML=h;
+      document.getElementById('mBack').addEventListener('click', showWorlds);
+    }
+  }
+
+  // ---- theme toggle -----------------------------------------------------
+  (function () {
+    var btn = document.getElementById('themeBtn');
+    btn.addEventListener('click', function () {
+      var light = document.body.classList.toggle('light');
+      document.body.classList.toggle('dark', !light);
+      btn.textContent = light ? 'Dark theme' : 'Light theme';
+      btn.setAttribute('aria-pressed', String(light));
+    });
+  })();
+
+  // init mobile to world list
+  buildMobile(null);
+</script>
+</body>
+</html>
