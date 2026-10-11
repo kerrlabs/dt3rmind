@@ -1,0 +1,687 @@
+<!doctype html>
+<html lang="en" data-theme="dark">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Dt3rmind nav — concept A, The Board</title>
+<style>
+  :root{
+    /* Okabe–Ito status tokens (status colors stay a11y-safe) */
+    --ok:#009e73; --ok-sub:#0b2a22;
+    --current:#0072b2; --current-sub:#0b2238;
+    --boss:#cc79a7; --boss-sub:#2a1522;
+    --warn:#e69f00; --yellow:#f0e442;
+    --locked:#8a97ab; --locked-sub:#1c2230;
+    /* warm board palette (decoration only, never a status signal) */
+    --wood-0:#2a1c10; --wood-1:#3a2715; --wood-2:#4e351d; --wood-edge:#6b4a28;
+    --gold:#d9a441; --gold-dim:#8a6a2e; --tan:#caa36a; --cream:#f3e6cf;
+    --text:#f3e6cf; --muted:#c7b48f; --focus:#56b4e9;
+  }
+  *{box-sizing:border-box}
+  html,body{margin:0}
+  body{
+    font:16px/1.5 system-ui,-apple-system,"Segoe UI",sans-serif;
+    color:var(--text);
+    background:
+      radial-gradient(120% 80% at 50% -10%, #3a2715 0%, #241509 55%, #180d05 100%);
+    min-height:100vh;
+  }
+  a{color:inherit;text-decoration:none}
+
+  /* ---- shell ---- */
+  .wrap{max-width:1400px;margin:0 auto;padding:20px clamp(12px,3vw,28px) 60px}
+  .top{display:flex;flex-wrap:wrap;gap:14px;align-items:center;justify-content:space-between;margin-bottom:14px}
+  .brand{display:flex;align-items:center;gap:12px}
+  .brand h1{font-size:19px;margin:0;letter-spacing:.3px}
+  .brand .sub{color:var(--muted);font-size:13px}
+  .hud{display:flex;gap:10px;flex-wrap:wrap}
+  .chip{
+    display:flex;align-items:center;gap:8px;padding:7px 12px;border-radius:11px;
+    background:linear-gradient(#4e351d,#3a2715);border:1px solid var(--wood-edge);
+    box-shadow:inset 0 1px 0 rgba(255,235,200,.12), 0 2px 5px rgba(0,0,0,.4);
+    font-size:13px;
+  }
+  .chip b{color:var(--gold)}
+  .rank-chip svg{filter:drop-shadow(0 1px 1px rgba(0,0,0,.5))}
+
+  .legend{
+    display:flex;flex-wrap:wrap;gap:8px 14px;align-items:center;margin:4px 0 10px;
+    padding:10px 14px;border:1px solid var(--wood-edge);border-radius:12px;
+    background:rgba(42,21,16,.55);font-size:12.5px;color:var(--muted)
+  }
+  .legend .item{display:flex;align-items:center;gap:6px}
+  .swatch{width:14px;height:14px;border-radius:4px;flex:none;border:1px solid rgba(0,0,0,.4)}
+
+  /* ---- the board ---- */
+  .board{
+    position:relative;
+    border:3px solid var(--wood-edge);border-radius:20px;
+    padding:26px 8px 40px;
+    background:
+      repeating-linear-gradient(90deg,#4a3219 0 2px,#3a2715 2px 46px),
+      linear-gradient(#3a2715,#2a1c10);
+    box-shadow:inset 0 2px 0 rgba(255,230,190,.14), inset 0 -18px 40px rgba(0,0,0,.5),
+               0 14px 40px rgba(0,0,0,.5);
+    overflow:hidden;
+  }
+  .board::before{ /* corner brackets */
+    content:"";position:absolute;inset:9px;border:1px solid rgba(217,164,65,.28);border-radius:14px;pointer-events:none;
+  }
+
+  /* The path is an ordered list in DOM order (bottom level first visually, but
+     DOM order is level 1 -> capstone top-to-bottom so SR reads in play order). */
+  ol.path{list-style:none;margin:0 auto;padding:0;max-width:900px;
+    display:flex;flex-direction:column;align-items:center}
+
+  /* each step: a stage holding the connector + tile; alternate the horizontal lean */
+  li.step{position:relative;width:100%;display:flex;justify-content:center;padding:3px 0}
+  li.step .inner{position:relative;width:min(560px,86vw);height:112px}
+  /* lean the tile left/right to make the zig-zag */
+  li.lean-l .tile-wrap{margin-right:auto}
+  li.lean-r .tile-wrap{margin-left:auto}
+  li.lean-c .tile-wrap{margin:0 auto}
+
+  /* connector rail drawn behind, down the centre */
+  .rail{position:absolute;left:50%;top:0;bottom:0;width:12px;transform:translateX(-50%);
+    background:linear-gradient(var(--gold-dim),#5a431f);border-radius:8px;
+    box-shadow:inset 0 0 0 1px rgba(0,0,0,.4), inset 0 2px 2px rgba(255,230,180,.25);
+    z-index:0}
+  .rail .fill{position:absolute;left:0;right:0;top:0;background:linear-gradient(var(--gold),#b8822f);
+    border-radius:8px}
+
+  .tile-wrap{position:relative;z-index:2;width:230px}
+  /* pedestal under the diamond */
+  .ped{position:absolute;left:50%;bottom:-2px;transform:translateX(-50%);
+    width:118px;height:26px;border-radius:50%/70%;
+    background:radial-gradient(60% 100% at 50% 20%, #6b4a28 0%, #3a2715 70%, transparent 100%);
+    filter:blur(.3px);z-index:1}
+
+  /* ---- a tile (diamond) ---- */
+  .tile{
+    position:relative;display:block;width:112px;height:112px;margin:0 auto;
+    transform:rotate(45deg);border-radius:18px;
+    background:linear-gradient(135deg,#5a3f22,#3a2715);
+    border:2px solid var(--wood-edge);
+    box-shadow:inset 0 2px 0 rgba(255,230,190,.18), 0 6px 14px rgba(0,0,0,.5);
+    cursor:pointer;outline:none;transition:transform .12s ease, box-shadow .12s ease;
+  }
+  .tile .face{position:absolute;inset:0;transform:rotate(-45deg);
+    display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;
+    padding:6px;text-align:center}
+  .tile .num{font-weight:800;font-size:26px;line-height:1;color:var(--cream);
+    text-shadow:0 1px 2px rgba(0,0,0,.6)}
+  .tile .ic{position:absolute;top:-9px;right:-9px;width:26px;height:26px;border-radius:50%;
+    display:grid;place-items:center;border:2px solid #241509;transform:rotate(-45deg)}
+  .tile:hover{transform:rotate(45deg) scale(1.05)}
+  .tile:focus-visible{box-shadow:0 0 0 4px var(--focus), inset 0 2px 0 rgba(255,230,190,.18)}
+
+  /* states — color + border + icon, never color alone */
+  .tile.passed{background:linear-gradient(135deg,#0f5a44,#0b3a2c);border-color:var(--ok)}
+  .tile.passed .ic{background:var(--ok)}
+  .tile.current{background:linear-gradient(135deg,#0f5a8a,#0b3a5c);border-color:var(--current);
+    box-shadow:0 0 0 3px rgba(0,114,178,.5), inset 0 2px 0 rgba(255,255,255,.15), 0 6px 16px rgba(0,0,0,.5)}
+  .tile.current .ic{background:var(--current)}
+  .tile.locked{background:linear-gradient(135deg,#2a3242,#1c2230);border-color:#3a4252;cursor:not-allowed}
+  .tile.locked .num{color:var(--locked)}
+  .tile.locked .ic{background:var(--locked-sub);border-color:#3a4252}
+  .tile.boss{width:132px;height:132px}
+  .tile.boss .num{font-size:14px;letter-spacing:.5px}
+  .tile.boss .ic{background:var(--boss)}
+  .tile.boss.passed{border-color:var(--ok)}
+  .tile.boss.locked .ic{background:var(--locked-sub)}
+
+  /* label card to the side of each tile */
+  .label{position:absolute;top:50%;transform:translateY(-50%);width:200px;max-width:40vw;
+    padding:9px 12px;border-radius:12px;background:rgba(26,16,8,.78);border:1px solid var(--wood-edge);
+    box-shadow:0 3px 10px rgba(0,0,0,.4)}
+  li.lean-l .label{left:255px}
+  li.lean-r .label{right:255px;text-align:right}
+  li.lean-c .label{left:255px}
+  .label .wl{font-size:11px;letter-spacing:.6px;text-transform:uppercase;color:var(--gold)}
+  .label .t{font-weight:600;font-size:13.5px;color:var(--text);margin:1px 0 3px}
+  .label .st{display:flex;gap:8px;align-items:center;font-size:11.5px;color:var(--muted)}
+  li.lean-r .label .st{justify-content:flex-end}
+  .stars{display:inline-flex;gap:2px}
+  .stars .s{width:12px;height:12px}
+  .statetag{display:inline-flex;align-items:center;gap:4px;padding:1px 7px;border-radius:20px;font-size:10.5px;font-weight:700}
+  .statetag.passed{background:var(--ok-sub);color:var(--ok)}
+  .statetag.current{background:var(--current-sub);color:var(--current)}
+  .statetag.locked{background:var(--locked-sub);color:var(--locked)}
+  .statetag.boss{background:var(--boss-sub);color:var(--boss)}
+
+  /* you-are-here marker: the player's piece standing on the current tile */
+  .here{position:absolute;left:50%;top:-46px;transform:translateX(-50%);z-index:5;
+    display:flex;flex-direction:column;align-items:center}
+  .here .tag{font-size:10px;font-weight:800;letter-spacing:.5px;color:#06263a;background:var(--yellow);
+    padding:2px 8px;border-radius:20px;margin-top:2px;box-shadow:0 2px 5px rgba(0,0,0,.4)}
+  .here .pc{filter:drop-shadow(0 4px 5px rgba(0,0,0,.55))}
+  @keyframes bob{0%,100%{transform:translateY(0)}50%{transform:translateY(-5px)}}
+  .here .pc{animation:bob 2.4s ease-in-out infinite}
+
+  /* seam band (Workshop) spans the board */
+  li.seam{width:100%;padding:10px 0}
+  .seam-band{position:relative;z-index:3;margin:0 auto;max-width:620px;
+    border:2px dashed var(--gold);border-radius:16px;padding:12px 16px;
+    background:linear-gradient(rgba(217,164,65,.14),rgba(217,164,65,.05));
+    display:flex;gap:12px;align-items:center}
+  .seam-band .gate{flex:none}
+  .seam-band .txt .h{font-weight:800;color:var(--gold);letter-spacing:.4px;font-size:12.5px;text-transform:uppercase}
+  .seam-band .txt .d{font-size:13px;color:var(--text)}
+
+  /* capstone medallion */
+  li.cap{padding:4px 0 18px}
+  .medallion{position:relative;z-index:3;width:150px;height:150px;margin:0 auto}
+  .cap-label{text-align:center;max-width:380px;margin:6px auto 0;color:var(--muted);font-size:12.5px}
+  .cap-label b{color:var(--gold)}
+
+  /* props scattered along the path */
+  .prop{position:absolute;z-index:1;opacity:.9;pointer-events:none;filter:drop-shadow(0 3px 4px rgba(0,0,0,.5))}
+
+  /* world header rows */
+  li.worldhdr{width:100%;padding:14px 0 2px}
+  .world-tab{margin:0 auto;max-width:300px;text-align:center;
+    border:1px solid var(--wood-edge);border-radius:20px;padding:5px 14px;
+    background:linear-gradient(#4e351d,#3a2715);font-size:12px;letter-spacing:.5px;color:var(--tan)}
+  .world-tab b{color:var(--gold)}
+
+  .sr-only{position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap;border:0}
+
+  @media (max-width:640px){
+    li.step .inner{height:150px}
+    .tile-wrap{margin:0 auto !important}
+    .label{position:static;transform:none;width:min(300px,80vw);margin:8px auto 0;text-align:center !important}
+    li.lean-l .label,li.lean-r .label,li.lean-c .label{left:auto;right:auto}
+    li.lean-r .label .st{justify-content:center}
+    .prop{display:none}
+    li.step .inner{display:flex;flex-direction:column;align-items:center;height:auto;padding:6px 0}
+    .ped{display:none}            /* pedestal bleeds over stacked labels on mobile */
+    .tile-wrap{width:auto}
+    .here{top:-40px}
+    .rail{display:none}           /* vertical rail is desktop-only; mobile is a plain column */
+  }
+  @media (prefers-reduced-motion:reduce){
+    .here .pc{animation:none}
+    .tile{transition:none}
+  }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div class="top">
+    <div class="brand">
+      <!-- small king badge -->
+      <svg width="34" height="34" viewBox="0 0 40 40" aria-hidden="true">
+        <circle cx="20" cy="20" r="19" fill="#3a2715" stroke="#d9a441" stroke-width="2"/>
+        <g fill="#f3e6cf"><path d="M20 7l2 3h-4z"/><path d="M14 15h12l-2 11h-8z"/><rect x="12" y="26" width="16" height="4" rx="2"/></g>
+      </svg>
+      <div>
+        <h1>Dt3rmind — the board</h1>
+        <div class="sub">Climb the path. Each world is a rank; the boss opens the next.</div>
+      </div>
+    </div>
+    <div class="hud">
+      <div class="chip rank-chip">
+        <!-- current piece: bishop (Tool User) -->
+        <svg width="18" height="22" viewBox="0 0 24 30" aria-hidden="true"><g fill="#d9a441"><circle cx="12" cy="5" r="3"/><path d="M12 7c4 2 6 7 6 11s-3 7-6 7-6-3-6-7 2-9 6-11z"/><rect x="7" y="25" width="10" height="3" rx="1.5"/><rect x="6" y="27.5" width="12" height="2.5" rx="1.2"/></g><path d="M12 12l3 3-3 3-3-3z" fill="#2a1c10"/></svg>
+        Rank <b>Tool User</b> (bishop)
+      </div>
+      <div class="chip">XP <b>640</b> / 900</div>
+      <div class="chip">Moves <b>M1–M5</b> unlocked</div>
+    </div>
+  </div>
+
+  <div class="legend" aria-label="Tile legend">
+    <span class="item"><span class="swatch" style="background:#0f5a44;border-color:#009e73"></span> Passed (check + stars)</span>
+    <span class="item"><span class="swatch" style="background:#0f5a8a;border-color:#0072b2"></span> Current — you are here</span>
+    <span class="item"><span class="swatch" style="background:#2a3242;border-color:#3a4252"></span> Locked (padlock)</span>
+    <span class="item"><span class="swatch" style="background:#3a1e30;border-color:#cc79a7"></span> Boss (larger tile, chess piece)</span>
+    <span class="item"><span class="swatch" style="background:transparent;border:2px dashed #d9a441"></span> Workshop seam / capstone</span>
+  </div>
+
+  <div class="board">
+    <ol class="path" aria-label="Level path, in play order from world 1 to the capstone">
+      <!-- The path is generated top=capstone, bottom=level 1. DOM order below is
+           world 1 first so a screen reader reads in play order. -->
+      <!-- ===================== WORLD 1 ===================== -->
+      <li class="worldhdr"><div class="world-tab"><b>World 1</b> · Shape the Answer · rank Shaper</div></li>
+
+      <li class="step lean-l">
+        <svg class="prop" style="right:4%;top:10px" width="52" height="52" viewBox="0 0 52 52" aria-hidden="true">
+          <!-- form / shape prop -->
+          <rect x="10" y="8" width="32" height="40" rx="4" fill="#4e351d" stroke="#caa36a"/>
+          <rect x="16" y="16" width="20" height="3" fill="#caa36a"/><rect x="16" y="23" width="20" height="3" fill="#caa36a"/><rect x="16" y="30" width="14" height="3" fill="#caa36a"/>
+        </svg>
+        <div class="inner"><div class="rail"><span class="fill" style="bottom:0;top:0"></span></div>
+          <div class="tile-wrap">
+            <span class="ped"></span>
+            <a class="tile passed" href="#" aria-label="World 1, level 1, The receipt. Passed, 3 of 3 stars.">
+              <span class="ic" aria-hidden="true"><svg width="13" height="13" viewBox="0 0 16 16"><path d="M3 8l3 3 7-7" stroke="#06261d" stroke-width="2.5" fill="none"/></svg></span>
+              <span class="face"><span class="num">1</span></span>
+            </a>
+            <div class="label"><div class="wl">World 1 · Level 1</div><div class="t">The receipt</div>
+              <div class="st"><span class="statetag passed">Passed</span><span class="stars" aria-hidden="true"><svg class="s" viewBox="0 0 12 12"><path d="M6 1l1.5 3 3.3.4-2.4 2.3.6 3.3L6 9.6 3 10.3l.6-3.3L1.2 4.4 4.5 4z" fill="#f0e442"/></svg><svg class="s" viewBox="0 0 12 12"><path d="M6 1l1.5 3 3.3.4-2.4 2.3.6 3.3L6 9.6 3 10.3l.6-3.3L1.2 4.4 4.5 4z" fill="#f0e442"/></svg><svg class="s" viewBox="0 0 12 12"><path d="M6 1l1.5 3 3.3.4-2.4 2.3.6 3.3L6 9.6 3 10.3l.6-3.3L1.2 4.4 4.5 4z" fill="#f0e442"/></svg></span><span class="sr-only">3 of 3 stars</span></div></div>
+          </div>
+        </div>
+      </li>
+
+      <li class="step lean-r">
+        <div class="inner"><div class="rail"><span class="fill" style="top:0;bottom:0"></span></div>
+          <div class="tile-wrap">
+            <span class="ped"></span>
+            <a class="tile passed" href="#" aria-label="World 1, level 2, One shape, many orders. Passed, 2 of 3 stars.">
+              <span class="ic" aria-hidden="true"><svg width="13" height="13" viewBox="0 0 16 16"><path d="M3 8l3 3 7-7" stroke="#06261d" stroke-width="2.5" fill="none"/></svg></span>
+              <span class="face"><span class="num">2</span></span>
+            </a>
+            <div class="label"><div class="wl">World 1 · Level 2</div><div class="t">One shape, many orders</div>
+              <div class="st"><span class="statetag passed">Passed</span><span class="stars" aria-hidden="true"><svg class="s" viewBox="0 0 12 12"><path d="M6 1l1.5 3 3.3.4-2.4 2.3.6 3.3L6 9.6 3 10.3l.6-3.3L1.2 4.4 4.5 4z" fill="#f0e442"/></svg><svg class="s" viewBox="0 0 12 12"><path d="M6 1l1.5 3 3.3.4-2.4 2.3.6 3.3L6 9.6 3 10.3l.6-3.3L1.2 4.4 4.5 4z" fill="#f0e442"/></svg><svg class="s" viewBox="0 0 12 12"><path d="M6 1l1.5 3 3.3.4-2.4 2.3.6 3.3L6 9.6 3 10.3l.6-3.3L1.2 4.4 4.5 4z" fill="#2a1c10"/></svg></span><span class="sr-only">2 of 3 stars</span></div></div>
+          </div>
+        </div>
+      </li>
+
+      <li class="step lean-l">
+        <svg class="prop" style="left:2%;top:0" width="40" height="56" viewBox="0 0 32 44" aria-hidden="true">
+          <!-- pawn -->
+          <g fill="#caa36a"><circle cx="16" cy="9" r="6"/><path d="M11 15h10l3 14H8z"/><rect x="6" y="29" width="20" height="4" rx="2"/><rect x="4" y="33" width="24" height="4" rx="2"/></g>
+        </svg>
+        <div class="inner"><div class="rail"><span class="fill" style="top:0;height:60%"></span></div>
+          <div class="tile-wrap">
+            <span class="ped"></span>
+            <a class="tile current" href="#" aria-current="step" aria-label="World 1, level 3, The field that must be there. Current level, you are here. Not yet passed.">
+              <span class="here"><svg class="pc" width="30" height="38" viewBox="0 0 24 30" aria-hidden="true"><g fill="#f0e442"><circle cx="12" cy="5" r="3.2"/><path d="M12 7c4 2 6 7 6 11s-3 7-6 7-6-3-6-7 2-9 6-11z"/><rect x="7" y="25" width="10" height="3" rx="1.5"/><rect x="6" y="27.5" width="12" height="2.5" rx="1.2"/></g><path d="M12 11l3 3-3 3-3-3z" fill="#06263a"/></svg><span class="tag">You</span></span>
+              <span class="ic" aria-hidden="true"><svg width="12" height="12" viewBox="0 0 16 16"><circle cx="8" cy="8" r="4" fill="#06263a"/></svg></span>
+              <span class="face"><span class="num">3</span></span>
+            </a>
+            <div class="label"><div class="wl">World 1 · Level 3</div><div class="t">The field that must be there</div>
+              <div class="st"><span class="statetag current">You are here</span></div></div>
+          </div>
+        </div>
+      </li>
+
+      <li class="step lean-c">
+        <svg class="prop" style="right:3%;top:4px" width="46" height="60" viewBox="0 0 32 44" aria-hidden="true">
+          <!-- knight (world boss piece hint) -->
+          <g fill="#8a6a2e"><path d="M8 40h18l-1-10c0-9-5-14-11-16l-2-5-3 3 2 3-5 5 2 4 4-2 1 3-6 6z"/><rect x="6" y="40" width="22" height="4" rx="2"/></g>
+        </svg>
+        <div class="inner"><div class="rail"></div>
+          <div class="tile-wrap">
+            <span class="ped" style="width:150px"></span>
+            <a class="tile boss locked" href="#" aria-label="World 1 boss, Shape a help-desk ticket. Locked. Clear world 1 levels to open.">
+              <span class="ic" aria-hidden="true"><svg width="13" height="13" viewBox="0 0 16 16"><rect x="4" y="7" width="8" height="6" rx="1" fill="none" stroke="#c7b48f" stroke-width="1.6"/><path d="M5.5 7V5a2.5 2.5 0 015 0v2" fill="none" stroke="#c7b48f" stroke-width="1.6"/></svg></span>
+              <span class="face"><span class="num">BOSS</span></span>
+            </a>
+            <div class="label"><div class="wl">World 1 · Boss (knight)</div><div class="t">Boss: shape a help-desk ticket</div>
+              <div class="st"><span class="statetag boss">Boss</span><span class="statetag locked">Locked</span></div></div>
+          </div>
+        </div>
+      </li>
+
+      <!-- ===================== WORLD 2 ===================== -->
+      <li class="worldhdr"><div class="world-tab"><b>World 2</b> · Spot the Guess</div></li>
+
+      <li class="step lean-l">
+        <svg class="prop" style="left:3%;top:8px" width="48" height="48" viewBox="0 0 48 48" aria-hidden="true">
+          <!-- calculator -->
+          <rect x="12" y="6" width="24" height="36" rx="4" fill="#4e351d" stroke="#caa36a"/>
+          <rect x="16" y="10" width="16" height="7" rx="2" fill="#2a1c10"/>
+          <g fill="#caa36a"><circle cx="18" cy="23" r="2"/><circle cx="24" cy="23" r="2"/><circle cx="30" cy="23" r="2"/><circle cx="18" cy="30" r="2"/><circle cx="24" cy="30" r="2"/><circle cx="30" cy="30" r="2"/><circle cx="18" cy="37" r="2"/><circle cx="24" cy="37" r="2"/><circle cx="30" cy="37" r="2"/></g>
+        </svg>
+        <div class="inner"><div class="rail"></div>
+          <div class="tile-wrap">
+            <span class="ped"></span>
+            <a class="tile locked" href="#" aria-label="World 2, level 1, Why it guesses. Locked.">
+              <span class="ic" aria-hidden="true"><svg width="13" height="13" viewBox="0 0 16 16"><rect x="4" y="7" width="8" height="6" rx="1" fill="none" stroke="#c7b48f" stroke-width="1.6"/><path d="M5.5 7V5a2.5 2.5 0 015 0v2" fill="none" stroke="#c7b48f" stroke-width="1.6"/></svg></span>
+              <span class="face"><span class="num">4</span></span>
+            </a>
+            <div class="label"><div class="wl">World 2 · Level 1</div><div class="t">Why it guesses</div><div class="st"><span class="statetag locked">Locked</span></div></div>
+          </div>
+        </div>
+      </li>
+
+      <li class="step lean-r">
+        <div class="inner"><div class="rail"></div>
+          <div class="tile-wrap"><span class="ped"></span>
+            <a class="tile locked" href="#" aria-label="World 2, level 2, Highlight the guess. Locked.">
+              <span class="ic" aria-hidden="true"><svg width="13" height="13" viewBox="0 0 16 16"><rect x="4" y="7" width="8" height="6" rx="1" fill="none" stroke="#c7b48f" stroke-width="1.6"/><path d="M5.5 7V5a2.5 2.5 0 015 0v2" fill="none" stroke="#c7b48f" stroke-width="1.6"/></svg></span>
+              <span class="face"><span class="num">5</span></span></a>
+            <div class="label"><div class="wl">World 2 · Level 2</div><div class="t">Highlight the guess</div><div class="st"><span class="statetag locked">Locked</span></div></div>
+          </div>
+        </div>
+      </li>
+
+      <li class="step lean-l">
+        <svg class="prop" style="right:4%;top:0" width="40" height="56" viewBox="0 0 32 44" aria-hidden="true"><g fill="#8a6a2e"><circle cx="16" cy="9" r="6"/><path d="M11 15h10l3 14H8z"/><rect x="6" y="29" width="20" height="4" rx="2"/></g></svg>
+        <div class="inner"><div class="rail"></div>
+          <div class="tile-wrap"><span class="ped"></span>
+            <a class="tile locked" href="#" aria-label="World 2, level 3, Ask for the tool, not the answer. Locked.">
+              <span class="ic" aria-hidden="true"><svg width="13" height="13" viewBox="0 0 16 16"><rect x="4" y="7" width="8" height="6" rx="1" fill="none" stroke="#c7b48f" stroke-width="1.6"/><path d="M5.5 7V5a2.5 2.5 0 015 0v2" fill="none" stroke="#c7b48f" stroke-width="1.6"/></svg></span>
+              <span class="face"><span class="num">6</span></span></a>
+            <div class="label"><div class="wl">World 2 · Level 3</div><div class="t">Ask for the tool, not the answer</div><div class="st"><span class="statetag locked">Locked</span></div></div>
+          </div>
+        </div>
+      </li>
+
+      <li class="step lean-r">
+        <div class="inner"><div class="rail"></div>
+          <div class="tile-wrap"><span class="ped"></span>
+            <a class="tile locked" href="#" aria-label="World 2, level 4, Right-answer or open? Locked.">
+              <span class="ic" aria-hidden="true"><svg width="13" height="13" viewBox="0 0 16 16"><rect x="4" y="7" width="8" height="6" rx="1" fill="none" stroke="#c7b48f" stroke-width="1.6"/><path d="M5.5 7V5a2.5 2.5 0 015 0v2" fill="none" stroke="#c7b48f" stroke-width="1.6"/></svg></span>
+              <span class="face"><span class="num">7</span></span></a>
+            <div class="label"><div class="wl">World 2 · Level 4</div><div class="t">Right-answer or open?</div><div class="st"><span class="statetag locked">Locked</span></div></div>
+          </div>
+        </div>
+      </li>
+
+      <li class="step lean-c">
+        <div class="inner"><div class="rail"></div>
+          <div class="tile-wrap"><span class="ped" style="width:150px"></span>
+            <a class="tile boss locked" href="#" aria-label="World 2 boss, Triage the clinic's monthly note. Locked.">
+              <span class="ic" aria-hidden="true"><svg width="13" height="13" viewBox="0 0 16 16"><rect x="4" y="7" width="8" height="6" rx="1" fill="none" stroke="#c7b48f" stroke-width="1.6"/><path d="M5.5 7V5a2.5 2.5 0 015 0v2" fill="none" stroke="#c7b48f" stroke-width="1.6"/></svg></span>
+              <span class="face"><span class="num">BOSS</span></span></a>
+            <div class="label"><div class="wl">World 2 · Boss (rook)</div><div class="t">Boss: Triage the clinic's monthly note</div><div class="st"><span class="statetag boss">Boss</span><span class="statetag locked">Locked</span></div></div>
+          </div>
+        </div>
+      </li>
+
+      <!-- ===================== WORLD 3 ===================== -->
+      <li class="worldhdr"><div class="world-tab"><b>World 3</b> · Answer from the Source · rank Tool User</div></li>
+
+      <li class="step lean-l">
+        <svg class="prop" style="right:3%;top:4px" width="46" height="46" viewBox="0 0 46 46" aria-hidden="true">
+          <!-- magnifier -->
+          <circle cx="20" cy="20" r="12" fill="none" stroke="#caa36a" stroke-width="4"/><rect x="29" y="29" width="12" height="5" rx="2.5" transform="rotate(45 29 29)" fill="#caa36a"/>
+        </svg>
+        <div class="inner"><div class="rail"></div>
+          <div class="tile-wrap"><span class="ped"></span>
+            <a class="tile locked" href="#" aria-label="World 3, level 1, Only from the sheet. Locked.">
+              <span class="ic" aria-hidden="true"><svg width="13" height="13" viewBox="0 0 16 16"><rect x="4" y="7" width="8" height="6" rx="1" fill="none" stroke="#c7b48f" stroke-width="1.6"/><path d="M5.5 7V5a2.5 2.5 0 015 0v2" fill="none" stroke="#c7b48f" stroke-width="1.6"/></svg></span>
+              <span class="face"><span class="num">8</span></span></a>
+            <div class="label"><div class="wl">World 3 · Level 1</div><div class="t">Only from the sheet</div><div class="st"><span class="statetag locked">Locked</span></div></div>
+          </div>
+        </div>
+      </li>
+
+      <li class="step lean-r">
+        <div class="inner"><div class="rail"></div>
+          <div class="tile-wrap"><span class="ped"></span>
+            <a class="tile locked" href="#" aria-label="World 3, level 2, When the answer isn't there. Locked.">
+              <span class="ic" aria-hidden="true"><svg width="13" height="13" viewBox="0 0 16 16"><rect x="4" y="7" width="8" height="6" rx="1" fill="none" stroke="#c7b48f" stroke-width="1.6"/><path d="M5.5 7V5a2.5 2.5 0 015 0v2" fill="none" stroke="#c7b48f" stroke-width="1.6"/></svg></span>
+              <span class="face"><span class="num">9</span></span></a>
+            <div class="label"><div class="wl">World 3 · Level 2</div><div class="t">When the answer isn't there</div><div class="st"><span class="statetag locked">Locked</span></div></div>
+          </div>
+        </div>
+      </li>
+
+      <li class="step lean-l">
+        <div class="inner"><div class="rail"></div>
+          <div class="tile-wrap"><span class="ped"></span>
+            <a class="tile locked" href="#" aria-label="World 3, level 3, Cite it or it didn't happen. Locked.">
+              <span class="ic" aria-hidden="true"><svg width="13" height="13" viewBox="0 0 16 16"><rect x="4" y="7" width="8" height="6" rx="1" fill="none" stroke="#c7b48f" stroke-width="1.6"/><path d="M5.5 7V5a2.5 2.5 0 015 0v2" fill="none" stroke="#c7b48f" stroke-width="1.6"/></svg></span>
+              <span class="face"><span class="num">10</span></span></a>
+            <div class="label"><div class="wl">World 3 · Level 3</div><div class="t">Cite it or it didn't happen</div><div class="st"><span class="statetag locked">Locked</span></div></div>
+          </div>
+        </div>
+      </li>
+
+      <li class="step lean-c">
+        <div class="inner"><div class="rail"></div>
+          <div class="tile-wrap"><span class="ped" style="width:150px"></span>
+            <a class="tile boss locked" href="#" aria-label="World 3 boss, The zone that isn't on the table. Locked.">
+              <span class="ic" aria-hidden="true"><svg width="13" height="13" viewBox="0 0 16 16"><rect x="4" y="7" width="8" height="6" rx="1" fill="none" stroke="#c7b48f" stroke-width="1.6"/><path d="M5.5 7V5a2.5 2.5 0 015 0v2" fill="none" stroke="#c7b48f" stroke-width="1.6"/></svg></span>
+              <span class="face"><span class="num">BOSS</span></span></a>
+            <div class="label"><div class="wl">World 3 · Boss (bishop)</div><div class="t">The zone that isn't on the table</div><div class="st"><span class="statetag boss">Boss</span><span class="statetag locked">Locked</span></div></div>
+          </div>
+        </div>
+      </li>
+
+      <!-- ===================== WORLD 4 (keystone) ===================== -->
+      <li class="worldhdr"><div class="world-tab"><b>World 4</b> · Name the Check · rank Checker · keystone</div></li>
+
+      <li class="step lean-l">
+        <svg class="prop" style="right:3%;top:0" width="46" height="52" viewBox="0 0 46 52" aria-hidden="true">
+          <!-- shield (checker) -->
+          <path d="M23 4l16 5v13c0 11-7 18-16 22-9-4-16-11-16-22V9z" fill="#4e351d" stroke="#caa36a" stroke-width="2"/>
+          <path d="M15 24l5 5 11-12" fill="none" stroke="#caa36a" stroke-width="3"/>
+        </svg>
+        <div class="inner"><div class="rail"></div>
+          <div class="tile-wrap"><span class="ped"></span>
+            <a class="tile locked" href="#" aria-label="World 4, level 1, Can this check even fail? Locked.">
+              <span class="ic" aria-hidden="true"><svg width="13" height="13" viewBox="0 0 16 16"><rect x="4" y="7" width="8" height="6" rx="1" fill="none" stroke="#c7b48f" stroke-width="1.6"/><path d="M5.5 7V5a2.5 2.5 0 015 0v2" fill="none" stroke="#c7b48f" stroke-width="1.6"/></svg></span>
+              <span class="face"><span class="num">11</span></span></a>
+            <div class="label"><div class="wl">World 4 · Level 1</div><div class="t">Can this check even fail?</div><div class="st"><span class="statetag locked">Locked</span></div></div>
+          </div>
+        </div>
+      </li>
+
+      <li class="step lean-r">
+        <div class="inner"><div class="rail"></div>
+          <div class="tile-wrap"><span class="ped"></span>
+            <a class="tile locked" href="#" aria-label="World 4, level 2, Which check is stronger? Locked.">
+              <span class="ic" aria-hidden="true"><svg width="13" height="13" viewBox="0 0 16 16"><rect x="4" y="7" width="8" height="6" rx="1" fill="none" stroke="#c7b48f" stroke-width="1.6"/><path d="M5.5 7V5a2.5 2.5 0 015 0v2" fill="none" stroke="#c7b48f" stroke-width="1.6"/></svg></span>
+              <span class="face"><span class="num">12</span></span></a>
+            <div class="label"><div class="wl">World 4 · Level 2</div><div class="t">Which check is stronger?</div><div class="st"><span class="statetag locked">Locked</span></div></div>
+          </div>
+        </div>
+      </li>
+
+      <li class="step lean-l">
+        <div class="inner"><div class="rail"></div>
+          <div class="tile-wrap"><span class="ped"></span>
+            <a class="tile locked" href="#" aria-label="World 4, level 3, Fix the check that lets a bad one through. Locked.">
+              <span class="ic" aria-hidden="true"><svg width="13" height="13" viewBox="0 0 16 16"><rect x="4" y="7" width="8" height="6" rx="1" fill="none" stroke="#c7b48f" stroke-width="1.6"/><path d="M5.5 7V5a2.5 2.5 0 015 0v2" fill="none" stroke="#c7b48f" stroke-width="1.6"/></svg></span>
+              <span class="face"><span class="num">13</span></span></a>
+            <div class="label"><div class="wl">World 4 · Level 3</div><div class="t">Fix the check that lets a bad one through</div><div class="st"><span class="statetag locked">Locked</span></div></div>
+          </div>
+        </div>
+      </li>
+
+      <li class="step lean-r">
+        <svg class="prop" style="left:3%;top:0" width="46" height="52" viewBox="0 0 46 52" aria-hidden="true"><path d="M23 4l16 5v13c0 11-7 18-16 22-9-4-16-11-16-22V9z" fill="#4e351d" stroke="#d9a441" stroke-width="2"/><circle cx="23" cy="24" r="6" fill="none" stroke="#d9a441" stroke-width="2.5"/></svg>
+        <div class="inner"><div class="rail"></div>
+          <div class="tile-wrap"><span class="ped"></span>
+            <a class="tile locked" href="#" aria-label="World 4, level 4, keystone, Ask for the check first. Locked.">
+              <span class="ic" aria-hidden="true"><svg width="13" height="13" viewBox="0 0 16 16"><rect x="4" y="7" width="8" height="6" rx="1" fill="none" stroke="#c7b48f" stroke-width="1.6"/><path d="M5.5 7V5a2.5 2.5 0 015 0v2" fill="none" stroke="#c7b48f" stroke-width="1.6"/></svg></span>
+              <span class="face"><span class="num">14</span></span></a>
+            <div class="label"><div class="wl">World 4 · Level 4 · keystone</div><div class="t">Ask for the check first</div><div class="st"><span class="statetag boss" style="background:#2a1f0d;color:#e69f00">Keystone</span><span class="statetag locked">Locked</span></div></div>
+          </div>
+        </div>
+      </li>
+
+      <li class="step lean-c">
+        <div class="inner"><div class="rail"></div>
+          <div class="tile-wrap"><span class="ped" style="width:150px"></span>
+            <a class="tile boss locked" href="#" aria-label="World 4 boss, The refund promise with no ticket. Locked.">
+              <span class="ic" aria-hidden="true"><svg width="13" height="13" viewBox="0 0 16 16"><rect x="4" y="7" width="8" height="6" rx="1" fill="none" stroke="#c7b48f" stroke-width="1.6"/><path d="M5.5 7V5a2.5 2.5 0 015 0v2" fill="none" stroke="#c7b48f" stroke-width="1.6"/></svg></span>
+              <span class="face"><span class="num">BOSS</span></span></a>
+            <div class="label"><div class="wl">World 4 · Boss (rook)</div><div class="t">The refund promise with no ticket</div><div class="st"><span class="statetag boss">Boss</span><span class="statetag locked">Locked</span></div></div>
+          </div>
+        </div>
+      </li>
+
+      <!-- ===================== WORKSHOP SEAM ===================== -->
+      <li class="seam">
+        <div class="seam-band">
+          <svg class="gate" width="52" height="56" viewBox="0 0 52 56" aria-hidden="true">
+            <!-- gate -->
+            <rect x="6" y="12" width="12" height="40" rx="2" fill="#4e351d" stroke="#d9a441" stroke-width="2"/>
+            <rect x="34" y="12" width="12" height="40" rx="2" fill="#4e351d" stroke="#d9a441" stroke-width="2"/>
+            <path d="M6 12q20-10 40 0" fill="none" stroke="#d9a441" stroke-width="3"/>
+          </svg>
+          <div class="txt"><div class="h">The Workshop seam</div>
+            <div class="d">You've been writing the ask. Now the AI builds real tools you keep.</div></div>
+        </div>
+      </li>
+
+      <!-- ===================== WORLD 5 ===================== -->
+      <li class="worldhdr"><div class="world-tab"><b>World 5</b> · Have AI Build the Tool</div></li>
+
+      <li class="step lean-l">
+        <svg class="prop" style="right:3%;top:2px" width="48" height="48" viewBox="0 0 48 48" aria-hidden="true">
+          <!-- wrench -->
+          <path d="M30 10a9 9 0 00-11 11L8 32l6 6 11-11a9 9 0 005-17l-4 4-3-3z" fill="#4e351d" stroke="#caa36a" stroke-width="2"/>
+        </svg>
+        <div class="inner"><div class="rail"></div>
+          <div class="tile-wrap"><span class="ped"></span>
+            <a class="tile locked" href="#" aria-label="World 5, level 1, Describe the tool. Locked.">
+              <span class="ic" aria-hidden="true"><svg width="13" height="13" viewBox="0 0 16 16"><rect x="4" y="7" width="8" height="6" rx="1" fill="none" stroke="#c7b48f" stroke-width="1.6"/><path d="M5.5 7V5a2.5 2.5 0 015 0v2" fill="none" stroke="#c7b48f" stroke-width="1.6"/></svg></span>
+              <span class="face"><span class="num">15</span></span></a>
+            <div class="label"><div class="wl">World 5 · Level 1</div><div class="t">Describe the tool</div><div class="st"><span class="statetag locked">Locked</span></div></div>
+          </div>
+        </div>
+      </li>
+
+      <li class="step lean-r">
+        <div class="inner"><div class="rail"></div>
+          <div class="tile-wrap"><span class="ped"></span>
+            <a class="tile locked" href="#" aria-label="World 5, level 2, Prove it on more than one month. Locked.">
+              <span class="ic" aria-hidden="true"><svg width="13" height="13" viewBox="0 0 16 16"><rect x="4" y="7" width="8" height="6" rx="1" fill="none" stroke="#c7b48f" stroke-width="1.6"/><path d="M5.5 7V5a2.5 2.5 0 015 0v2" fill="none" stroke="#c7b48f" stroke-width="1.6"/></svg></span>
+              <span class="face"><span class="num">16</span></span></a>
+            <div class="label"><div class="wl">World 5 · Level 2</div><div class="t">Prove it on more than one month</div><div class="st"><span class="statetag locked">Locked</span></div></div>
+          </div>
+        </div>
+      </li>
+
+      <li class="step lean-l">
+        <div class="inner"><div class="rail"></div>
+          <div class="tile-wrap"><span class="ped"></span>
+            <a class="tile locked" href="#" aria-label="World 5, level 3, The check you can't peek past. Locked.">
+              <span class="ic" aria-hidden="true"><svg width="13" height="13" viewBox="0 0 16 16"><rect x="4" y="7" width="8" height="6" rx="1" fill="none" stroke="#c7b48f" stroke-width="1.6"/><path d="M5.5 7V5a2.5 2.5 0 015 0v2" fill="none" stroke="#c7b48f" stroke-width="1.6"/></svg></span>
+              <span class="face"><span class="num">17</span></span></a>
+            <div class="label"><div class="wl">World 5 · Level 3</div><div class="t">The check you can't peek past</div><div class="st"><span class="statetag locked">Locked</span></div></div>
+          </div>
+        </div>
+      </li>
+
+      <li class="step lean-c">
+        <div class="inner"><div class="rail"></div>
+          <div class="tile-wrap"><span class="ped" style="width:150px"></span>
+            <a class="tile boss locked" href="#" aria-label="World 5 boss, Build it and prove it, average order value by weekday. Locked.">
+              <span class="ic" aria-hidden="true"><svg width="13" height="13" viewBox="0 0 16 16"><rect x="4" y="7" width="8" height="6" rx="1" fill="none" stroke="#c7b48f" stroke-width="1.6"/><path d="M5.5 7V5a2.5 2.5 0 015 0v2" fill="none" stroke="#c7b48f" stroke-width="1.6"/></svg></span>
+              <span class="face"><span class="num">BOSS</span></span></a>
+            <div class="label"><div class="wl">World 5 · Boss (knight)</div><div class="t">Build it and prove it: average order value by weekday</div><div class="st"><span class="statetag boss">Boss</span><span class="statetag locked">Locked</span></div></div>
+          </div>
+        </div>
+      </li>
+
+      <!-- ===================== WORLD 6 ===================== -->
+      <li class="worldhdr"><div class="world-tab"><b>World 6</b> · Prove It &amp; Fix It · rank Builder</div></li>
+
+      <li class="step lean-l">
+        <svg class="prop" style="right:3%;top:2px" width="48" height="48" viewBox="0 0 48 48" aria-hidden="true">
+          <!-- bug/fix -->
+          <ellipse cx="24" cy="26" rx="10" ry="12" fill="#4e351d" stroke="#caa36a" stroke-width="2"/>
+          <path d="M24 14v-5M14 20l-6-3M34 20l6-3M14 32l-6 3M34 32l6 3M24 38v5" stroke="#caa36a" stroke-width="2"/>
+        </svg>
+        <div class="inner"><div class="rail"></div>
+          <div class="tile-wrap"><span class="ped"></span>
+            <a class="tile locked" href="#" aria-label="World 6, level 1, The green that lied. Locked.">
+              <span class="ic" aria-hidden="true"><svg width="13" height="13" viewBox="0 0 16 16"><rect x="4" y="7" width="8" height="6" rx="1" fill="none" stroke="#c7b48f" stroke-width="1.6"/><path d="M5.5 7V5a2.5 2.5 0 015 0v2" fill="none" stroke="#c7b48f" stroke-width="1.6"/></svg></span>
+              <span class="face"><span class="num">18</span></span></a>
+            <div class="label"><div class="wl">World 6 · Level 1</div><div class="t">The green that lied</div><div class="st"><span class="statetag locked">Locked</span></div></div>
+          </div>
+        </div>
+      </li>
+
+      <li class="step lean-r">
+        <div class="inner"><div class="rail"></div>
+          <div class="tile-wrap"><span class="ped"></span>
+            <a class="tile locked" href="#" aria-label="World 6, level 2, Point at the broken case. Locked.">
+              <span class="ic" aria-hidden="true"><svg width="13" height="13" viewBox="0 0 16 16"><rect x="4" y="7" width="8" height="6" rx="1" fill="none" stroke="#c7b48f" stroke-width="1.6"/><path d="M5.5 7V5a2.5 2.5 0 015 0v2" fill="none" stroke="#c7b48f" stroke-width="1.6"/></svg></span>
+              <span class="face"><span class="num">19</span></span></a>
+            <div class="label"><div class="wl">World 6 · Level 2</div><div class="t">Point at the broken case</div><div class="st"><span class="statetag locked">Locked</span></div></div>
+          </div>
+        </div>
+      </li>
+
+      <li class="step lean-l">
+        <div class="inner"><div class="rail"></div>
+          <div class="tile-wrap"><span class="ped"></span>
+            <a class="tile locked" href="#" aria-label="World 6, level 3, Prove it like you mean it. Locked.">
+              <span class="ic" aria-hidden="true"><svg width="13" height="13" viewBox="0 0 16 16"><rect x="4" y="7" width="8" height="6" rx="1" fill="none" stroke="#c7b48f" stroke-width="1.6"/><path d="M5.5 7V5a2.5 2.5 0 015 0v2" fill="none" stroke="#c7b48f" stroke-width="1.6"/></svg></span>
+              <span class="face"><span class="num">20</span></span></a>
+            <div class="label"><div class="wl">World 6 · Level 3</div><div class="t">Prove it like you mean it</div><div class="st"><span class="statetag locked">Locked</span></div></div>
+          </div>
+        </div>
+      </li>
+
+      <li class="step lean-c">
+        <div class="inner"><div class="rail"></div>
+          <div class="tile-wrap"><span class="ped" style="width:150px"></span>
+            <a class="tile boss locked" href="#" aria-label="World 6 boss, The timezone that dropped the orders. Locked.">
+              <span class="ic" aria-hidden="true"><svg width="13" height="13" viewBox="0 0 16 16"><rect x="4" y="7" width="8" height="6" rx="1" fill="none" stroke="#c7b48f" stroke-width="1.6"/><path d="M5.5 7V5a2.5 2.5 0 015 0v2" fill="none" stroke="#c7b48f" stroke-width="1.6"/></svg></span>
+              <span class="face"><span class="num">BOSS</span></span></a>
+            <div class="label"><div class="wl">World 6 · Boss (queen)</div><div class="t">The timezone that dropped the orders</div><div class="st"><span class="statetag boss">Boss</span><span class="statetag locked">Locked</span></div></div>
+          </div>
+        </div>
+      </li>
+
+      <!-- ===================== WORLD 7 ===================== -->
+      <li class="worldhdr"><div class="world-tab"><b>World 7</b> · Decide Where It Matters · rank Architect</div></li>
+
+      <li class="step lean-l">
+        <svg class="prop" style="right:3%;top:2px" width="48" height="48" viewBox="0 0 48 48" aria-hidden="true">
+          <!-- risk dial -->
+          <path d="M8 34a16 16 0 0132 0" fill="none" stroke="#caa36a" stroke-width="3"/>
+          <line x1="24" y1="34" x2="34" y2="22" stroke="#d9a441" stroke-width="3"/><circle cx="24" cy="34" r="3" fill="#d9a441"/>
+        </svg>
+        <div class="inner"><div class="rail"></div>
+          <div class="tile-wrap"><span class="ped"></span>
+            <a class="tile locked" href="#" aria-label="World 7, level 1, What does it cost to be wrong? Locked.">
+              <span class="ic" aria-hidden="true"><svg width="13" height="13" viewBox="0 0 16 16"><rect x="4" y="7" width="8" height="6" rx="1" fill="none" stroke="#c7b48f" stroke-width="1.6"/><path d="M5.5 7V5a2.5 2.5 0 015 0v2" fill="none" stroke="#c7b48f" stroke-width="1.6"/></svg></span>
+              <span class="face"><span class="num">21</span></span></a>
+            <div class="label"><div class="wl">World 7 · Level 1</div><div class="t">What does it cost to be wrong?</div><div class="st"><span class="statetag locked">Locked</span></div></div>
+          </div>
+        </div>
+      </li>
+
+      <li class="step lean-r">
+        <div class="inner"><div class="rail"></div>
+          <div class="tile-wrap"><span class="ped"></span>
+            <a class="tile locked" href="#" aria-label="World 7, level 2, The gate that was too expensive. Locked.">
+              <span class="ic" aria-hidden="true"><svg width="13" height="13" viewBox="0 0 16 16"><rect x="4" y="7" width="8" height="6" rx="1" fill="none" stroke="#c7b48f" stroke-width="1.6"/><path d="M5.5 7V5a2.5 2.5 0 015 0v2" fill="none" stroke="#c7b48f" stroke-width="1.6"/></svg></span>
+              <span class="face"><span class="num">22</span></span></a>
+            <div class="label"><div class="wl">World 7 · Level 2</div><div class="t">The gate that was too expensive</div><div class="st"><span class="statetag locked">Locked</span></div></div>
+          </div>
+        </div>
+      </li>
+
+      <li class="step lean-l">
+        <div class="inner"><div class="rail"></div>
+          <div class="tile-wrap"><span class="ped"></span>
+            <a class="tile locked" href="#" aria-label="World 7, level 3, Your call, defended. Locked.">
+              <span class="ic" aria-hidden="true"><svg width="13" height="13" viewBox="0 0 16 16"><rect x="4" y="7" width="8" height="6" rx="1" fill="none" stroke="#c7b48f" stroke-width="1.6"/><path d="M5.5 7V5a2.5 2.5 0 015 0v2" fill="none" stroke="#c7b48f" stroke-width="1.6"/></svg></span>
+              <span class="face"><span class="num">23</span></span></a>
+            <div class="label"><div class="wl">World 7 · Level 3</div><div class="t">Your call, defended</div><div class="st"><span class="statetag locked">Locked</span></div></div>
+          </div>
+        </div>
+      </li>
+
+      <li class="step lean-c">
+        <div class="inner"><div class="rail"></div>
+          <div class="tile-wrap"><span class="ped" style="width:150px"></span>
+            <a class="tile boss locked" href="#" aria-label="World 7 boss, The loan-approval assistant. Locked.">
+              <span class="ic" aria-hidden="true"><svg width="13" height="13" viewBox="0 0 16 16"><rect x="4" y="7" width="8" height="6" rx="1" fill="none" stroke="#c7b48f" stroke-width="1.6"/><path d="M5.5 7V5a2.5 2.5 0 015 0v2" fill="none" stroke="#c7b48f" stroke-width="1.6"/></svg></span>
+              <span class="face"><span class="num">BOSS</span></span></a>
+            <div class="label"><div class="wl">World 7 · Boss (king)</div><div class="t">The loan-approval assistant</div><div class="st"><span class="statetag boss">Boss</span><span class="statetag locked">Locked</span></div></div>
+          </div>
+        </div>
+      </li>
+
+      <!-- ===================== CAPSTONE ===================== -->
+      <li class="cap">
+        <div class="medallion" role="img" aria-label="Capstone, the volunteer-shift scheduler, locked. Earns Certified Practitioner.">
+          <svg width="150" height="150" viewBox="0 0 150 150" aria-hidden="true">
+            <circle cx="75" cy="75" r="60" fill="url(#g)" stroke="#8a6a2e" stroke-width="3"/>
+            <circle cx="75" cy="75" r="48" fill="none" stroke="#d9a441" stroke-width="2" stroke-dasharray="4 4"/>
+            <!-- king -->
+            <g fill="#f3e6cf"><path d="M75 36l3 6h-6z"/><path d="M63 48h24l-4 26H67z"/><rect x="60" y="74" width="30" height="6" rx="3"/><rect x="56" y="80" width="38" height="6" rx="3"/></g>
+            <path d="M60 108h30" stroke="#d9a441" stroke-width="3"/>
+            <defs><radialGradient id="g" cx="50%" cy="35%"><stop offset="0%" stop-color="#6b4a28"/><stop offset="100%" stop-color="#3a2715"/></radialGradient></defs>
+          </svg>
+        </div>
+        <div class="cap-label"><b>Capstone</b> — the volunteer-shift scheduler. An unseen cross-domain job, free-text ask. Earns <b>Certified Practitioner</b>. (Locked until the world 7 boss falls.)</div>
+      </li>
+    </ol>
+  </div>
+</div>
+</body>
+</html>
