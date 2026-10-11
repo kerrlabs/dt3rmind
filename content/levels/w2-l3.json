@@ -1,0 +1,194 @@
+{
+  "id": "w2-l3",
+  "world": 2,
+  "order": 3,
+  "title": "Ask for the tool, not the answer",
+  "kicker": "World 2 · Spot the Guess · Level 3",
+  "competencies": ["C3"],
+  "movesTaught": ["M2", "M3", "M4"],
+  "isBoss": false,
+  "job": {
+    "text": "Your manager asks: \"What was West region revenue in Q3?\" You paste the sales sheet into your AI.",
+    "preview": {
+      "columns": ["order_id", "date", "region", "category", "revenue"],
+      "rows": [
+        ["10001", "2025-07-03", "West", "Electronics", "1,284.50"],
+        ["10002", "2025-07-03", "East", "Furniture", "612.00"],
+        ["10003", "2025-06-29", "West", "Office", "88.40"],
+        ["10004", "2025-08-14", "South", "Electronics", "2,010.75"]
+      ],
+      "more": "… 1,996 more rows · sales.csv · 2,000 rows"
+    }
+  },
+  "naivePrompt": "Here's my sales data. What was West region revenue in Q3?",
+  "basePrompt": "Here's my sales data. What was West region revenue in Q3?",
+  "moves": [
+    {
+      "id": "tool",
+      "kind": "real",
+      "label": "Ask for a formula, not the number",
+      "text": {
+        "plain": "Don't calculate it yourself. Write a spreadsheet formula that adds up revenue where region is West and the date is in Q3.",
+        "tech": "Don't calculate it yourself. Write a pandas script that filters region == 'West' and Q3 dates, then sums revenue."
+      }
+    },
+    {
+      "id": "run",
+      "kind": "real",
+      "label": "Make it run the formula",
+      "text": {
+        "plain": "Run the formula on my file and give me the result it produces.",
+        "tech": "Execute the script on sales.csv and report the value it outputs."
+      }
+    },
+    {
+      "id": "show",
+      "kind": "real",
+      "label": "Show me the formula",
+      "text": {
+        "plain": "Show me the formula so I can check it.",
+        "tech": "Show me the code so I can review it."
+      }
+    },
+    {
+      "id": "care",
+      "kind": "trick",
+      "label": "Be careful, double-check",
+      "text": {
+        "plain": "Please be very careful and double-check your math.",
+        "tech": "Please be very careful and double-check your math."
+      }
+    },
+    {
+      "id": "steps",
+      "kind": "trick",
+      "label": "Think step by step",
+      "text": { "plain": "Think step by step.", "tech": "Think step by step." }
+    },
+    {
+      "id": "expert",
+      "kind": "trick",
+      "label": "You are an expert",
+      "text": {
+        "plain": "You are an expert data analyst.",
+        "tech": "You are an expert data analyst."
+      }
+    },
+    {
+      "id": "just",
+      "kind": "trick",
+      "label": "Just the number",
+      "text": {
+        "plain": "Reply with just the number.",
+        "tech": "Reply with just the number."
+      }
+    }
+  ],
+  "subChoices": [],
+  "renderer": "numeric-scatter",
+  "rules": [
+    {
+      "id": "pass",
+      "when": { "requireAll": ["tool", "run"] },
+      "isPass": true,
+      "claim": "Result from running it: 227,421.36",
+      "doer": "spreadsheet",
+      "feedback": "<b>Same exact answer, 5 out of 5.</b> The AI didn't get better at math — you asked it for a tool and had the tool do the math.",
+      "lesson": "The tool does the math; the AI only writes it.",
+      "output": {
+        "truth": 227421.36,
+        "values": [227421.36, 227421.36, 227421.36, 227421.36, 227421.36],
+        "formulas": {
+          "plain": [
+            "=SUMIFS(E:E, C:C,\"West\", B:B,\">=2025-07-01\", B:B,\"<=2025-09-30\")",
+            "=SUMPRODUCT((C2:C2001=\"West\")*(MONTH(B2:B2001)>=7)*(MONTH(B2:B2001)<=9)*E2:E2001)"
+          ],
+          "tech": [
+            "df[(df.region==\"West\") & df.date.between(\"2025-07-01\",\"2025-09-30\")].revenue.sum()",
+            "df.query(\"region=='West' and date.dt.quarter==3\")[\"revenue\"].sum()"
+          ]
+        },
+        "showNote": "Runs used two different formulas and got the identical number."
+      }
+    },
+    {
+      "id": "formula_only",
+      "when": { "requireAll": ["tool"], "forbidAny": ["run"] },
+      "isPass": false,
+      "claim": "Applying this, the total is about 231,880.",
+      "doer": "ai-guessing",
+      "feedback": "<b>Half-way there.</b> You got a formula, but the AI <i>still guessed</i> the total instead of running it. See \"about 231,880\"? Getting a formula isn't enough. Something has to <b>run</b> it: the AI's code tool, or your own spreadsheet.",
+      "lesson": "A tool nobody runs is still a guess.",
+      "output": {
+        "truth": 227421.36,
+        "values": [231880.0, 219400.0, 240115.5, 226950.0, 228300.0],
+        "formulas": {
+          "plain": [
+            "=SUMIFS(E:E, C:C,\"West\", B:B,\">=2025-07-01\", B:B,\"<=2025-09-30\")",
+            "=SUMPRODUCT((C2:C2001=\"West\")*(MONTH(B2:B2001)>=7)*(MONTH(B2:B2001)<=9)*E2:E2001)"
+          ],
+          "tech": [
+            "df[(df.region==\"West\") & df.date.between(\"2025-07-01\",\"2025-09-30\")].revenue.sum()",
+            "df.query(\"region=='West' and date.dt.quarter==3\")[\"revenue\"].sum()"
+          ]
+        }
+      }
+    },
+    {
+      "id": "tricks",
+      "when": { "requireAny": ["care", "steps", "expert", "just"] },
+      "isPass": false,
+      "claim": "West region revenue in Q3 was 251,330.00.",
+      "doer": "ai-guessing",
+      "feedback": "<b>Closer, but still guessing.</b> \"Be careful\", \"think step by step\" and \"you're an expert\" change how the AI <i>talks</i>, not who does the math. It's still predicting the number. Which move takes the math out of its hands?",
+      "lesson": "Tricks change the voice, not the calculator.",
+      "output": {
+        "truth": 227421.36,
+        "values": [251330.0, 289104.8, 233915.2, 307460.0, 214778.65]
+      }
+    },
+    {
+      "id": "naive",
+      "when": {},
+      "isPass": false,
+      "claim": "West region revenue in Q3 was 312,904.10.",
+      "doer": "ai-guessing",
+      "feedback": "<b>Nothing changed.</b> Asking the same question again just gives you another guess. Add a move that changes <i>who does the math</i>.",
+      "lesson": "Asking again isn't accuracy.",
+      "output": {
+        "truth": 227421.36,
+        "values": [312904.1, 198417.55, 441203.0, 265880.25, 179622.4]
+      }
+    }
+  ],
+  "attemptBudget": 2,
+  "stars": {
+    "attemptBudget": 2,
+    "showMove": "show",
+    "thirdStar": null
+  },
+  "xp": { "level": 20, "seenFailing": 15, "boss": 0 },
+  "hints": {
+    "nudge": "Who does the adding up in your current ask? If the answer is \"the AI\", your rewrite needs to change that.",
+    "gap": "Spreadsheets add up 2,000 rows perfectly every time. The AI is good at <i>writing</i> formulas. What if you asked for the formula instead of the number?",
+    "moves": "Add <b>Ask for a formula, not the number</b> and <b>Make it run the formula</b>. Leave the politeness tricks out. They don't change who does the math."
+  },
+  "whatYouDoDifferently": {
+    "naive": "\"What was West Q3 revenue?\" → 5 different wrong numbers, nothing to check.",
+    "rewrite": "\"write a formula, run it, show it\" → identical exact answer every run, and a formula you can reuse next quarter."
+  },
+  "tryIt": {
+    "template": {
+      "plain": "Don't calculate this yourself. Write a spreadsheet formula that [what you need, e.g. adds up revenue where region is West in Q3]. Run it on my file and give me the result it produces. Show me the formula so I can check it.",
+      "tech": "Don't compute this yourself. Write a script that [what you need]. Execute it on the attached file and report the value it outputs. Show me the code."
+    },
+    "notes": [
+      "<b>ChatGPT:</b> upload the file. It writes and runs code itself, so \"run it\" really happens.",
+      "<b>Copilot in Excel:</b> ask for the formula, then put it in a cell. Excel does the math.",
+      "<b>A chat AI that can't run code:</b> ask for the formula only, then paste it into your spreadsheet yourself. Never take its number."
+    ]
+  },
+  "expectPass": {
+    "conditions": { "requireAll": ["tool", "run"] }
+  }
+}
