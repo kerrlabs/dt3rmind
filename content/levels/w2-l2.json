@@ -1,0 +1,209 @@
+{
+  "id": "w2-l2",
+  "world": 2,
+  "order": 2,
+  "title": "Highlight the guess",
+  "kicker": "World 2 · Spot the Guess · Level 2",
+  "competencies": [
+    "C2"
+  ],
+  "movesTaught": [],
+  "isBoss": false,
+  "job": {
+    "text": "Here is an answer the AI gave on its own: <i>\"Our Q3 revenue was $412,000 across 1,208 orders, up 14% from Q2.\"</i> Tap every claim the AI could only be guessing — the numbers it would have to calculate from data it was never given. Leave the parts it was simply handed.",
+    "preview": {
+      "text": "\"Our Q3 revenue was $412,000 across 1,208 orders, up 14% from Q2.\"",
+      "more": "tap the guesses"
+    }
+  },
+  "naivePrompt": "Read the paragraph and trust the numbers.",
+  "basePrompt": "Read the paragraph and trust the numbers.",
+  "moves": [
+    {
+      "id": "dollars",
+      "kind": "real",
+      "label": "$412,000",
+      "text": {
+        "plain": "Mark \"$412,000\" — a dollar total the AI would have to add up from orders it was never given.",
+        "tech": "Tag \"$412,000\" as computed — it is a SUM over records not supplied."
+      }
+    },
+    {
+      "id": "ordercount",
+      "kind": "real",
+      "label": "1,208 orders",
+      "text": {
+        "plain": "Mark \"1,208 orders\" — a count the AI would have to tally from data it never saw.",
+        "tech": "Tag \"1,208 orders\" as computed — it is a COUNT over records not supplied."
+      }
+    },
+    {
+      "id": "pct",
+      "kind": "real",
+      "label": "up 14%",
+      "text": {
+        "plain": "Mark \"up 14%\" — a change the AI would have to calculate from two quarters of data.",
+        "tech": "Tag \"up 14%\" as computed — it is a ratio of two totals, neither supplied."
+      }
+    },
+    {
+      "id": "brand",
+      "kind": "trick",
+      "label": "\"Our\" (the company)",
+      "text": {
+        "plain": "Mark \"Our\" — but the company name was given, not computed.",
+        "tech": "Tag \"Our\" as computed — but it is a given, not a calculation."
+      }
+    },
+    {
+      "id": "quarter",
+      "kind": "trick",
+      "label": "Q3 (the quarter)",
+      "text": {
+        "plain": "Mark \"Q3\" — but the quarter label was given, not computed.",
+        "tech": "Tag \"Q3\" as computed — but it is a given, not a calculation."
+      }
+    },
+    {
+      "id": "revenueword",
+      "kind": "trick",
+      "label": "the word \"revenue\"",
+      "text": {
+        "plain": "Mark the word \"revenue\" — but that's just a label, not a number it had to work out.",
+        "tech": "Tag \"revenue\" as computed — but it is a field name, not a value."
+      }
+    },
+    {
+      "id": "ordersword",
+      "kind": "trick",
+      "label": "the word \"orders\"",
+      "text": {
+        "plain": "Mark the word \"orders\" — but that's just a label, not a number it had to work out.",
+        "tech": "Tag \"orders\" as computed — but it is a field name, not a value."
+      }
+    }
+  ],
+  "subChoices": [],
+  "renderer": "text-answer",
+  "rules": [
+    {
+      "id": "overtag",
+      "when": {
+        "atLeast": {
+          "ids": [
+            "brand",
+            "quarter",
+            "revenueword",
+            "ordersword"
+          ],
+          "n": 2
+        }
+      },
+      "isPass": false,
+      "claim": "Marked: a given, not a guess.",
+      "doer": "ai-guessing",
+      "feedback": "<b>Too wide.</b> The brand name, the quarter and the field labels aren't guesses — they were given. Flag only what the AI had to <i>compute</i>: a total, a count, a percentage.",
+      "lesson": "Not everything is a guess; aim at the computed claims.",
+      "output": {
+        "answer": "Our Q3 revenue was $412,000 across 1,208 orders, up 14% from Q2.",
+        "highlights": [
+          "$412,000",
+          "1,208 orders",
+          "up 14%"
+        ],
+        "source": "an unprompted AI paragraph"
+      }
+    },
+    {
+      "id": "pass",
+      "when": {
+        "requireAll": [
+          "dollars",
+          "ordercount",
+          "pct"
+        ]
+      },
+      "isPass": true,
+      "claim": "Marked: $412,000 · 1,208 orders · up 14% — all three guesses.",
+      "doer": "ai-guessing",
+      "feedback": "<b>You spotted all three guesses.</b> Every one is a number the AI would have to calculate from data it was never handed. Each needs a tool or a source. Next, you hand them off.",
+      "lesson": "A right-answer number without a tool is a guess.",
+      "output": {
+        "answer": "Our Q3 revenue was $412,000 across 1,208 orders, up 14% from Q2.",
+        "highlights": [
+          "$412,000",
+          "1,208 orders",
+          "up 14%"
+        ],
+        "source": "an unprompted AI paragraph"
+      }
+    },
+    {
+      "id": "undertag",
+      "when": {},
+      "isPass": false,
+      "claim": "Marked: fewer than three guesses.",
+      "doer": "ai-guessing",
+      "feedback": "<b>You let a guess through.</b> \"$412,000\", \"1,208 orders\" and \"up 14%\" are all numbers the AI would have to <i>calculate</i>. It was handed none of the data to do that — every one of the three is a guess.",
+      "lesson": "Confident numbers are the guesses to catch.",
+      "output": {
+        "answer": "Our Q3 revenue was $412,000 across 1,208 orders, up 14% from Q2.",
+        "highlights": [
+          "$412,000",
+          "1,208 orders",
+          "up 14%"
+        ],
+        "source": "an unprompted AI paragraph"
+      }
+    }
+  ],
+  "attemptBudget": 2,
+  "stars": {
+    "attemptBudget": 2,
+    "showMove": null,
+    "thirdStar": null
+  },
+  "xp": {
+    "level": 20,
+    "seenFailing": 0,
+    "boss": 0
+  },
+  "hints": {
+    "nudge": "Which of these numbers would the AI have to <i>calculate</i> to know?",
+    "gap": "The brand name and the quarter were given to it — leave those. What's left is computed: a total, a count, a percentage.",
+    "moves": "The three guesses are the dollar total ($412,000), the order count (1,208) and the percent change (up 14%). Leave the labels and the quarter alone."
+  },
+  "whatYouDoDifferently": {
+    "naive": "Read the confident paragraph and believe the numbers.",
+    "rewrite": "Mark every computed number and get ready to route it to a tool."
+  },
+  "tryIt": {
+    "template": {
+      "plain": "When the AI gives you numbers, ask yourself: was it handed the data to compute this, or is it guessing? Reply \"Which of these numbers did you calculate versus look up?\"",
+      "tech": "For each figure in the answer, ask the model to label it calculated | retrieved | given, and treat every \"calculated\" one as unverified."
+    },
+    "notes": [
+      "<b>ChatGPT:</b> ask it to label each number \"calculated\" or \"given\" — it often admits it guessed.",
+      "<b>Copilot in Excel:</b> any number it states that isn't a cell or formula result is a guess.",
+      "<b>A chat AI that can't run code:</b> treat every total, count or percentage as unverified until a tool produces it; never accept \"I checked, it's right.\""
+    ]
+  },
+  "expectPass": {
+    "conditions": {
+      "requireAll": [
+        "dollars",
+        "ordercount",
+        "pct"
+      ],
+      "atMost": {
+        "ids": [
+          "brand",
+          "quarter",
+          "revenueword",
+          "ordersword"
+        ],
+        "n": 1
+      }
+    }
+  }
+}

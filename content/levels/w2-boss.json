@@ -1,0 +1,239 @@
+{
+  "id": "w2-boss",
+  "world": 2,
+  "order": 5,
+  "title": "Boss: Triage the clinic's monthly note",
+  "kicker": "World 2 · Spot the Guess · Boss",
+  "competencies": ["C2", "C3"],
+  "movesTaught": ["M2", "M3"],
+  "isBoss": true,
+  "job": {
+    "text": "New domain, no training wheels. A clinic's AI wrote this monthly note on its own: <i>\"This month the clinic saw 1,042 patients across 318 visits, a 9% rise, and the average wait was 23 minutes.\"</i> It was handed no patient records — just asked to \"write the monthly note.\" Flag every number it could only be <b>guessing</b>, and route the ones that have a right answer to a <b>tool</b>. Leave the given labels alone. (In the live version you'll type this ask in your own words; for now, use the chips. Pass is decided by the hidden ground truth, never by an AI reading your prompt.)",
+    "preview": {
+      "text": "\"This month the clinic saw 1,042 patients across 318 visits, a 9% rise, and the average wait was 23 minutes.\"",
+      "more": "no records were given to it"
+    }
+  },
+  "naivePrompt": "Write the clinic's monthly note.",
+  "basePrompt": "Write the clinic's monthly note.",
+  "moves": [
+    {
+      "id": "patients_flag",
+      "kind": "real",
+      "label": "Flag \"1,042 patients\"",
+      "text": {
+        "plain": "Flag \"1,042 patients\" as a guess — it had no records to count from.",
+        "tech": "Tag \"1,042 patients\" un-knowable — a COUNT over records not supplied."
+      }
+    },
+    {
+      "id": "visits_flag",
+      "kind": "real",
+      "label": "Flag \"318 visits\"",
+      "text": {
+        "plain": "Flag \"318 visits\" as a guess — it had no records to count from.",
+        "tech": "Tag \"318 visits\" un-knowable — a COUNT over records not supplied."
+      }
+    },
+    {
+      "id": "rise_flag",
+      "kind": "real",
+      "label": "Flag \"a 9% rise\"",
+      "text": {
+        "plain": "Flag \"a 9% rise\" as a guess — it had no two months to compare.",
+        "tech": "Tag \"9% rise\" un-knowable — a ratio of two totals, neither supplied."
+      }
+    },
+    {
+      "id": "wait_flag",
+      "kind": "real",
+      "label": "Flag \"23 minutes\" average wait",
+      "text": {
+        "plain": "Flag the \"23 minute\" average wait as a guess — it had no wait times to average.",
+        "tech": "Tag \"23 minutes\" un-knowable — an AVERAGE over records not supplied."
+      }
+    },
+    {
+      "id": "clinic_flag",
+      "kind": "trick",
+      "label": "Flag \"the clinic\"",
+      "text": {
+        "plain": "Flag \"the clinic\" — but that was given, not computed.",
+        "tech": "Tag \"the clinic\" un-knowable — but it is a given, not a calculation."
+      }
+    },
+    {
+      "id": "month_flag",
+      "kind": "trick",
+      "label": "Flag \"this month\"",
+      "text": {
+        "plain": "Flag \"this month\" — but that was given, not computed.",
+        "tech": "Tag \"this month\" un-knowable — but it is a given, not a calculation."
+      }
+    },
+    {
+      "id": "route_counts",
+      "kind": "real",
+      "label": "Patient and visit counts → tool",
+      "text": {
+        "plain": "Route the patient and visit counts to a tool that counts the records.",
+        "tech": "Attach a COUNT tool over the records for the patient and visit totals."
+      }
+    },
+    {
+      "id": "route_stats",
+      "kind": "real",
+      "label": "The rise and the average wait → tool",
+      "text": {
+        "plain": "Route the 9% rise and the average wait to a tool that computes them from the data.",
+        "tech": "Attach tools: a month-over-month ratio and an AVERAGE over wait times."
+      }
+    },
+    {
+      "id": "clinician",
+      "kind": "trick",
+      "label": "You're a clinician, you'd know",
+      "text": {
+        "plain": "Tell it: you're a clinician, you'd know these numbers.",
+        "tech": "Prompt: \"as an experienced clinician, you'd know these figures.\""
+      }
+    },
+    {
+      "id": "round",
+      "kind": "trick",
+      "label": "Round the numbers",
+      "text": {
+        "plain": "Tell it: round numbers like 1,000 patients are fine.",
+        "tech": "Prompt: \"round figures to the nearest hundred, that's close enough.\""
+      }
+    }
+  ],
+  "subChoices": [],
+  "renderer": "table",
+  "rules": [
+    {
+      "id": "tricks",
+      "when": { "requireAny": ["clinician", "round"] },
+      "isPass": false,
+      "claim": "\"As a clinician I'd estimate about 1,000 patients this month.\"",
+      "doer": "ai-guessing",
+      "feedback": "<b>That's permission to invent.</b> \"You're a clinician\" and \"round the numbers\" don't give the AI any records — they just make a guess sound expert and tidy. The 1,042 patient count was never real to begin with.",
+      "lesson": "Role-play and rounding dress up a guess; they don't source it.",
+      "output": {
+        "columns": ["claim", "status", "owner"],
+        "rows": [
+          { "cells": ["1,042 patients", "fabricated", "ai-guessing"], "pass": false },
+          { "cells": ["318 visits", "guessed", "ai-guessing"], "pass": false },
+          { "cells": ["9% rise", "guessed", "ai-guessing"], "pass": false },
+          { "cells": ["23 min wait", "guessed", "ai-guessing"], "pass": false }
+        ],
+        "source": "an expert-sounding guess"
+      }
+    },
+    {
+      "id": "overflag",
+      "when": { "requireAny": ["clinic_flag", "month_flag"] },
+      "isPass": false,
+      "claim": "Flagged \"the clinic\" / \"this month\" — a given, not a guess.",
+      "doer": "ai-guessing",
+      "feedback": "<b>Too wide.</b> \"The clinic\" and \"this month\" were handed to it — they aren't guesses. Flag only the numbers it had to compute from records it never got.",
+      "lesson": "Not every word is a guess; aim at the computed numbers.",
+      "output": {
+        "columns": ["claim", "status", "owner"],
+        "rows": [
+          { "cells": ["the clinic", "given", "n/a"], "pass": true },
+          { "cells": ["this month", "given", "n/a"], "pass": true },
+          { "cells": ["1,042 patients", "un-knowable", "needs a tool"], "pass": false }
+        ],
+        "source": "over-flagged givens"
+      }
+    },
+    {
+      "id": "pass",
+      "when": {
+        "requireAll": [
+          "patients_flag",
+          "visits_flag",
+          "rise_flag",
+          "wait_flag",
+          "route_counts",
+          "route_stats"
+        ]
+      },
+      "isPass": true,
+      "claim": "All four numbers flagged; counts and stats routed to tools. The fabricated 1,042 count is caught.",
+      "doer": "tool",
+      "feedback": "<b>Boss cleared.</b> You flagged every number the AI had to invent — including the fabricated patient count — and sent each one to a tool that computes it from real records. The note now reports what the data says, not what a sentence should sound like.",
+      "lesson": "Flag every un-knowable number, then let a tool produce it from the source.",
+      "output": {
+        "columns": ["claim", "flagged", "owner"],
+        "rows": [
+          { "cells": ["1,042 patients (fabricated)", "yes", "count tool"], "pass": true },
+          { "cells": ["318 visits", "yes", "count tool"], "pass": true },
+          { "cells": ["9% rise", "yes", "ratio tool"], "pass": true },
+          { "cells": ["23 min wait", "yes", "average tool"], "pass": true }
+        ],
+        "source": "tools over the real records"
+      }
+    },
+    {
+      "id": "leftguess",
+      "when": {},
+      "isPass": false,
+      "claim": "A guessed number was left un-flagged or un-routed — including a patient count that was never real.",
+      "doer": "ai-guessing",
+      "feedback": "<b>A guess slipped through.</b> Every number here — the patient count, the visit count, the 9% rise, the 23-minute wait — had to be computed from records the AI never saw. The 1,042 patient count is fabricated. Flag them all and route them to a tool.",
+      "lesson": "A confident clinical number without a tool or a source is a guess.",
+      "output": {
+        "columns": ["claim", "flagged", "owner"],
+        "rows": [
+          { "cells": ["1,042 patients (fabricated)", "no", "ai-guessing"], "pass": false },
+          { "cells": ["318 visits", "no", "ai-guessing"], "pass": false },
+          { "cells": ["9% rise", "no", "ai-guessing"], "pass": false },
+          { "cells": ["23 min wait", "no", "ai-guessing"], "pass": false }
+        ],
+        "source": "guesses left in the note"
+      }
+    }
+  ],
+  "attemptBudget": 3,
+  "stars": {
+    "attemptBudget": 3,
+    "showMove": null,
+    "thirdStar": null
+  },
+  "xp": { "level": 20, "seenFailing": 15, "boss": 50 },
+  "hints": {
+    "nudge": "The AI was handed no patient records. So which numbers in this note could it possibly know?",
+    "gap": "Four numbers here had to be computed from records it never got: the patient count, the visit count, the rise, the wait. The clinic name and the month were given — leave those.",
+    "moves": "Flag all four numbers, route the counts and the stats to tools, and skip \"you're a clinician\" and \"round the numbers\" — they only make a guess sound confident."
+  },
+  "whatYouDoDifferently": {
+    "naive": "\"Write the monthly note\" → confident numbers, one of them fabricated, none from data.",
+    "rewrite": "Flag every number it had to compute, and route each to a tool that reads the real records."
+  },
+  "tryIt": {
+    "template": {
+      "plain": "This note has numbers in it. For each one, tell me: were you given the data to compute it, or did you guess? For every computed number, write me a tool that produces it from the records and run it. Don't invent a figure to fill a gap.",
+      "tech": "For each figure, label it computed | given. For every computed figure, emit a tool (query/script) over the source records and run it; never fabricate a value when the data is absent."
+    },
+    "notes": [
+      "<b>ChatGPT:</b> upload the records and ask it to label each number computed or given, then produce and run a tool for the computed ones.",
+      "<b>Copilot in Excel:</b> every reported number should trace to a formula over the data — if it can't, it's a guess.",
+      "<b>A chat AI that can't run code:</b> ask for the formulas, run them on the records yourself, and never accept \"I checked, the counts are right.\""
+    ]
+  },
+  "expectPass": {
+    "conditions": {
+      "requireAll": [
+        "patients_flag",
+        "visits_flag",
+        "rise_flag",
+        "wait_flag",
+        "route_counts",
+        "route_stats"
+      ],
+      "forbidAny": ["clinic_flag", "month_flag", "clinician", "round"]
+    }
+  }
+}

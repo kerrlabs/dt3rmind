@@ -1,0 +1,92 @@
+{
+  "id": "w2-l1",
+  "world": 2,
+  "order": 1,
+  "title": "Why it guesses",
+  "kicker": "World 2 · Spot the Guess · Level 1",
+  "competencies": ["C2"],
+  "movesTaught": [],
+  "isBoss": false,
+  "job": {
+    "text": "Press \"Ask the AI the same hard sum 5 times\" and watch what comes back. One unchanged question, five confident answers. Note: this is a warm-up, not a graded puzzle. There is no move to add yet. When you see what is happening, check the box to unlock the next level.",
+    "preview": {
+      "text": "6,847 × 2,913",
+      "more": "one unchanged question, asked 5 times"
+    }
+  },
+  "naivePrompt": "What is 6,847 × 2,913?",
+  "basePrompt": "What is 6,847 × 2,913?",
+  "moves": [
+    {
+      "id": "see",
+      "kind": "real",
+      "label": "I see — it's guessing, not calculating",
+      "text": {
+        "plain": "I see — the AI is guessing at this, not calculating it.",
+        "tech": "I see — the AI is predicting a plausible product, not computing it."
+      }
+    }
+  ],
+  "subChoices": [],
+  "renderer": "numeric-scatter",
+  "rules": [
+    {
+      "id": "pass",
+      "when": { "requireAll": ["see"] },
+      "isPass": true,
+      "claim": "Warm-up complete.",
+      "doer": "ai-guessing",
+      "feedback": "<b>Exactly.</b> Same question, five different answers, every one stated with full confidence. Now you'll learn the move that takes the math out of its hands.",
+      "lesson": "The AI guesses; it does not compute.",
+      "output": {
+        "truth": 19945311,
+        "values": [19824600, 20051400, 19736925, 20118050, 19512480],
+        "showNote": "This 'check' only asks 'are the five answers all equal?' — it can't go red on a single run. That's a bad check. You'll learn to spot those in World 4."
+      }
+    },
+    {
+      "id": "naive",
+      "when": {},
+      "isPass": false,
+      "claim": "Run 1: 19,824,600 · Run 2: 20,051,400 · Run 3: 19,736,925 · Run 4: 20,118,050 · Run 5: 19,512,480",
+      "doer": "ai-guessing",
+      "feedback": "<b>Same question, five answers.</b> The AI is predicting what a product <i>looks like</i>, not multiplying. Asking again just rolls the dice again. When you see it, check the box.",
+      "lesson": "The AI guesses; it does not compute.",
+      "output": {
+        "truth": 19945311,
+        "values": [19824600, 20051400, 19736925, 20118050, 19512480],
+        "showNote": "None of the five is 19,945,311. Compare the last three digits of runs 2 and 4 — they don't match."
+      }
+    }
+  ],
+  "attemptBudget": 2,
+  "stars": {
+    "attemptBudget": 2,
+    "showMove": null,
+    "thirdStar": null
+  },
+  "xp": { "level": 10, "seenFailing": 0, "boss": 0 },
+  "hints": {
+    "nudge": "Did it give you the same answer twice?",
+    "gap": "Look at the last three digits of runs 2 and 4 — they don't match. One unchanged question can't have five right answers.",
+    "moves": "There's nothing to fix here yet. Check the box; the next level gives you the move."
+  },
+  "whatYouDoDifferently": {
+    "naive": "Ask again, hope the next answer is the right one.",
+    "rewrite": "Stop asking it to do the math at all — the next level shows you how."
+  },
+  "tryIt": {
+    "template": {
+      "plain": "Ask your AI a long multiplication (like 6,847 × 2,913) three times in a row. If the answers differ, you've just watched it guess.",
+      "tech": "Prompt a long multiplication three times with code tools off. Differing answers are the guess; turn code on and they lock."
+    },
+    "notes": [
+      "<b>ChatGPT:</b> without its code tool on, the answers often differ. Turn code on and they lock — that's the preview of World 2's move.",
+      "<b>Copilot in Excel:</b> =6847*2913 in a cell is always exact — that's the contrast.",
+      "<b>A chat AI that can't run code:</b> expect it to differ, and never accept \"I checked, it's right\" on a number it only guessed."
+    ]
+  },
+  "expectPass": {
+    "conditions": { "requireAll": ["see"] }
+  }
+}

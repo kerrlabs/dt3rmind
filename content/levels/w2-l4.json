@@ -1,0 +1,170 @@
+{
+  "id": "w2-l4",
+  "world": 2,
+  "order": 4,
+  "title": "Right-answer or open?",
+  "kicker": "World 2 · Spot the Guess · Level 4",
+  "competencies": ["C3"],
+  "movesTaught": ["M2"],
+  "isBoss": false,
+  "job": {
+    "text": "Five steps of a weekly report are listed below. For each one, decide who should own it: hand it to a <b>tool</b> if it has exactly one right answer, or leave it to the <b>AI</b> if it's a judgment call. Turn a chip on to route that step to a tool; leave it off to keep it with the AI.",
+    "preview": {
+      "columns": ["#", "step", "has one right answer?"],
+      "rows": [
+        ["1", "Compute the revenue total", "yes"],
+        ["2", "Write a friendly subject line", "no"],
+        ["3", "Count the overdue invoices", "yes"],
+        ["4", "Suggest a discount %", "no"],
+        ["5", "Look up today's date", "yes"]
+      ],
+      "more": "5 steps · route each one"
+    }
+  },
+  "naivePrompt": "Do all five of these for me.",
+  "basePrompt": "Do all five of these for me.",
+  "moves": [
+    {
+      "id": "total",
+      "kind": "real",
+      "label": "Revenue total → tool",
+      "text": {
+        "plain": "Route the revenue total to a tool — it has exactly one right answer.",
+        "tech": "Mark step 1 (revenue total) deterministic: true and attach a sum tool."
+      }
+    },
+    {
+      "id": "count",
+      "kind": "real",
+      "label": "Overdue invoice count → tool",
+      "text": {
+        "plain": "Route the overdue-invoice count to a tool — it has exactly one right answer.",
+        "tech": "Mark step 3 (invoice count) deterministic: true and attach a count tool."
+      }
+    },
+    {
+      "id": "date",
+      "kind": "real",
+      "label": "Today's date → tool",
+      "text": {
+        "plain": "Route today's date to a tool — a lookup has exactly one right answer.",
+        "tech": "Mark step 5 (today's date) deterministic: true and attach a date lookup."
+      }
+    },
+    {
+      "id": "subject",
+      "kind": "trick",
+      "label": "Subject line → tool",
+      "text": {
+        "plain": "Route the friendly subject line to a tool — but it has no single right answer.",
+        "tech": "Mark step 2 (subject line) deterministic: true — but it is open-ended."
+      }
+    },
+    {
+      "id": "discount",
+      "kind": "trick",
+      "label": "Discount % → tool",
+      "text": {
+        "plain": "Route the suggested discount to a tool — but it's a judgment call, not a calculation.",
+        "tech": "Mark step 4 (discount) deterministic: true — but it is a judgment call."
+      }
+    }
+  ],
+  "subChoices": [],
+  "renderer": "table",
+  "rules": [
+    {
+      "id": "overtooled",
+      "when": { "requireAny": ["subject", "discount"] },
+      "isPass": false,
+      "claim": "A tool was asked to write the subject line / pick the discount — and it couldn't.",
+      "doer": "tool",
+      "feedback": "<b>Over-tooled.</b> A friendly subject line and a discount have no single right answer — a calculator can't write them. Not every step needs a gate.",
+      "lesson": "Don't gate the open steps; it just slows you down.",
+      "output": {
+        "columns": ["step", "owner", "outcome"],
+        "rows": [
+          { "cells": ["Compute the revenue total", "tool", "exact"], "pass": true },
+          { "cells": ["Write a friendly subject line", "tool", "rejected — no right answer"], "pass": false },
+          { "cells": ["Count the overdue invoices", "tool", "exact"], "pass": true },
+          { "cells": ["Suggest a discount %", "tool", "rejected — judgment call"], "pass": false },
+          { "cells": ["Look up today's date", "tool", "exact"], "pass": true }
+        ],
+        "source": "a tool asked to do an open-ended step"
+      }
+    },
+    {
+      "id": "pass",
+      "when": { "requireAll": ["total", "count", "date"] },
+      "isPass": true,
+      "claim": "Total, count and date → tools (exact). Subject line and discount → the AI.",
+      "doer": "tool",
+      "feedback": "<b>Right owner for each step.</b> The three exact steps go to tools; the two judgment steps stay with the AI. That's the whole game — and it's how World 7 thinks about a whole workflow.",
+      "lesson": "Match the owner to whether the step has one right answer.",
+      "output": {
+        "columns": ["step", "owner", "outcome"],
+        "rows": [
+          { "cells": ["Compute the revenue total", "tool", "exact"], "pass": true },
+          { "cells": ["Write a friendly subject line", "AI", "best effort"], "pass": true },
+          { "cells": ["Count the overdue invoices", "tool", "exact"], "pass": true },
+          { "cells": ["Suggest a discount %", "AI", "best effort"], "pass": true },
+          { "cells": ["Look up today's date", "tool", "exact"], "pass": true }
+        ],
+        "source": "the right owner for each step"
+      }
+    },
+    {
+      "id": "leftguess",
+      "when": {},
+      "isPass": false,
+      "claim": "A right-answer step was left to the AI — the total, the count or the date came back wrong.",
+      "doer": "ai-guessing",
+      "feedback": "<b>You left a right-answer step to the guesser.</b> The total, the invoice count and today's date each have exactly one correct value — those go to a tool, every time.",
+      "lesson": "A step with one right answer is never the AI's job.",
+      "output": {
+        "columns": ["step", "owner", "outcome"],
+        "rows": [
+          { "cells": ["Compute the revenue total", "AI", "scattered total"], "pass": false },
+          { "cells": ["Write a friendly subject line", "AI", "best effort"], "pass": true },
+          { "cells": ["Count the overdue invoices", "AI", "off by two"], "pass": false },
+          { "cells": ["Suggest a discount %", "AI", "best effort"], "pass": true },
+          { "cells": ["Look up today's date", "AI", "yesterday's date"], "pass": false }
+        ],
+        "source": "right-answer steps left to the AI"
+      }
+    }
+  ],
+  "attemptBudget": 2,
+  "stars": {
+    "attemptBudget": 2,
+    "showMove": null,
+    "thirdStar": null
+  },
+  "xp": { "level": 20, "seenFailing": 0, "boss": 0 },
+  "hints": {
+    "nudge": "If two careful people did this step, would they get the exact same answer? If yes, it's a tool step.",
+    "gap": "The total and the invoice count are clearly tool steps — that leaves three. Which of those three is also exact?",
+    "moves": "Today's date is a lookup → a tool. The subject line and the discount are judgment → leave them to the AI."
+  },
+  "whatYouDoDifferently": {
+    "naive": "\"Do all five\" → the exact ones come back wrong.",
+    "rewrite": "Send the total, count and date to tools; leave the subject line and discount to the AI."
+  },
+  "tryIt": {
+    "template": {
+      "plain": "For each step, tell me: does it have exactly one right answer? If yes, write me a tool (formula or script) for it. If it's a judgment call, just do your best and say so.",
+      "tech": "Split the task: for each step annotate deterministic true | false. Build a tool for every deterministic step; leave the rest to best-effort generation."
+    },
+    "notes": [
+      "<b>ChatGPT:</b> ask it to split the task into \"needs a tool\" versus \"judgment\" before doing any of it.",
+      "<b>Copilot in Excel:</b> the exact steps become formulas; the wording stays prose.",
+      "<b>A chat AI that can't run code:</b> get the formulas for the exact steps and run them yourself; trust its prose only for the open steps, and never accept \"I checked, the total's right.\""
+    ]
+  },
+  "expectPass": {
+    "conditions": {
+      "requireAll": ["total", "count", "date"],
+      "forbidAny": ["subject", "discount"]
+    }
+  }
+}
