@@ -1,0 +1,183 @@
+{
+  "id": "w7-l3",
+  "world": 7,
+  "order": 3,
+  "title": "Your call, defended",
+  "kicker": "World 7 · Decide Where It Matters · Level 3",
+  "competencies": ["C13"],
+  "movesTaught": ["M9"],
+  "isBoss": false,
+  "job": {
+    "text": "A <b>new</b> workflow you haven't seen: a hospital discharge-instructions assistant. Tier every step by the cost of being wrong, hard-gate the one step that must be exact, and name the single riskiest step.<br><br><i>The real ask here is free text — \"for each step, tell me the cost of being wrong and bucket it (hard gate / heuristic / human); name the riskiest step and defend it in one sentence.\" For now you build that ask from the chips below; your pass is decided by the hidden expert key, never by the AI reading your words. The one-sentence defense is stored for a human to read and does not gate the result.</i>",
+    "preview": {
+      "columns": ["#", "step", "if it's wrong…"],
+      "rows": [
+        ["1", "Compute the medication dosage", "a patient can be harmed"],
+        ["2", "Greet the patient", "a slightly off tone"],
+        ["3", "Summarize the diagnosis in plain words", "a confusing sentence"],
+        ["4", "Look up the next appointment", "a wrong date to re-book"],
+        ["5", "List warning signs to watch for", "a missed symptom"],
+        ["6", "Decide whether to escalate to a nurse", "a needed review skipped"]
+      ],
+      "more": "6 steps · a new domain"
+    }
+  },
+  "naivePrompt": "Treat it like the billing one.",
+  "basePrompt": "Treat it like the billing one.",
+  "moves": [
+    {
+      "id": "dosage_gate",
+      "kind": "real",
+      "label": "Dosage → hard gate",
+      "text": {
+        "plain": "Hard-gate the dosage calculation — it has one right answer and the highest cost of being wrong, so a tool must compute it.",
+        "tech": "Mark step 1 (dosage) gate: hard; the number is computed by a tool, not estimated, even though a human also reviews it."
+      }
+    },
+    {
+      "id": "dosage_risk",
+      "kind": "real",
+      "label": "Name the dosage as the riskiest step",
+      "text": {
+        "plain": "Flag the dosage as the single riskiest step — a dosage error can harm a patient.",
+        "tech": "Set riskiest = step 1 (dosage); attach the one-sentence defense (stored for human review)."
+      }
+    },
+    {
+      "id": "escalate_human",
+      "kind": "real",
+      "label": "Escalate decision → human",
+      "text": {
+        "plain": "Send the escalate-to-a-nurse decision to a human — it's a judgment call about patient care.",
+        "tech": "Mark step 6 (escalate) gate: human; route to a clinician."
+      }
+    },
+    {
+      "id": "appt_gate",
+      "kind": "real",
+      "label": "Next appointment → hard gate",
+      "text": {
+        "plain": "Hard-gate the next-appointment lookup — a date lookup has one right value.",
+        "tech": "Mark step 4 (next appointment) gate: hard; the date comes from a lookup, not a guess."
+      }
+    },
+    {
+      "id": "copy_billing",
+      "kind": "trick",
+      "label": "Reuse the billing tiers",
+      "text": {
+        "plain": "Copy the tiers from the billing workflow — but a different domain has different risks.",
+        "tech": "Reuse the billing tiering verbatim — ignoring that a dosage error harms a patient."
+      }
+    },
+    {
+      "id": "warn_gate",
+      "kind": "trick",
+      "label": "Warning signs → hard gate",
+      "text": {
+        "plain": "Hard-gate the warning-signs list — but a list of symptoms has no single exact right answer to gate against.",
+        "tech": "Mark step 5 (warning signs) gate: hard — but there is no one exact list to gate."
+      }
+    }
+  ],
+  "subChoices": [],
+  "renderer": "table",
+  "rules": [
+    {
+      "id": "copied",
+      "when": { "requireAny": ["copy_billing"] },
+      "isPass": false,
+      "claim": "The billing tiers were copied over — and the dosage ended up tiered like a payment plan.",
+      "doer": "ai-guessing",
+      "feedback": "<b>Different workflow, different risks.</b> \"Treat it like billing\" misses that a dosage error harms a patient. Tier for <i>this</i> job.",
+      "lesson": "Risk-tiering doesn't transfer by copy-paste.",
+      "output": {
+        "columns": ["step", "tier", "outcome"],
+        "rows": [
+          { "cells": ["Compute the medication dosage", "heuristic", "copied from billing — unsafe"], "pass": false },
+          { "cells": ["Greet the patient", "heuristic", "best effort"], "pass": true },
+          { "cells": ["Summarize the diagnosis", "heuristic", "best effort"], "pass": true },
+          { "cells": ["Look up the next appointment", "heuristic", "copied tier"], "pass": false },
+          { "cells": ["List warning signs", "heuristic", "best effort"], "pass": true },
+          { "cells": ["Decide whether to escalate", "heuristic", "copied tier"], "pass": false }
+        ],
+        "source": "the billing tiers reused on a clinical workflow"
+      }
+    },
+    {
+      "id": "pass",
+      "when": { "requireAll": ["dosage_gate", "dosage_risk"] },
+      "isPass": true,
+      "claim": "Dosage → hard gate and named the riskiest step; the defense is stored for a nurse to read.",
+      "doer": "tool",
+      "feedback": "<b>Defended and correct.</b> You hard-gated the dosage, flagged it as the riskiest, and said why in one line. That's the judgment the whole ladder was building to.",
+      "lesson": "On a new domain, find the exact high-cost step and gate it hard.",
+      "output": {
+        "columns": ["step", "tier", "outcome"],
+        "rows": [
+          { "cells": ["Compute the medication dosage", "hard gate · riskiest", "exact, tool-computed"], "pass": true },
+          { "cells": ["Greet the patient", "heuristic", "best effort"], "pass": true },
+          { "cells": ["Summarize the diagnosis", "heuristic", "best effort"], "pass": true },
+          { "cells": ["Look up the next appointment", "hard gate", "exact"], "pass": true },
+          { "cells": ["List warning signs", "heuristic", "best effort"], "pass": true },
+          { "cells": ["Decide whether to escalate", "human review", "a clinician decides"], "pass": true }
+        ],
+        "source": "the hidden expert key for this domain"
+      }
+    },
+    {
+      "id": "dosage_soft",
+      "when": {},
+      "isPass": false,
+      "claim": "The dosage wasn't hard-gated — it was left to be estimated or named something other than the riskiest step.",
+      "doer": "ai-guessing",
+      "feedback": "<b>The dosage needs a hard gate.</b> It has one right answer and the highest cost of being wrong — a human reviews it, but the number itself must be computed by a tool, not estimated. And it is the step to name as riskiest.",
+      "lesson": "The highest-cost exact step is always hard-gated.",
+      "output": {
+        "columns": ["step", "tier", "outcome"],
+        "rows": [
+          { "cells": ["Compute the medication dosage", "heuristic", "estimated — unsafe"], "pass": false },
+          { "cells": ["Greet the patient", "heuristic", "best effort"], "pass": true },
+          { "cells": ["Summarize the diagnosis", "heuristic", "best effort"], "pass": true },
+          { "cells": ["Look up the next appointment", "heuristic", "best effort"], "pass": true },
+          { "cells": ["List warning signs", "heuristic", "best effort"], "pass": true },
+          { "cells": ["Decide whether to escalate", "heuristic", "unreviewed"], "pass": false }
+        ],
+        "source": "a dosage step left ungated"
+      }
+    }
+  ],
+  "attemptBudget": 3,
+  "stars": {
+    "attemptBudget": 3,
+    "showMove": null,
+    "thirdStar": null
+  },
+  "xp": { "level": 20, "seenFailing": 0, "boss": 0 },
+  "hints": {
+    "nudge": "In THIS workflow, which single step would do the most harm if wrong?",
+    "gap": "Narrow to the two clinical steps — one of them is a calculation.",
+    "moves": "Hard-gate the dosage calculation and name it the riskiest step. Leave the greeting, the diagnosis summary and the warning-signs list on heuristic; the escalate decision goes to a human."
+  },
+  "whatYouDoDifferently": {
+    "naive": "Reuse the billing tiers → the dosage goes ungated.",
+    "rewrite": "Tier for this domain, hard-gate the dosage, name and defend the riskiest step."
+  },
+  "tryIt": {
+    "template": {
+      "plain": "New workflow. For each step, tell me the cost of being wrong and bucket it: must be exact (tool-gated) / best-effort / human decides. Name the single riskiest step and defend it in one sentence.",
+      "tech": "New workflow. For each step annotate gate: hard | heuristic | human from cost-of-wrong, not from what's easy. Hard-gate every step with a single correct value; name the riskiest step and store a one-line defense for human review."
+    },
+    "notes": [
+      "<b>ChatGPT:</b> make it reason from cost-of-wrong, not from what's easy to automate.",
+      "<b>Copilot in Excel:</b> the exact, high-cost steps are the ones you turn into checked formulas.",
+      "<b>A chat AI that can't run code:</b> you own the high-stakes calls; use its tiering as input, not the decision — and never accept \"the dosage looks right\" without a tool and a person on it."
+    ]
+  },
+  "expectPass": {
+    "conditions": {
+      "requireAll": ["dosage_gate", "dosage_risk"],
+      "forbidAny": ["copy_billing"]
+    }
+  }
+}

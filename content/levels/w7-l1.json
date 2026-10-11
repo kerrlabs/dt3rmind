@@ -1,0 +1,204 @@
+{
+  "id": "w7-l1",
+  "world": 7,
+  "order": 1,
+  "title": "What does it cost to be wrong?",
+  "kicker": "World 7 · Decide Where It Matters · Level 1",
+  "competencies": ["C13"],
+  "movesTaught": ["M9"],
+  "isBoss": false,
+  "job": {
+    "text": "A billing assistant runs six steps. For each one, decide who should own it by asking \"what happens if this is wrong?\" A step with one right answer gets a <b>hard gate</b> (a tool must get it exact). The costly judgment call goes to a <b>human review</b>. Everything else is <b>heuristic</b> — the AI does its best.<br><br>Turn a chip on to move that step off the default heuristic lane into a hard gate or a human review. Leave a chip off to keep that step heuristic.",
+    "preview": {
+      "columns": ["#", "step", "if it's wrong…"],
+      "rows": [
+        ["1", "Compute the invoice total", "you bill the wrong amount"],
+        ["2", "Greet the customer", "a slightly off tone"],
+        ["3", "Recommend a payment plan", "a so-so suggestion"],
+        ["4", "Look up the account balance", "you show the wrong balance"],
+        ["5", "Draft the apology wording", "a clumsy sentence"],
+        ["6", "Decide whether to issue a refund", "money goes out in error"]
+      ],
+      "more": "6 steps · tier each one"
+    }
+  },
+  "naivePrompt": "One pipeline, treat every step the same.",
+  "basePrompt": "One pipeline, treat every step the same.",
+  "moves": [
+    {
+      "id": "total_gate",
+      "kind": "real",
+      "label": "Invoice total → hard gate",
+      "text": {
+        "plain": "Hard-gate the invoice total — it has exactly one right answer, so a tool must compute it.",
+        "tech": "Mark step 1 (invoice total) gate: hard; attach a sum tool that must match exactly."
+      }
+    },
+    {
+      "id": "balance_gate",
+      "kind": "real",
+      "label": "Account balance → hard gate",
+      "text": {
+        "plain": "Hard-gate the account balance — a lookup has one right value, so a tool must produce it.",
+        "tech": "Mark step 4 (account balance) gate: hard; attach a balance lookup that must match exactly."
+      }
+    },
+    {
+      "id": "refund_human",
+      "kind": "real",
+      "label": "Refund decision → human review",
+      "text": {
+        "plain": "Send the refund decision to a human — it's a high-cost judgment call, not a model decision.",
+        "tech": "Mark step 6 (refund decision) gate: human; route to a reviewer before any payout."
+      }
+    },
+    {
+      "id": "greet_gate",
+      "kind": "trick",
+      "label": "Greeting → hard gate",
+      "text": {
+        "plain": "Hard-gate the greeting — but a greeting has no single right answer to gate against.",
+        "tech": "Mark step 2 (greeting) gate: hard — but it is open-ended, so the gate catches nothing."
+      }
+    },
+    {
+      "id": "recommend_gate",
+      "kind": "trick",
+      "label": "Payment plan → hard gate",
+      "text": {
+        "plain": "Hard-gate the payment-plan suggestion — but it's a judgment call, not an exact answer.",
+        "tech": "Mark step 3 (payment plan) gate: hard — but there is no single correct plan to gate."
+      }
+    },
+    {
+      "id": "apology_gate",
+      "kind": "trick",
+      "label": "Apology wording → hard gate",
+      "text": {
+        "plain": "Hard-gate the apology wording — but wording has no one right answer.",
+        "tech": "Mark step 5 (apology wording) gate: hard — but it is open-ended text."
+      }
+    }
+  ],
+  "subChoices": [],
+  "renderer": "table",
+  "rules": [
+    {
+      "id": "overgated",
+      "when": { "requireAny": ["greet_gate", "recommend_gate", "apology_gate"] },
+      "isPass": false,
+      "claim": "A hard gate was put on an open step — and it caught nothing while slowing the whole pipeline.",
+      "doer": "tool",
+      "feedback": "<b>Over-gated.</b> A greeting, a payment-plan suggestion and an apology have no single right answer — a hard gate just slows everything and catches nothing. Those are heuristic.",
+      "lesson": "Don't hard-gate the open steps.",
+      "output": {
+        "columns": ["step", "tier", "outcome"],
+        "rows": [
+          { "cells": ["Compute the invoice total", "hard gate", "exact"], "pass": true },
+          { "cells": ["Greet the customer", "hard gate", "wasteful — nothing to check"], "pass": false },
+          { "cells": ["Recommend a payment plan", "heuristic", "best effort"], "pass": true },
+          { "cells": ["Look up the account balance", "hard gate", "exact"], "pass": true },
+          { "cells": ["Draft the apology wording", "heuristic", "best effort"], "pass": true },
+          { "cells": ["Decide whether to issue a refund", "human review", "a person decides"], "pass": true }
+        ],
+        "source": "a hard gate on an open-ended step"
+      }
+    },
+    {
+      "id": "pass",
+      "when": { "requireAll": ["total_gate", "balance_gate", "refund_human"] },
+      "isPass": true,
+      "claim": "Total and balance → hard gates (exact). Recommendation and apology → heuristic. Refund → a human.",
+      "doer": "tool",
+      "feedback": "<b>Right tier for each step.</b> The exact steps are gated hard, the open steps stay loose, and the costly judgment goes to a person. That's the whole workflow thinking.",
+      "lesson": "Tier by whether it's exact and by the cost of being wrong.",
+      "output": {
+        "columns": ["step", "tier", "outcome"],
+        "rows": [
+          { "cells": ["Compute the invoice total", "hard gate", "exact"], "pass": true },
+          { "cells": ["Greet the customer", "heuristic", "best effort"], "pass": true },
+          { "cells": ["Recommend a payment plan", "heuristic", "best effort"], "pass": true },
+          { "cells": ["Look up the account balance", "hard gate", "exact"], "pass": true },
+          { "cells": ["Draft the apology wording", "heuristic", "best effort"], "pass": true },
+          { "cells": ["Decide whether to issue a refund", "human review", "a person decides"], "pass": true }
+        ],
+        "source": "the right tier for each step"
+      }
+    },
+    {
+      "id": "refund_ungated",
+      "when": { "requireAll": ["total_gate", "balance_gate"], "forbidAny": ["refund_human"] },
+      "isPass": false,
+      "claim": "The refund decision was left to the model — and it approved a refund it shouldn't have.",
+      "doer": "ai-guessing",
+      "feedback": "<b>The riskiest step went to the guesser.</b> Issuing a refund is a high-cost judgment call — leaving it to the model means money goes out in error. That's a human review, not a model decision.",
+      "lesson": "The highest-cost judgment goes to a human.",
+      "output": {
+        "columns": ["step", "tier", "outcome"],
+        "rows": [
+          { "cells": ["Compute the invoice total", "hard gate", "exact"], "pass": true },
+          { "cells": ["Greet the customer", "heuristic", "best effort"], "pass": true },
+          { "cells": ["Recommend a payment plan", "heuristic", "best effort"], "pass": true },
+          { "cells": ["Look up the account balance", "hard gate", "exact"], "pass": true },
+          { "cells": ["Draft the apology wording", "heuristic", "best effort"], "pass": true },
+          { "cells": ["Decide whether to issue a refund", "model", "approved a bad refund"], "pass": false }
+        ],
+        "source": "the refund decision left to the model"
+      }
+    },
+    {
+      "id": "leftguess",
+      "when": {},
+      "isPass": false,
+      "claim": "A right-answer step was left to the model — the invoice total or the balance came back wrong.",
+      "doer": "ai-guessing",
+      "feedback": "<b>A right-answer step with no gate.</b> The invoice total and the balance each have one correct value — leave either to the model and you ship a wrong number. That's exactly what World 2 taught, now at workflow scale.",
+      "lesson": "Right-answer steps are the hard gates.",
+      "output": {
+        "columns": ["step", "tier", "outcome"],
+        "rows": [
+          { "cells": ["Compute the invoice total", "model", "scattered total"], "pass": false },
+          { "cells": ["Greet the customer", "heuristic", "best effort"], "pass": true },
+          { "cells": ["Recommend a payment plan", "heuristic", "best effort"], "pass": true },
+          { "cells": ["Look up the account balance", "model", "wrong balance"], "pass": false },
+          { "cells": ["Draft the apology wording", "heuristic", "best effort"], "pass": true },
+          { "cells": ["Decide whether to issue a refund", "heuristic", "unreviewed"], "pass": false }
+        ],
+        "source": "right-answer steps left to the model"
+      }
+    }
+  ],
+  "attemptBudget": 3,
+  "stars": {
+    "attemptBudget": 3,
+    "showMove": null,
+    "thirdStar": null
+  },
+  "xp": { "level": 20, "seenFailing": 0, "boss": 0 },
+  "hints": {
+    "nudge": "If this step is wrong, who gets hurt and how badly?",
+    "gap": "The total and the balance are clearly hard gates. That leaves four — which of those is a costly judgment?",
+    "moves": "Hard-gate the invoice total and the account balance; send the refund decision to a human. Leave the greeting, the plan and the apology on heuristic."
+  },
+  "whatYouDoDifferently": {
+    "naive": "Treat every step the same → a wasteful gate on the greeting and a dangerous gap on the refund.",
+    "rewrite": "Gate the exact steps, leave the open ones loose, send the costly judgment to a person."
+  },
+  "tryIt": {
+    "template": {
+      "plain": "For each step, tell me the cost of being wrong, then put it in one of three buckets: must be exact (I'll gate it with a tool), best-effort (the AI can do it), or a human decides. Justify each in one line.",
+      "tech": "For each step annotate gate: hard | heuristic | human with a one-line cost-of-wrong rationale. Attach a tool to every hard-gated step; route human-gated steps to a reviewer."
+    },
+    "notes": [
+      "<b>ChatGPT:</b> ask it to tier the whole workflow before it builds any step.",
+      "<b>Copilot in Excel:</b> the \"must be exact\" steps become formulas; the rest stay prose.",
+      "<b>A chat AI that can't run code:</b> use its tiering as a draft, but you decide the high-cost steps — and never accept \"I checked, the refund's fine\" without a person on it."
+    ]
+  },
+  "expectPass": {
+    "conditions": {
+      "requireAll": ["total_gate", "balance_gate", "refund_human"],
+      "forbidAny": ["greet_gate", "recommend_gate", "apology_gate"]
+    }
+  }
+}

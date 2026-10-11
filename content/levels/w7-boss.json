@@ -1,0 +1,219 @@
+{
+  "id": "w7-boss",
+  "world": 7,
+  "order": 4,
+  "title": "The loan-approval assistant",
+  "kicker": "World 7 · Decide Where It Matters · Boss",
+  "competencies": ["C13"],
+  "movesTaught": ["M9"],
+  "isBoss": true,
+  "job": {
+    "text": "New domain, held out. A loan-approval assistant runs five steps. Tier every step by the cost of being wrong, hard-gate the steps that must be exact, and send the high-stakes judgment to a person.<br><br><i>Boss rule: the real ask is free text — \"tier every step by cost of being wrong; hard-gate the exact ones; name who owns the riskiest decision.\" For now you build that ask from the chips below; your pass is decided by the hidden expert key, never by the AI's say-so. Two new tricks are on the table — resist both.</i>",
+    "preview": {
+      "columns": ["#", "step", "if it's wrong…"],
+      "rows": [
+        ["1", "Compute the debt-to-income score", "a wrong eligibility number"],
+        ["2", "Look up the current rate from the rate sheet", "the wrong rate is quoted"],
+        ["3", "Draft the approval-letter wording", "a clumsy sentence"],
+        ["4", "Greet the applicant", "a slightly off tone"],
+        ["5", "Decide final approval or denial", "a wrongful approval or denial"]
+      ],
+      "more": "5 steps · a new high-stakes workflow"
+    }
+  },
+  "naivePrompt": "Automate the whole thing for speed.",
+  "basePrompt": "Automate the whole thing for speed.",
+  "moves": [
+    {
+      "id": "eligibility_gate",
+      "kind": "real",
+      "label": "Debt-to-income score → hard gate",
+      "text": {
+        "plain": "Hard-gate the debt-to-income score — it has exactly one right answer, so a tool must compute it.",
+        "tech": "Mark step 1 (DTI score) gate: hard; attach a calculator that must match exactly."
+      }
+    },
+    {
+      "id": "rate_gate",
+      "kind": "real",
+      "label": "Rate lookup → hard gate",
+      "text": {
+        "plain": "Hard-gate the rate lookup — the rate comes from the rate sheet, so a tool must read it, not guess it.",
+        "tech": "Mark step 2 (rate) gate: hard; the value is read from the rate sheet by a lookup."
+      }
+    },
+    {
+      "id": "approval_human",
+      "kind": "real",
+      "label": "Final decision → human review",
+      "text": {
+        "plain": "Send the final approval or denial to a human — it's the highest-cost judgment in the workflow.",
+        "tech": "Mark step 5 (final decision) gate: human; a reviewer signs off before any approval or denial."
+      }
+    },
+    {
+      "id": "letter_gate",
+      "kind": "trick",
+      "label": "Letter wording → hard gate",
+      "text": {
+        "plain": "Hard-gate the approval-letter wording — but wording has no single right answer to gate against.",
+        "tech": "Mark step 3 (letter wording) gate: hard — but it is open-ended text."
+      }
+    },
+    {
+      "id": "automate_all",
+      "kind": "trick",
+      "label": "Automate the final decision for speed",
+      "text": {
+        "plain": "Let the assistant approve or deny on its own to go faster — but a wrongful approval or denial is the costliest error here.",
+        "tech": "Mark step 5 (final decision) gate: heuristic — but automating the highest-stakes judgment ships wrongful decisions."
+      }
+    },
+    {
+      "id": "rate_model",
+      "kind": "trick",
+      "label": "Let the model decide the rate",
+      "text": {
+        "plain": "Let the model pick the rate instead of reading the rate sheet — but then the quoted rate is a guess.",
+        "tech": "Mark step 2 (rate) gate: heuristic and let the model produce it — but the rate must come from the sheet."
+      }
+    }
+  ],
+  "subChoices": [],
+  "renderer": "table",
+  "rules": [
+    {
+      "id": "automated",
+      "when": { "requireAny": ["automate_all"] },
+      "isPass": false,
+      "claim": "The final decision was automated for speed — and the assistant approved a loan it shouldn't have.",
+      "doer": "ai-guessing",
+      "feedback": "<b>The costliest call went to the guesser.</b> Approving or denying a loan is the highest-stakes judgment here — \"automate it all for speed\" ships wrongful decisions. That step is a human review.",
+      "lesson": "The highest-cost judgment goes to a human, not to speed.",
+      "output": {
+        "columns": ["step", "tier", "outcome"],
+        "rows": [
+          { "cells": ["Compute the debt-to-income score", "hard gate", "exact"], "pass": true },
+          { "cells": ["Look up the current rate", "hard gate", "exact"], "pass": true },
+          { "cells": ["Draft the approval letter", "heuristic", "best effort"], "pass": true },
+          { "cells": ["Greet the applicant", "heuristic", "best effort"], "pass": true },
+          { "cells": ["Decide final approval or denial", "model", "wrongful approval"], "pass": false }
+        ],
+        "source": "the final decision automated for speed"
+      }
+    },
+    {
+      "id": "rateguess",
+      "when": { "requireAny": ["rate_model"] },
+      "isPass": false,
+      "claim": "The model picked the rate instead of reading the rate sheet — and quoted a rate that isn't on it.",
+      "doer": "ai-guessing",
+      "feedback": "<b>You let the model guess the rate.</b> The rate is written on the rate sheet — a lookup has one right value. Letting the model decide it quotes a number that isn't there. Keep that gate hard.",
+      "lesson": "A right-answer lookup is never the model's to decide.",
+      "output": {
+        "columns": ["step", "tier", "outcome"],
+        "rows": [
+          { "cells": ["Compute the debt-to-income score", "hard gate", "exact"], "pass": true },
+          { "cells": ["Look up the current rate", "model", "quoted a rate not on the sheet"], "pass": false },
+          { "cells": ["Draft the approval letter", "heuristic", "best effort"], "pass": true },
+          { "cells": ["Greet the applicant", "heuristic", "best effort"], "pass": true },
+          { "cells": ["Decide final approval or denial", "human review", "a person decides"], "pass": true }
+        ],
+        "source": "the rate left to the model"
+      }
+    },
+    {
+      "id": "overgated",
+      "when": { "requireAny": ["letter_gate"] },
+      "isPass": false,
+      "claim": "A hard gate was put on the letter wording — it caught nothing and slowed the pipeline.",
+      "doer": "tool",
+      "feedback": "<b>Over-gated.</b> The approval-letter wording has no single right answer — a hard gate on it catches nothing and just costs time. That step is heuristic.",
+      "lesson": "Don't hard-gate the open steps.",
+      "output": {
+        "columns": ["step", "tier", "outcome"],
+        "rows": [
+          { "cells": ["Compute the debt-to-income score", "hard gate", "exact"], "pass": true },
+          { "cells": ["Look up the current rate", "hard gate", "exact"], "pass": true },
+          { "cells": ["Draft the approval letter", "hard gate", "wasteful — nothing to check"], "pass": false },
+          { "cells": ["Greet the applicant", "heuristic", "best effort"], "pass": true },
+          { "cells": ["Decide final approval or denial", "human review", "a person decides"], "pass": true }
+        ],
+        "source": "a hard gate on an open-ended step"
+      }
+    },
+    {
+      "id": "pass",
+      "when": { "requireAll": ["eligibility_gate", "rate_gate", "approval_human"] },
+      "isPass": true,
+      "claim": "Score and rate → hard gates (exact). Letter and greeting → heuristic. Final decision → a human.",
+      "doer": "tool",
+      "feedback": "<b>Right tier for every step.</b> The eligibility score and the rate are gated hard, the open steps run loose, and the costliest judgment — the approval itself — goes to a person. That's the Architect's call.",
+      "lesson": "Tier by whether it's exact and by the cost of being wrong.",
+      "output": {
+        "columns": ["step", "tier", "outcome"],
+        "rows": [
+          { "cells": ["Compute the debt-to-income score", "hard gate", "exact"], "pass": true },
+          { "cells": ["Look up the current rate", "hard gate", "exact"], "pass": true },
+          { "cells": ["Draft the approval letter", "heuristic", "best effort"], "pass": true },
+          { "cells": ["Greet the applicant", "heuristic", "best effort"], "pass": true },
+          { "cells": ["Decide final approval or denial", "human review", "a person decides"], "pass": true }
+        ],
+        "source": "the hidden expert key for this workflow"
+      }
+    },
+    {
+      "id": "leftguess",
+      "when": {},
+      "isPass": false,
+      "claim": "A right-answer step was left to the model, or the final decision had no human on it.",
+      "doer": "ai-guessing",
+      "feedback": "<b>Not tiered yet.</b> The debt-to-income score and the rate each have one right answer — hard-gate both — and the final approval is a high-cost judgment that needs a human. Match the tier to the cost of being wrong.",
+      "lesson": "Exact steps are hard gates; the costliest judgment is a human's.",
+      "output": {
+        "columns": ["step", "tier", "outcome"],
+        "rows": [
+          { "cells": ["Compute the debt-to-income score", "heuristic", "wrong score risk"], "pass": false },
+          { "cells": ["Look up the current rate", "heuristic", "wrong rate risk"], "pass": false },
+          { "cells": ["Draft the approval letter", "heuristic", "best effort"], "pass": true },
+          { "cells": ["Greet the applicant", "heuristic", "best effort"], "pass": true },
+          { "cells": ["Decide final approval or denial", "heuristic", "no human on it"], "pass": false }
+        ],
+        "source": "a workflow that isn't tiered"
+      }
+    }
+  ],
+  "attemptBudget": 3,
+  "stars": {
+    "attemptBudget": 3,
+    "showMove": null,
+    "thirdStar": null
+  },
+  "xp": { "level": 20, "seenFailing": 0, "boss": 50 },
+  "hints": {
+    "nudge": "For each step, ask who gets hurt and how badly if it's wrong.",
+    "gap": "Two steps are exact calculations or lookups — those are hard gates. One step is the costliest judgment — that's a human's.",
+    "moves": "Hard-gate the debt-to-income score and the rate lookup; send the final approval or denial to a human. Leave the letter wording and the greeting on heuristic — and don't automate the decision or let the model pick the rate."
+  },
+  "whatYouDoDifferently": {
+    "naive": "Automate the whole thing → a wrongful approval ships and the rate is a guess.",
+    "rewrite": "Hard-gate the score and the rate, leave the wording loose, send the decision to a person."
+  },
+  "tryIt": {
+    "template": {
+      "plain": "New workflow. For each step, tell me the cost of being wrong and bucket it: must be exact (tool-gated) / best-effort / human decides. Hard-gate every exact step, and name who owns the riskiest decision.",
+      "tech": "New workflow. For each step annotate gate: hard | heuristic | human from cost-of-wrong. Hard-gate every step with a single correct value; route the highest-stakes judgment to a human reviewer. Report the tiering and the owner of the riskiest step."
+    },
+    "notes": [
+      "<b>ChatGPT:</b> make it tier from cost-of-wrong before it drafts anything, and refuse \"just automate it all.\"",
+      "<b>Copilot in Excel:</b> the score and the rate become checked formulas/lookups; the letter stays prose.",
+      "<b>A chat AI that can't run code:</b> you own the approval decision and the rate; use its tiering as input, and never accept \"I checked, the approval's fine\" without a person on it."
+    ]
+  },
+  "expectPass": {
+    "conditions": {
+      "requireAll": ["eligibility_gate", "rate_gate", "approval_human"],
+      "forbidAny": ["letter_gate", "automate_all", "rate_model"]
+    }
+  }
+}

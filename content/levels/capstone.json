@@ -1,0 +1,239 @@
+{
+  "id": "capstone",
+  "world": 7,
+  "order": 5,
+  "title": "Capstone: the volunteer-shift scheduler",
+  "kicker": "Capstone · cross-domain · earns Certified Practitioner",
+  "competencies": ["C14"],
+  "movesTaught": ["M2", "M3", "M5", "M6", "M8", "M9"],
+  "isBoss": true,
+  "job": {
+    "text": "A brand-new job, far from sales or billing: a <b>volunteer-shift scheduler</b> for a community food bank. You get a roster and a list of shifts, and you must produce a schedule plus a summary — total volunteer-hours this week, who is unassigned, and whether any shift is understaffed. No scaffolding, no hints baked in. Run the whole ladder end to end.<br><br><i>The real capstone is free text throughout — no chips. For now you assemble the full ask from the chips below; every gate is decided by a hidden ground truth (a canonical hours total, a planted false green on one dimension, and an expert tiering key), never by an AI reading your prompt. The one-sentence rationales are kept for human review and do not gate the result.</i>",
+    "preview": {
+      "text": "roster.csv (name · can_lift · max_hours) + shifts.csv (shift · needed · hours). Hidden truth: a canonical total volunteer-hours, a planted false green on the \"understaffed\" check, and an expert tiering key for the whole workflow.",
+      "more": "cross-domain · free-text in the live version"
+    }
+  },
+  "naivePrompt": "Here's the roster and the shifts — build me the schedule and a summary.",
+  "basePrompt": "Here's the roster and the shifts — build me the schedule and a summary.",
+  "moves": [
+    {
+      "id": "spot",
+      "kind": "real",
+      "label": "Name where it will guess",
+      "text": {
+        "plain": "Point out which numbers the AI would have to compute — the hours total, the unassigned count — so those don't get guessed.",
+        "tech": "Tag each summary claim computed | retrieved | given; flag the computed ones so they can't be free-text guesses."
+      }
+    },
+    {
+      "id": "tool",
+      "kind": "real",
+      "label": "Route the counts to a tool, names to the roster",
+      "text": {
+        "plain": "Don't let it add up hours itself — write a tool for the totals, and read every name straight from the roster.",
+        "tech": "Write a tool that sums hours and counts unassigned; bind every name to the roster rows, never invent one."
+      }
+    },
+    {
+      "id": "build",
+      "kind": "real",
+      "label": "Have the AI build the tool and run it",
+      "text": {
+        "plain": "Describe the tool — inputs, the one output, the rule — and have the AI build it and run it on my data.",
+        "tech": "Spec the tool (inputs, single output, one rule), have the AI build it on the safe runner (SELECT-only), and execute it."
+      }
+    },
+    {
+      "id": "check",
+      "kind": "real",
+      "label": "Author a two-sided check first",
+      "text": {
+        "plain": "Before you see any output, write the exact check: the hours total must equal the roster's, and no shift may be left understaffed.",
+        "tech": "Commit a two-sided check (passes a good schedule, fails a bad one) before output is revealed — lock it first (C10)."
+      }
+    },
+    {
+      "id": "prove",
+      "kind": "real",
+      "label": "Prove the check can fail",
+      "text": {
+        "plain": "Test the check on a bad schedule first and show me it goes red — a check you never see fail could be broken.",
+        "tech": "Run the check on a known-bad schedule first and show it returns False before trusting any green."
+      }
+    },
+    {
+      "id": "cases",
+      "kind": "real",
+      "label": "Prove it on a case set",
+      "text": {
+        "plain": "Run it on more than the easy week: a week with an empty shift (boundary) and a volunteer over their max hours (adversarial).",
+        "tech": "Prove on a case set with a boundary (an empty shift → still valid) and an adversarial case (an over-max assignment → must fail)."
+      }
+    },
+    {
+      "id": "fix",
+      "kind": "real",
+      "label": "Expose and fix the false green",
+      "text": {
+        "plain": "The \"understaffed\" check passes a shift it shouldn't — find why, strengthen it so it goes red, and fix the rule without overfitting.",
+        "tech": "Expose the planted false green on the understaffed dimension, strengthen the check to fail it, and fix the rule with no regression and no loosening."
+      }
+    },
+    {
+      "id": "tier",
+      "kind": "real",
+      "label": "Risk-tier the whole workflow",
+      "text": {
+        "plain": "Decide each step's owner: hours total and understaffing → hard gate; the thank-you note → heuristic; who covers a safety-critical gap → a human.",
+        "tech": "Tier every step gate: hard | heuristic | human against the expert key; hard-gate the exact steps, route the safety-critical gap to a human."
+      }
+    },
+    {
+      "id": "nice",
+      "kind": "trick",
+      "label": "Be careful, you're an expert",
+      "text": {
+        "plain": "Just tell it to be careful and that it's an expert scheduler.",
+        "tech": "Add \"be careful\" and \"you are an expert scheduler\" to the prompt."
+      }
+    },
+    {
+      "id": "ship",
+      "kind": "trick",
+      "label": "Looks right, ship it",
+      "text": {
+        "plain": "The first schedule looks fine — just ship it.",
+        "tech": "Accept the first output on one green and ship it."
+      }
+    }
+  ],
+  "subChoices": [],
+  "renderer": "text-answer",
+  "rules": [
+    {
+      "id": "tricks",
+      "when": { "requireAny": ["nice", "ship"] },
+      "isPass": false,
+      "claim": "\"Done — careful, expert-level, and it looks right.\" (The hours total is still a guess and one shift is quietly understaffed.)",
+      "doer": "ai-guessing",
+      "feedback": "<b>Effort and a glance aren't proof.</b> \"Be careful\", \"you're an expert\" and \"looks right, ship it\" are the exact tricks this whole ladder disproved. The hours total is still guessed and the understaffed shift still slips through. Build the tool, author the check, prove it, and tier the work.",
+      "lesson": "The capstone is passed by tools, checks and tiers — never by trying harder or trusting a glance.",
+      "output": {
+        "answer": "Careful, expert-level, shipped — and still wrong on the hours total and one understaffed shift.",
+        "highlights": ["looks right", "be careful"],
+        "source": "a confident, unverified schedule"
+      }
+    },
+    {
+      "id": "pass",
+      "when": {
+        "requireAll": ["spot", "tool", "build", "check", "prove", "cases", "fix", "tier"]
+      },
+      "isPass": true,
+      "claim": "Hours total matches the roster exactly, every shift is staffed or flagged, the false green is red, and the safety-critical gap is routed to a person.",
+      "doer": "checker",
+      "feedback": "<b>Certified.</b> You named the guesses, routed the counts to a tool and the names to the roster, authored a two-sided check and proved it could fail, built and ran the tool, proved it on a boundary and an adversarial case, turned the planted false green red, and tiered the workflow — safety-critical gap to a human. End to end, on a domain you'd never seen. That's the Certified Practitioner.",
+      "lesson": "On a novel job, run the whole ladder: name the guess, route to tools, ground the facts, check it before you look, prove it, fix the false green, and tier by cost of being wrong.",
+      "output": {
+        "fields": [
+          { "key": "total volunteer-hours", "value": "matches the roster", "numeric": false },
+          { "key": "unassigned volunteers", "value": "counted from the roster", "numeric": false },
+          { "key": "understaffed shifts", "value": "flagged — check goes red", "numeric": false },
+          { "key": "safety-critical gap", "value": "routed to a human", "numeric": false }
+        ],
+        "answer": "A schedule you can trust without reading every row.",
+        "source": "the hidden ground truth: a tool, a proven check, and the expert tiering key"
+      }
+    },
+    {
+      "id": "nocheck",
+      "when": { "requireAll": ["tool", "build"], "forbidAny": ["check"] },
+      "isPass": false,
+      "claim": "The tool ran and produced a total — but nothing was committed to check it against.",
+      "doer": "tool",
+      "feedback": "<b>A tool with no check is half the job.</b> You built and ran the tool, but you never authored a two-sided check and locked it before output — so a wrong schedule has nothing to fail against. Commit the check first, prove it can fail, then trust the green.",
+      "lesson": "A built tool still needs a check committed before you look at its output.",
+      "output": {
+        "answer": "A total from a tool, with nothing committed to catch it being wrong.",
+        "highlights": ["no check committed"],
+        "source": "a tool run without a locked check"
+      }
+    },
+    {
+      "id": "nofix",
+      "when": { "requireAll": ["check", "prove", "build"], "forbidAny": ["fix"] },
+      "isPass": false,
+      "claim": "Checker: all shifts pass. (The understaffed shift passed a check that never looked at staffing.)",
+      "doer": "checker",
+      "feedback": "<b>False green.</b> Your check proved it could fail on hours, but the \"understaffed\" dimension was never strengthened — so a shift that's short a volunteer still passes. Expose that false green and fix the rule without loosening the check.",
+      "lesson": "A green only covers the dimensions the check actually tests.",
+      "output": {
+        "answer": "All green — except the one shift that's quietly understaffed.",
+        "highlights": ["understaffed"],
+        "source": "a check that never tested staffing"
+      }
+    },
+    {
+      "id": "notier",
+      "when": { "requireAll": ["check", "prove", "fix"], "forbidAny": ["tier"] },
+      "isPass": false,
+      "claim": "The numbers check out — but the safety-critical gap was left for the model to resolve.",
+      "doer": "ai-guessing",
+      "feedback": "<b>Right on the numbers, wrong on the judgment.</b> The hours and staffing are verified, but you never tiered the workflow — the safety-critical coverage gap is a human's call, not the model's. Risk-tier the steps to finish the ladder.",
+      "lesson": "Verified numbers still need the workflow tiered by cost of being wrong.",
+      "output": {
+        "answer": "Correct totals, but the risky coverage gap was left to the model.",
+        "highlights": ["safety-critical gap"],
+        "source": "a verified tool with no risk-tiering"
+      }
+    },
+    {
+      "id": "naive",
+      "when": {},
+      "isPass": false,
+      "claim": "West-region-style scatter: a plausible schedule, a guessed hours total, and no way to know what's wrong.",
+      "doer": "ai-guessing",
+      "feedback": "<b>Back at the start.</b> Asked plainly, the AI guesses the hours total, may invent a volunteer, and tells you nothing about the understaffed shift. Run the ladder: name the guesses, route them to a tool, ground the names, author and prove a check, build and run the tool, fix the false green, and tier the work.",
+      "lesson": "A novel job asked plainly is just a guess at scale — the ladder is what makes it checkable.",
+      "output": {
+        "answer": "A plausible-looking schedule with a guessed total and a hidden understaffed shift.",
+        "highlights": ["guessed total"],
+        "source": "the naive ask"
+      }
+    }
+  ],
+  "attemptBudget": 3,
+  "stars": {
+    "attemptBudget": 3,
+    "showMove": null,
+    "thirdStar": null
+  },
+  "xp": { "level": 20, "seenFailing": 15, "boss": 50 },
+  "hints": {
+    "nudge": "This is a new domain, but the moves are the same ones you've been collecting. Which numbers here would the AI have to compute?",
+    "gap": "Route the hours total and the unassigned count to a tool, ground every name in the roster, and commit a two-sided check before you see any output.",
+    "moves": "Add every real move: name the guess, route to a tool, build and run it, author the check first, prove it can fail, prove it on a case set, expose and fix the false green, and risk-tier the workflow. Leave the \"be careful\" and \"looks right, ship it\" tricks out."
+  },
+  "whatYouDoDifferently": {
+    "naive": "\"Build the schedule and a summary\" → a guessed hours total and a hidden understaffed shift.",
+    "rewrite": "Name the guesses, route them to a tool, ground the names, author and prove a two-sided check, build and run the tool, fix the false green, and tier the workflow by cost of being wrong."
+  },
+  "tryIt": {
+    "template": {
+      "plain": "New job you've never done. First tell me which numbers you'd have to compute (so they don't get guessed). Write me a tool for those and read any names from my data. Before you show me anything, write an exact two-sided check and prove it can fail on a bad example. Build and run the tool, test it on a normal case, an edge case, and a tricky case, and fix any check that passed a wrong answer. Finally, tell me which steps must be exact, which are best-effort, and which a human must decide.",
+      "tech": "New domain. Tag each summary claim computed | retrieved | given. Spec and build a SELECT-only tool for the computed numbers; bind names to source rows. Commit a two-sided check and lock it before output; prove it returns False on a known-bad input. Run on a case set (normal, boundary, adversarial); strengthen any check that passed a wrong answer with no regression. Tier every step gate: hard | heuristic | human and route the highest-cost judgment to a human."
+    },
+    "notes": [
+      "<b>ChatGPT with file or code tools:</b> upload the roster and shifts; it can build the tool, run the check on a bad example, and run the case set itself.",
+      "<b>Copilot in Excel:</b> the hours total and the staffing counts become checked formulas; the thank-you note stays prose.",
+      "<b>A chat AI that can't run code:</b> ask for the tool and the check, then run them yourself on a boundary and an adversarial case; never accept \"I checked, the schedule's fine\" — and you own the safety-critical call."
+    ]
+  },
+  "expectPass": {
+    "conditions": {
+      "requireAll": ["spot", "tool", "build", "check", "prove", "cases", "fix", "tier"],
+      "forbidAny": ["nice", "ship"]
+    }
+  }
+}

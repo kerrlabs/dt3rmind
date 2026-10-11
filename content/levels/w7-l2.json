@@ -1,0 +1,170 @@
+{
+  "id": "w7-l2",
+  "world": 7,
+  "order": 2,
+  "title": "The gate that was too expensive",
+  "kicker": "World 7 · Decide Where It Matters · Level 2",
+  "competencies": ["C13"],
+  "movesTaught": ["M9"],
+  "isBoss": false,
+  "job": {
+    "text": "Someone built the billing pipeline with a <b>hard gate on every step</b>. It's slow and brittle, and the hard gates on the wording still can't make it any better. Relax the gates that don't need to be hard — <b>without</b> un-gating a step that has one right answer.<br><br>Every step starts hard-gated. Turn a chip on to relax that step to heuristic. Leave a chip off to keep that step's hard gate.",
+    "preview": {
+      "columns": ["#", "step", "one right answer?"],
+      "rows": [
+        ["1", "Compute the invoice total", "yes — keep the gate"],
+        ["2", "Greet the customer", "no"],
+        ["3", "Recommend a payment plan", "no"],
+        ["4", "Look up the account balance", "yes — keep the gate"],
+        ["5", "Draft the apology wording", "no"]
+      ],
+      "more": "5 steps · all hard-gated now"
+    }
+  },
+  "naivePrompt": "Gate it all to be safe.",
+  "basePrompt": "Gate it all to be safe.",
+  "moves": [
+    {
+      "id": "relax_recommend",
+      "kind": "real",
+      "label": "Relax the payment-plan gate",
+      "text": {
+        "plain": "Relax the payment-plan suggestion to heuristic — it has no single right answer, so a hard gate buys nothing.",
+        "tech": "Set step 3 (payment plan) gate: heuristic — no exact answer to gate against."
+      }
+    },
+    {
+      "id": "relax_apology",
+      "kind": "real",
+      "label": "Relax the apology gate",
+      "text": {
+        "plain": "Relax the apology wording to heuristic — wording has no one right answer.",
+        "tech": "Set step 5 (apology wording) gate: heuristic — open-ended text."
+      }
+    },
+    {
+      "id": "relax_greet",
+      "kind": "real",
+      "label": "Relax the greeting gate",
+      "text": {
+        "plain": "Relax the greeting to heuristic — a greeting has no single right answer.",
+        "tech": "Set step 2 (greeting) gate: heuristic — open-ended."
+      }
+    },
+    {
+      "id": "relax_total",
+      "kind": "trick",
+      "label": "Relax the invoice-total gate",
+      "text": {
+        "plain": "Relax the invoice total to save time — but it has exactly one right answer, so its gate must stay hard.",
+        "tech": "Set step 1 (invoice total) gate: heuristic — but a wrong total ships if you do."
+      }
+    },
+    {
+      "id": "relax_balance",
+      "kind": "trick",
+      "label": "Relax the balance gate",
+      "text": {
+        "plain": "Relax the account balance to save time — but a lookup has one right value, so its gate must stay hard.",
+        "tech": "Set step 4 (account balance) gate: heuristic — but a wrong balance ships if you do."
+      }
+    }
+  ],
+  "subChoices": [],
+  "renderer": "table",
+  "rules": [
+    {
+      "id": "relaxed_exact",
+      "when": { "requireAny": ["relax_total", "relax_balance"] },
+      "isPass": false,
+      "claim": "A right-answer gate was relaxed — and a wrong total or balance shipped.",
+      "doer": "ai-guessing",
+      "feedback": "<b>You traded away a gate you needed.</b> The invoice total and the balance each have one right answer — their gates stay hard no matter how slow. You can't buy speed by un-gating an exact step.",
+      "lesson": "Never relax a right-answer gate.",
+      "output": {
+        "columns": ["step", "tier", "outcome"],
+        "rows": [
+          { "cells": ["Compute the invoice total", "heuristic", "wrong total shipped"], "pass": false },
+          { "cells": ["Greet the customer", "heuristic", "best effort"], "pass": true },
+          { "cells": ["Recommend a payment plan", "heuristic", "best effort"], "pass": true },
+          { "cells": ["Look up the account balance", "heuristic", "wrong balance shipped"], "pass": false },
+          { "cells": ["Draft the apology wording", "heuristic", "best effort"], "pass": true }
+        ],
+        "source": "a right-answer gate traded away for speed"
+      }
+    },
+    {
+      "id": "pass",
+      "when": { "requireAll": ["relax_recommend", "relax_apology"] },
+      "isPass": true,
+      "claim": "Open steps relaxed; the invoice total and balance stay hard-gated. Faster, still exact where it counts.",
+      "doer": "tool",
+      "feedback": "<b>Right trade.</b> You relaxed the judgment steps and kept the exact ones gated. Faster, and still correct where correctness has one answer.",
+      "lesson": "Spend your gates where there's a right answer.",
+      "output": {
+        "columns": ["step", "tier", "outcome"],
+        "rows": [
+          { "cells": ["Compute the invoice total", "hard gate", "exact"], "pass": true },
+          { "cells": ["Greet the customer", "heuristic", "best effort"], "pass": true },
+          { "cells": ["Recommend a payment plan", "heuristic", "best effort"], "pass": true },
+          { "cells": ["Look up the account balance", "hard gate", "exact"], "pass": true },
+          { "cells": ["Draft the apology wording", "heuristic", "best effort"], "pass": true }
+        ],
+        "source": "gates kept where there is a right answer"
+      }
+    },
+    {
+      "id": "stillgated",
+      "when": {},
+      "isPass": false,
+      "claim": "The wording and recommendation are still hard-gated — the pipeline stays slow and brittle.",
+      "doer": "tool",
+      "feedback": "<b>Still too expensive.</b> Hard-gating the wording and the recommendation catches nothing and costs a lot. Relax the open steps.",
+      "lesson": "Gating the open steps is pure cost.",
+      "output": {
+        "columns": ["step", "tier", "outcome"],
+        "rows": [
+          { "cells": ["Compute the invoice total", "hard gate", "exact"], "pass": true },
+          { "cells": ["Greet the customer", "hard gate", "wasteful"], "pass": false },
+          { "cells": ["Recommend a payment plan", "hard gate", "wasteful"], "pass": false },
+          { "cells": ["Look up the account balance", "hard gate", "exact"], "pass": true },
+          { "cells": ["Draft the apology wording", "hard gate", "wasteful"], "pass": false }
+        ],
+        "source": "a pipeline that gates everything"
+      }
+    }
+  ],
+  "attemptBudget": 3,
+  "stars": {
+    "attemptBudget": 3,
+    "showMove": null,
+    "thirdStar": null
+  },
+  "xp": { "level": 20, "seenFailing": 0, "boss": 0 },
+  "hints": {
+    "nudge": "Which of these steps has one right answer? Those keep the hard gate.",
+    "gap": "The total and the balance must stay gated — relax the other steps.",
+    "moves": "Relax the payment-plan recommendation and the apology wording; keep the invoice total and the balance gated. (You can relax the greeting too — it's open as well.)"
+  },
+  "whatYouDoDifferently": {
+    "naive": "Gate everything → slow and brittle.",
+    "rewrite": "Relax the open steps, keep the exact ones gated → fast and still correct where it counts."
+  },
+  "tryIt": {
+    "template": {
+      "plain": "This is over-engineered — it treats every step as critical. Keep hard checks only on the steps with one right answer; let the judgment steps run loose. Tell me which you relaxed and why.",
+      "tech": "This pipeline gates every step. Keep gate: hard only on steps with a single correct value; set the rest to gate: heuristic. Report which gates you relaxed and the cost-of-wrong rationale for each."
+    },
+    "notes": [
+      "<b>ChatGPT:</b> have it identify which gates actually earn their cost.",
+      "<b>Copilot in Excel:</b> keep formulas on the exact steps; drop needless validation on the text.",
+      "<b>A chat AI that can't run code:</b> you decide which steps are truly must-be-exact — and never relax the ones with one right answer to save time."
+    ]
+  },
+  "expectPass": {
+    "conditions": {
+      "requireAll": ["relax_recommend", "relax_apology"],
+      "forbidAny": ["relax_total", "relax_balance"]
+    }
+  }
+}
