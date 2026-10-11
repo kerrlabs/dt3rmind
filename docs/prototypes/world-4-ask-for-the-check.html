@@ -1,0 +1,511 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Puzzle Ladder · World 4 · Ask for the check first</title>
+<style>
+  :root{
+    --bg:#0d1117; --bg-elev:#161c2b; --card:#1a2130; --border:#2a3444; --text:#e8ecf4; --muted:#8a97ab;
+    --ok:#009E73; --ok-sub:#0b2a22; --danger:#D55E00; --danger-sub:#2e1a0d; --accent:#0072B2; --accent-sub:#0b2238;
+    --sky:#56B4E9; --warn:#E69F00; --purple:#CC79A7; --yellow:#F0E442;
+  }
+  body.light{ --bg:#f6f7f9; --bg-elev:#fff; --card:#fff; --border:#d5dae2; --text:#1d2433; --muted:#5b6578;
+    --ok-sub:#e3f4ee; --danger-sub:#fbeadf; --accent-sub:#e2eef7; }
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--bg);color:var(--text);font-family:Inter,system-ui,-apple-system,"Segoe UI",sans-serif;line-height:1.45}
+  .wrap{max-width:1160px;margin:0 auto;padding:20px}
+  button{font:inherit;cursor:pointer}
+  button:focus-visible{outline:3px solid var(--sky);outline-offset:2px}
+  .top{display:flex;align-items:center;justify-content:space-between;gap:16px;flex-wrap:wrap;background:var(--bg-elev);border:1px solid var(--border);border-radius:14px;padding:14px 18px}
+  .badge{width:42px;height:42px;border-radius:11px;background:var(--accent);color:#fff;display:flex;align-items:center;justify-content:center;font-weight:900;font-size:18px}
+  .kicker{font-size:11px;letter-spacing:.1em;text-transform:uppercase;color:var(--sky);font-weight:800}
+  h1{font-size:19px;margin:2px 0 0}
+  .meta{display:flex;align-items:center;gap:16px;flex-wrap:wrap}
+  .xp{font-size:12px;color:var(--muted)} .xp b{color:var(--text)}
+  .stars{font-size:18px;letter-spacing:3px;color:var(--muted)} .stars .on{color:var(--warn)}
+  .tg button{font-size:12px;padding:6px 11px;border-radius:8px;border:1px solid var(--border);background:var(--card);color:var(--text)}
+  .tg button[aria-pressed="true"]{border-color:var(--accent);background:var(--accent-sub);color:var(--sky);font-weight:700}
+  .steps{display:flex;gap:8px;margin:16px 0 12px;flex-wrap:wrap}
+  .step{font-size:12px;font-weight:700;padding:6px 12px;border-radius:20px;border:1px solid var(--border);color:var(--muted)}
+  .step.on{border-color:var(--sky);color:var(--sky)} .step.done{border-color:var(--ok);color:var(--ok)}
+  .row{display:grid;grid-template-columns:5fr 6fr;gap:16px}
+  @media (max-width:960px){.row{grid-template-columns:1fr}}
+  .panel{background:var(--bg-elev);border:1px solid var(--border);border-radius:14px;padding:16px}
+  .ph{font-size:12px;font-weight:800;letter-spacing:.06em;text-transform:uppercase;color:var(--muted);margin-bottom:10px;display:flex;justify-content:space-between;gap:8px}
+  .ask{font-size:15px;background:var(--card);border:1px solid var(--border);border-left:4px solid var(--warn);border-radius:10px;padding:12px 14px}
+  .rule3{display:flex;gap:6px;flex-wrap:wrap;margin-top:8px}
+  .rule3 span{font-size:12px;font-weight:700;padding:3px 9px;border-radius:20px;border:1px solid var(--border)}
+  .you{font-size:11px;color:var(--muted);margin:16px 0 6px;text-transform:uppercase;letter-spacing:.08em;font-weight:700}
+  .prompt{background:var(--card);border:1px solid var(--border);border-radius:12px;padding:12px 14px;font-size:14px;min-height:80px;white-space:pre-wrap}
+  .prompt .add{color:var(--sky);font-weight:600} .prompt .decoy{color:var(--purple);font-weight:600}
+  .moves{display:flex;flex-wrap:wrap;gap:8px;margin-top:10px}
+  .move{font-size:13px;padding:8px 12px;border-radius:20px;border:1px solid var(--border);background:var(--card);color:var(--text);transition:transform .15s,border-color .2s,background .2s}
+  .move:hover{transform:translateY(-1px);border-color:var(--sky)}
+  .move[aria-pressed="true"]{border-color:var(--accent);background:var(--accent-sub);color:var(--sky);font-weight:700}
+  .move[aria-pressed="true"]::before{content:"+ "}
+  .crit{display:none;margin-top:10px;padding:10px 12px;border:1px dashed var(--accent);border-radius:10px;background:var(--accent-sub)}
+  .crit .lbl{font-size:12px;font-weight:700;color:var(--sky);margin-bottom:6px}
+  .crit .move{font-size:12px;padding:6px 10px}
+  .btn{padding:11px 18px;border-radius:10px;border:none;font-weight:800;font-size:14px}
+  .btn.primary{background:var(--accent);color:#fff}
+  .btn.ghost{background:transparent;border:1px solid var(--border);color:var(--text)}
+  .btn:disabled{opacity:.4;cursor:not-allowed}
+  .actions{display:flex;gap:10px;flex-wrap:wrap;margin-top:14px}
+  .hint{font-size:13px;margin-top:10px;padding:10px 12px;border-left:3px solid var(--warn);background:var(--card);border-radius:0 8px 8px 0;display:none}
+
+  .summary{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+  .sbox{background:var(--card);border:1px solid var(--border);border-radius:10px;padding:10px 12px}
+  .sbox .k{font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:.06em;font-weight:700}
+  .sbox .v{font-size:20px;font-weight:900;margin-top:2px}
+  .log{margin-top:10px;font-size:12.5px;background:var(--card);border:1px solid var(--border);border-radius:10px;padding:10px 12px;display:none}
+  .log code,.log pre{font-family:ui-monospace,Menlo,monospace;font-size:11.5px;color:var(--sky)}
+  .log pre{white-space:pre-wrap;margin:6px 0 0}
+  .drafts{display:grid;grid-template-columns:repeat(2,1fr);gap:10px;margin-top:12px}
+  @media (max-width:560px){.drafts{grid-template-columns:1fr}}
+  .d{background:var(--card);border:1px solid var(--border);border-radius:10px;padding:9px 11px;font-size:12px;transition:border-color .3s,opacity .3s;opacity:.35}
+  .d.show{opacity:1}
+  .d.good{border-color:var(--ok)} .d.bad{border-color:var(--danger)}
+  .d .to{display:flex;justify-content:space-between;color:var(--muted);font-size:11px;margin-bottom:4px}
+  .d .body{white-space:pre-wrap;min-height:64px}
+  .d mark{background:transparent;color:inherit;outline:2px solid var(--yellow);border-radius:3px}
+  .marks{display:flex;gap:8px;margin-top:6px;border-top:1px solid var(--border);padding-top:6px;flex-wrap:wrap}
+  .mk{display:flex;align-items:center;gap:3px;font-size:11px}
+  .ic{width:13px;height:13px;flex:none}
+  .ck{font-size:10.5px;font-weight:800;padding:1px 7px;border-radius:20px;margin-left:auto}
+  .ck.p{color:var(--ok);border:1px solid var(--ok)} .ck.f{color:var(--danger);border:1px solid var(--danger)} .ck.n{color:var(--muted);border:1px solid var(--border)}
+  .rev{font-size:10px;color:var(--sky);font-weight:800}
+  .check{margin-top:12px;min-height:40px;border-radius:9px;border:1px solid var(--border);background:var(--card);display:flex;align-items:center;justify-content:center;font-weight:800;font-size:13px;gap:8px;padding:6px 10px;text-align:center}
+  .check.pass{background:var(--ok-sub);border-color:var(--ok);color:var(--ok)}
+  .check.fail{background:var(--danger-sub);border-color:var(--danger);color:var(--danger)}
+  .fb{margin-top:12px;padding:12px 14px;border-radius:10px;font-size:14px;display:none}
+  .fb.bad{display:block;background:var(--danger-sub);border:1px solid var(--danger)}
+  .fb.good{display:block;background:var(--ok-sub);border:1px solid var(--ok)}
+  .fb.warn{display:block;background:var(--card);border:1px solid var(--warn)}
+  .shake{animation:shake .45s}
+  @keyframes shake{0%,100%{transform:translateX(0)}20%{transform:translateX(-7px)}40%{transform:translateX(7px)}60%{transform:translateX(-4px)}80%{transform:translateX(4px)}}
+
+  .compare{display:none;margin-top:16px}
+  .compare .cols{display:grid;grid-template-columns:1fr 1fr;gap:16px}
+  @media (max-width:900px){.compare .cols{grid-template-columns:1fr}}
+  .colA{background:var(--danger-sub);border:1px solid var(--danger);border-radius:12px;padding:14px}
+  .colB{background:var(--ok-sub);border:1px solid var(--ok);border-radius:12px;padding:14px}
+  .compare h3{margin:0 0 6px;font-size:14px}
+  .compare .q{font-size:13.5px;font-style:italic}
+  .rankup{margin-top:14px;display:flex;gap:14px;align-items:center;background:var(--bg-elev);border:1px solid var(--warn);border-radius:12px;padding:14px 16px;animation:pop .5s cubic-bezier(.2,1.4,.4,1)}
+  .crest{width:56px;height:56px;flex:none;border-radius:50%;border:3px solid var(--warn);display:flex;align-items:center;justify-content:center}
+  .crest svg{width:30px;height:30px;stroke:var(--warn);fill:none;stroke-width:1.8}
+  .collected{display:flex;gap:8px;flex-wrap:wrap;margin-top:8px}
+  .chip{font-size:12px;font-weight:800;padding:5px 10px;border-radius:20px;border:1px solid var(--warn);color:var(--warn);animation:pop .5s cubic-bezier(.2,1.4,.4,1)}
+  .tryit{margin-top:14px;background:var(--bg-elev);border:1px solid var(--sky);border-radius:12px;padding:14px 16px}
+  .tryit pre{white-space:pre-wrap;font-family:inherit;font-size:14px;background:var(--card);border:1px solid var(--border);border-radius:9px;padding:10px 12px;margin:8px 0}
+  .tryit ul{margin:6px 0 0 18px;padding:0;font-size:13px;color:var(--muted)}
+  @keyframes pop{from{transform:scale(.6);opacity:0}to{transform:scale(1);opacity:1}}
+  @media (prefers-reduced-motion: reduce){*{animation:none!important;transition:none!important}}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <header class="top">
+    <div style="display:flex;align-items:center;gap:12px">
+      <div class="badge" aria-hidden="true">4</div>
+      <div>
+        <div class="kicker">World 4 · Name the Check · Level 4 (keystone)</div>
+        <h1>Ask for the check before the work</h1>
+      </div>
+    </div>
+    <div class="meta">
+      <div class="xp">Rank: <b id="rank">Tool User</b> · <b id="xp">340</b> XP</div>
+      <div class="stars" id="stars" aria-label="0 of 3 stars"><span>★</span><span>★</span><span>★</span></div>
+      <div class="tg" role="group" aria-label="Skin and theme">
+        <button id="skinPlain" aria-pressed="true">Plain English</button>
+        <button id="skinTech" aria-pressed="false">Technical</button>
+        <button id="themeBtn">Light</button>
+      </div>
+    </div>
+  </header>
+
+  <div class="steps" aria-hidden="true">
+    <span class="step on" id="s1">1 · Just ask</span>
+    <span class="step" id="s2">2 · Rewrite the ask</span>
+    <span class="step" id="s3">3 · Take it to your AI</span>
+  </div>
+
+  <div class="row">
+    <section class="panel" aria-labelledby="jobH">
+      <div class="ph"><span id="jobH">The job</span><span>8 customers waiting</span></div>
+      <div class="ask">Your team has 8 customer emails to answer today. You have the AI draft the replies. Every reply <b>must</b> have:
+        <div class="rule3"><span>a greeting</span><span>the customer's name</span><span>a clear next step</span></div>
+        <div style="font-size:13px;color:var(--muted);margin-top:8px">You don't have time to read all 8. How do you <i>know</i> they're right?</div>
+      </div>
+
+      <div class="you">What you type</div>
+      <div class="prompt" id="prompt" aria-live="polite"></div>
+
+      <div id="builder" style="display:none">
+        <div class="ph" style="margin-top:14px"><span>Add to your ask</span><span id="pickCount"></span></div>
+        <div class="moves" id="moves"></div>
+        <div class="crit" id="crit">
+          <div class="lbl">What should the checker test? (it fails any draft that misses one)</div>
+          <div class="moves" id="critMoves" style="margin-top:0"></div>
+        </div>
+      </div>
+
+      <div class="actions">
+        <button class="btn primary" id="runBtn">Have the AI draft all 8</button>
+        <button class="btn ghost" id="hintBtn" style="display:none">Hint (1 of 3)</button>
+      </div>
+      <div class="hint" id="hint" aria-live="polite"></div>
+    </section>
+
+    <section class="panel" aria-labelledby="outH">
+      <div class="ph"><span id="outH">What comes back</span><span>graded against the 3 rules</span></div>
+      <div class="summary">
+        <div class="sbox"><div class="k">Actually right</div><div class="v" id="actual">–</div></div>
+        <div class="sbox"><div class="k">What the AI told you</div><div class="v" id="claim" style="font-size:15px">–</div></div>
+      </div>
+      <div class="log" id="log" aria-live="polite"></div>
+      <div class="drafts" id="drafts"></div>
+      <div class="check" id="check">The check: all 8 drafts follow the rules, and what the AI told you matches reality</div>
+      <div class="fb" id="fb" role="status" aria-live="polite"></div>
+    </section>
+  </div>
+
+  <section class="compare" id="compare" aria-labelledby="cmpH">
+    <div class="ph"><span id="cmpH">What you do differently</span></div>
+    <div class="cols">
+      <div class="colA">
+        <h3>Just prompting</h3>
+        <div class="q">"Draft replies to these 8 customer emails."</div>
+        <p style="font-size:13px;margin:8px 0 0">4 of 8 broke a rule. The AI didn't say so, and the only way to find out was to read every one.</p>
+      </div>
+      <div class="colB">
+        <h3>Asking for the check first</h3>
+        <div class="q" id="finalPrompt"></div>
+        <p style="font-size:13px;margin:8px 0 0">The AI wrote a checker, <b>proved it could fail</b>, ran it on every draft, and fixed the failures. You read one short checker instead of 8 emails.</p>
+      </div>
+    </div>
+
+    <div class="rankup">
+      <div class="crest"><svg viewBox="0 0 24 24"><path d="M12 3l7 3v6c0 4-3 7-7 9-4-2-7-5-7-9V6z"/><path d="M9 12l2 2 4-4"/></svg></div>
+      <div><div class="kicker">Rank up</div><div style="font-size:18px;font-weight:900">You're a Checker</div>
+        <div style="font-size:13px;color:var(--muted)" id="xpLine"></div></div>
+    </div>
+
+    <div class="ph" style="margin-top:14px"><span>Moves collected</span></div>
+    <div class="collected" id="collected"></div>
+
+    <div class="tryit">
+      <div class="kicker">Try it in your AI</div>
+      <div style="font-size:14px;margin-top:4px">Any time the AI produces many things that must follow rules (emails, summaries, rows, tickets), copy this pattern:</div>
+      <pre id="template"></pre>
+      <div class="actions" style="margin-top:4px"><button class="btn ghost" id="copyBtn">Copy the pattern</button></div>
+      <ul>
+        <li><b>ChatGPT with file or code tools:</b> it can write and run the checker itself, so "run it" really happens.</li>
+        <li><b>Copilot in Excel:</b> put the drafts in a column and ask for checker formulas, e.g. <code>=ISNUMBER(SEARCH(B2, A2))</code> for "uses the name".</li>
+        <li><b>A chat AI that can't run code:</b> it can't truly check its own work. Ask for the checker, then run it yourself in a spreadsheet. Never accept "I checked, they all pass."</li>
+      </ul>
+    </div>
+  </section>
+</div>
+
+<script>
+(function(){
+  var reduce = matchMedia('(prefers-reduced-motion: reduce)').matches;
+  var $ = function(id){ return document.getElementById(id); };
+  var BASE = "Draft replies to these 8 customer emails.";
+
+  // ---- The 8 drafts the AI produces on a plain ask (recorded fixture). Four break a rule. ----
+  // D8's "next week" is the trap: it LOOKS like a next step to a lazy checker, but tells the customer nothing to do.
+  var CUSTOMERS = [
+    { name:"Maria", topic:"Sorry your order is late. It ships today.", step:"Please reply to confirm your address and we'll send tracking." },
+    { name:"James", topic:"We refunded the duplicate $42 charge.", step:"Please check your statement in 3 to 5 days." },
+    { name:"Aisha", topic:"Your laptop repair is finished.", step:"Please book a pickup time in your account." },
+    { name:"Tom",   topic:"Your password reset link has expired.", step:"Please click 'Forgot password' to get a new one." },
+    { name:"Lena",  topic:"We received your returned jacket.", step:"Please choose refund or exchange in the link below." },
+    { name:"Raj",   topic:"Your plan renews on the 14th.", step:"Please reply if you want to switch to yearly billing." },
+    { name:"Chen",  topic:"One item was missing from your box.", step:"Please reply with a photo of the packing slip." },
+    { name:"Sofia", topic:"Your blender is covered by warranty.", step:"Please call us at 555-0142 to start the claim.", fake:"A replacement arrives next week." }
+  ];
+  var BASE_DRAFTS = [
+    { greet:true,  name:true,  step:true  },
+    { greet:true,  name:true,  step:true  },
+    { greet:true,  name:true,  step:false },
+    { greet:true,  name:true,  step:true  },
+    { greet:true,  name:false, step:true  },
+    { greet:true,  name:true,  step:true  },
+    { greet:false, name:true,  step:true  },
+    { greet:true,  name:true,  step:false, fakeStep:true }
+  ];
+  // When you only REMIND the AI of the rules, it follows them better, but not every time (recorded: 7 of 8).
+  var REMINDED = [
+    { greet:true, name:true, step:true }, { greet:true, name:true, step:true }, { greet:true, name:true, step:true },
+    { greet:true, name:true, step:true }, { greet:true, name:true, step:true }, { greet:true, name:true, step:true },
+    { greet:true, name:true, step:true }, { greet:true, name:true, step:false, fakeStep:true }
+  ];
+
+  var MOVES = [
+    { id:"check", real:true, label:"Ask for a checker first",
+      plain:function(c){ return "Before you write anything, write a checker that fails any draft missing " + c + "."; },
+      tech: function(c){ return "Before drafting, write a Python function check(draft, customer) that returns False if the draft is missing " + c + "."; } },
+    { id:"prove", real:true, label:"Make it prove the checker can fail",
+      plain:function(){ return "Test the checker on a bad example first and show me it fails."; },
+      tech: function(){ return "Run check() on a known-bad draft first and show me it returns False."; } },
+    { id:"run", real:true, label:"Run the checker on every draft",
+      plain:function(){ return "Then run the checker on every draft and rewrite any that fail until they pass."; },
+      tech: function(){ return "Execute check() on every draft, regenerate any that fail, and report the final pass/fail for each."; } },
+    { id:"show", real:true, label:"Show me the checker",
+      plain:function(){ return "Show me the checker and the results."; },
+      tech: function(){ return "Show me the code and the results table."; } },
+    { id:"remind", real:false, label:"Remind it of the rules",
+      plain:function(){ return "Remember: always include a greeting, the customer's name, and a next step."; }, tech:null },
+    { id:"perfect", real:false, label:"Make sure they're perfect",
+      plain:function(){ return "Make sure every email is perfect."; }, tech:null },
+    { id:"double", real:false, label:"Double-check your work",
+      plain:function(){ return "Double-check your work before answering."; }, tech:null }
+  ];
+  var CRITERIA = [
+    { id:"greet", label:"a greeting", real:true },
+    { id:"name",  label:"the customer's name", real:true },
+    { id:"step",  label:"a next step", real:true },
+    { id:"friendly", label:"a friendly tone", real:false },
+    { id:"pro",   label:"a professional tone", real:false }
+  ];
+
+  var st = { phase:1, skin:"plain", picked:{}, crit:{}, attempts:0, hints:0, done:false, xp:340 };
+  function has(id){ return !!st.picked[id]; }
+  function hasC(id){ return has("check") && !!st.crit[id]; }
+  function critText(){
+    var l = CRITERIA.filter(function(c){ return st.crit[c.id]; }).map(function(c){ return c.label; });
+    if(!l.length) return "[pick what it tests]";
+    return l.length===1 ? l[0] : l.slice(0,-1).join(", ") + " or " + l[l.length-1];
+  }
+  function moveText(m){ var f = (st.skin==="tech" && m.tech) ? m.tech : m.plain; return f(critText()); }
+
+  // ---- Deterministic simulation of what happens, given ONLY the ask ----
+  function simulate(){
+    var res = { drafts:[], claim:null, log:[], kind:"" };
+    var base = (has("remind") || has("check")) ? REMINDED : BASE_DRAFTS;
+    if(st.phase===1) base = BASE_DRAFTS;
+    var drafts = base.map(function(d){ return { greet:d.greet, name:d.name, step:d.step, fakeStep:!!d.fakeStep, revised:false, verdict:null }; });
+
+    if(st.phase===1 || !has("check")){
+      res.kind = st.phase===1 ? "naive" : (has("remind") ? "remind" : "tricks");
+      res.claim = (has("perfect")||has("double")) && st.phase===2 ? "\"All 8 are perfect.\"" : "Nothing. It just handed them over.";
+      res.drafts = drafts; return res;
+    }
+
+    var realC = CRITERIA.filter(function(c){ return c.real && st.crit[c.id]; });
+    var vagueOnly = realC.length===0;
+    // A checker for "next step" written naively looks for the word "next". A bad-example test exposes that bug.
+    var stepBug = hasC("step") && !has("prove");
+
+    function verdictFor(d){
+      if(vagueOnly) return true; // "friendly tone" cannot be tested by a checker, so it passes everything
+      for(var i=0;i<realC.length;i++){
+        var id=realC[i].id;
+        if(id==="step"){ var looks = d.step || (stepBug && d.fakeStep); if(!looks) return false; }
+        else if(!d[id]) return false;
+      }
+      return true;
+    }
+
+    if(has("prove")){
+      if(vagueOnly) res.log.push("Tested the checker on a bad example: it <b>PASSED</b> it. A tone can't be measured, so this checker can't fail.");
+      else if(hasC("step")) res.log.push("Tested the checker on a bad example (\"A replacement arrives next week.\"): it <b>PASSED</b>. Bug: it only looked for the word \"next\". Fixed it to look for an action the customer takes. Retested: <b>FAILS</b> the bad example, as it should.");
+      else res.log.push("Tested the checker on a bad example: it <b>FAILS</b>, as it should.");
+    }
+
+    if(!has("run")){
+      res.kind = "notRun";
+      res.claim = "\"I checked them. All 8 pass.\" (It never ran the checker.)";
+      res.drafts = drafts; return res;
+    }
+
+    drafts.forEach(function(d){
+      var v = verdictFor(d);
+      if(!v){ // regenerate: fix exactly what the checker tests for
+        realC.forEach(function(c){ d[c.id] = true; if(c.id==="step") d.fakeStep=false; });
+        d.revised = true; v = verdictFor(d);
+      }
+      d.verdict = v;
+    });
+    var nRev = drafts.filter(function(d){ return d.revised; }).length;
+    res.log.push("Ran the checker on all 8 drafts. " + (nRev ? nRev + " failed and were rewritten." : "None failed."));
+    res.claim = "Checker: " + drafts.filter(function(d){ return d.verdict; }).length + " of 8 pass";
+    res.kind = vagueOnly ? "vague" : (realC.length<3 ? "partial" : (stepBug ? "bug" : "ok"));
+    res.drafts = drafts; return res;
+  }
+  function isGood(d){ return d.greet && d.name && d.step; }
+
+  // ---- Rendering ----
+  function esc(s){ return String(s).replace(/&/g,"&amp;").replace(/</g,"&lt;"); }
+  function renderPrompt(){
+    var h = esc(BASE);
+    if(st.phase>=2) MOVES.forEach(function(m){ if(has(m.id)) h += ' <span class="'+(m.real?"add":"decoy")+'">'+esc(moveText(m))+'</span>'; });
+    $("prompt").innerHTML = h;
+  }
+  function promptText(){ var t=BASE; MOVES.forEach(function(m){ if(has(m.id)) t += " " + moveText(m); }); return t; }
+  function chipRow(container, list, isOn, toggle){
+    container.innerHTML = list.map(function(m){ return '<button class="move" data-id="'+m.id+'" aria-pressed="'+isOn(m.id)+'">'+m.label+'</button>'; }).join("");
+    Array.prototype.forEach.call(container.querySelectorAll(".move"), function(b){
+      b.onclick = function(){ if(st.done) return; toggle(b.getAttribute("data-id")); renderBuilder(); renderPrompt(); };
+    });
+  }
+  function renderBuilder(){
+    chipRow($("moves"), MOVES, has, function(id){ st.picked[id]=!st.picked[id]; });
+    chipRow($("critMoves"), CRITERIA, function(id){ return !!st.crit[id]; }, function(id){ st.crit[id]=!st.crit[id]; });
+    $("crit").style.display = has("check") ? "block" : "none";
+    var n = MOVES.filter(function(m){ return has(m.id); }).length;
+    $("pickCount").textContent = n ? n + " added" : "pick any";
+  }
+
+  var OK='<svg class="ic" viewBox="0 0 24 24" fill="none" stroke="var(--ok)" stroke-width="2.8" stroke-linecap="round"><path d="M5 12l4 4 10-10"/></svg>';
+  var NO='<svg class="ic" viewBox="0 0 24 24" fill="none" stroke="var(--danger)" stroke-width="2.8" stroke-linecap="round"><path d="M6 6l12 12M18 6L6 18"/></svg>';
+  function draftText(c, d){
+    var lines = [];
+    if(d.greet) lines.push((d.name ? "Hi " + c.name : "Hi there") + ",");
+    lines.push((!d.greet && d.name ? c.name + ", " + c.topic.charAt(0).toLowerCase() + c.topic.slice(1) : c.topic));
+    if(d.step) lines.push(c.step);
+    else if(d.fakeStep) lines.push("<mark>" + c.fake + "</mark>");
+    lines.push("Acme Support");
+    return lines.map(function(l){ return l.indexOf("<mark>")===0 ? l : esc(l); }).join("\n");
+  }
+  function renderDrafts(res, upto){
+    $("drafts").innerHTML = CUSTOMERS.map(function(c,i){
+      if(i>=upto) return '<div class="d"><div class="to"><span>To: '+c.name+'</span></div><div class="body" style="color:var(--muted)">…</div></div>';
+      var d=res.drafts[i], g=isGood(d);
+      var ck = d.verdict===null ? '<span class="ck n">not checked</span>' : (d.verdict ? '<span class="ck p">checker: pass</span>' : '<span class="ck f">checker: fail</span>');
+      return '<div class="d show '+(g?"good":"bad")+'"><div class="to"><span>To: '+c.name+'</span>'+(d.revised?'<span class="rev">REWRITTEN</span>':'')+'</div>'+
+        '<div class="body">'+draftText(c,d)+'</div>'+
+        '<div class="marks"><span class="mk">'+(d.greet?OK:NO)+'greeting</span><span class="mk">'+(d.name?OK:NO)+'name</span><span class="mk">'+(d.step?OK:NO)+'next step</span>'+ck+'</div></div>';
+    }).join("");
+  }
+  function checkerCode(){
+    var parts=[], tech=st.skin==="tech";
+    CRITERIA.forEach(function(c){
+      if(!st.crit[c.id]) return;
+      if(c.id==="greet") parts.push(tech?"re.match(r'^(hi|hello|dear)\\b', draft, re.I)":"starts with Hi, Hello or Dear");
+      if(c.id==="name")  parts.push(tech?"customer.name in draft":"contains the customer's name");
+      if(c.id==="step")  parts.push(has("prove") ? (tech?"re.search(r'please (reply|call|click|book|check|choose)', draft, re.I)":"contains an action: please reply / call / click / book / check / choose")
+                                                 : (tech?"'next' in draft.lower()":"contains the word \"next\""));
+      if(c.id==="friendly") parts.push(tech?"# 'friendly tone': no test possible":"sounds friendly (can't be tested)");
+      if(c.id==="pro") parts.push(tech?"# 'professional tone': no test possible":"sounds professional (can't be tested)");
+    });
+    return tech ? "def check(draft, customer):\n    return all([\n        " + parts.join(",\n        ") + "\n    ])"
+                : "PASS only if the draft:\n  - " + parts.join("\n  - ");
+  }
+
+  // ---- Run ----
+  $("runBtn").onclick = function(){
+    if(st.done) return;
+    if(st.phase===2 && has("check") && !CRITERIA.some(function(c){ return st.crit[c.id]; })){
+      fb("warn","Pick at least one thing for the checker to test."); return;
+    }
+    $("runBtn").disabled=true; fbClear(); setCheck(null); $("log").style.display="none";
+    if(st.phase===2) st.attempts++;
+    var res = simulate(); st.last = res;
+    var i=0;
+    (function tick(){
+      renderDrafts(res, i);
+      if(i<8){ i++; setTimeout(tick, reduce?0:140); return; }
+      finish(res);
+    })();
+  };
+
+  function finish(res){
+    var good = res.drafts.filter(isGood).length;
+    $("actual").textContent = good + " of 8"; $("actual").style.color = good===8 ? "var(--ok)" : "var(--danger)";
+    $("claim").textContent = res.claim;
+    var logHtml = res.log.join("<br>");
+    if(has("show") && has("check")) logHtml += '<pre>'+esc(checkerCode())+'</pre>';
+    if(logHtml){ $("log").style.display="block"; $("log").innerHTML = "<b>What the AI did:</b><br>" + logHtml; }
+    $("runBtn").disabled=false;
+    var claimHonest = res.kind==="ok";
+    var pass = good===8 && claimHonest;
+    setCheck(pass, good);
+
+    var missNames = res.drafts.map(function(d,i){ return isGood(d)?null:CUSTOMERS[i].name; }).filter(Boolean).join(", ");
+    if(res.kind==="naive"){
+      shake($("check"));
+      fb("bad","<b>4 of 8 broke a rule</b> ("+missNames+"), and the AI didn't mention it. Look at Sofia's: \"arrives next week\" <i>sounds</i> like a next step, but it gives her nothing to do.<br><br>Asking more nicely won't tell you which drafts are wrong. <b>Your move:</b> change what you ask for.");
+      st.phase=2; $("builder").style.display="block"; $("hintBtn").style.display="inline-block";
+      $("runBtn").textContent="Run my rewritten ask"; $("s1").className="step done"; $("s2").className="step on";
+      renderBuilder(); renderPrompt(); return;
+    }
+    if(res.kind==="remind"){ shake($("check")); fb("bad","<b>Better, but still 1 broken ("+missNames+"), and you'd only know by reading all 8.</b> Telling the AI the rule isn't the same as <i>checking</i> the rule. What would actually catch the one that slipped?"); return; }
+    if(res.kind==="tricks"){ shake($("check")); fb("bad","<b>\"Make sure they're perfect\" and \"double-check\" just got you a confident claim.</b> It said all 8 are fine. "+(8-good)+" aren't. Asking it to try harder doesn't give you a way to <i>know</i>."); return; }
+    if(res.kind==="notRun"){ shake($("check")); fb("warn","<b>It wrote a checker, then said \"all pass\" without running it.</b> "+missNames+" still breaks a rule. A checker nobody runs is just a promise. Make it <b>run</b> the checker on every draft."); return; }
+    if(res.kind==="vague"){ shake($("check")); fb("bad","<b>Your checker can't fail.</b> \"Friendly tone\" and \"professional tone\" aren't things a checker can measure, so it passed all 8, including the broken ones. A check has to test something that's clearly there or not there."); return; }
+    if(res.kind==="partial"){
+      var missingRules = CRITERIA.filter(function(c){ return c.real && !st.crit[c.id]; }).map(function(c){ return c.label; }).join(" and ");
+      shake($("check")); fb("bad","<b>The checker said "+res.claim.replace("Checker: ","")+", but "+missNames+" still breaks a rule.</b> Your checker never tests for "+missingRules+". A check only proves what it actually checks."); return;
+    }
+    if(res.kind==="bug"){
+      shake($("check")); fb("bad","<b>False green.</b> The checker said 8 of 8 pass, but Sofia's draft has no real next step. The AI's checker just looked for the word \"next\", and \"arrives <i>next</i> week\" matched. Your checker never failed anything, so nobody noticed it was broken.<br><br>What move would have caught a broken checker <i>before</i> you trusted it?"); return;
+    }
+    // success
+    st.done=true;
+    var stars = 1 + ((st.attempts<=3 && st.hints<3)?1:0) + (has("show")?1:0);
+    setStars(stars);
+    st.xp += 20 + 15 + 50; $("xp").textContent = st.xp; $("rank").textContent = "Checker";
+    var vagueNote = (st.crit.friendly||st.crit.pro) ? "<br><br>Note: the tone checks did nothing. They can't fail, so they can't catch anything. They're harmless here, but don't count them as protection." : "";
+    fb("good","<b>8 of 8 correct, and the AI's report matches reality.</b> The checker proved it could fail, caught the broken drafts, and they were rewritten. You can trust this without reading all 8."+vagueNote+
+      (has("show")?"":"<br><br>For the third star: also ask it to <b>show you the checker</b>. Reading one checker is how you know what \"pass\" actually means."));
+    $("s2").className="step done"; $("s3").className="step on";
+    reveal(stars);
+  }
+
+  function reveal(stars){
+    $("compare").style.display="block";
+    $("finalPrompt").textContent = '"' + promptText() + '"';
+    $("xpLine").textContent = "+20 level · +15 checker seen failing · +50 keystone · " + st.xp + " XP · " + stars + " of 3 stars";
+    var c=["Ask for the check first","Prove the check can fail","Run the check on everything"]; if(has("show")) c.push("Show me the check");
+    $("collected").innerHTML = c.map(function(x){ return '<span class="chip">'+x+'</span>'; }).join("");
+    $("template").textContent = st.skin==="plain"
+      ? "Before you write anything, write a checker that fails any [draft / summary / row] missing [rule 1], [rule 2] or [rule 3]. Test it on a bad example first and show me it fails. Then do the work, run the checker on every result, and redo any that fail. Show me the checker and the results."
+      : "Before generating, write a function check(item) that returns False if [rules]. Run it on a known-bad example and show it returns False. Then generate, execute check() on every item, regenerate failures, and show me the code and the pass/fail table.";
+    if(!reduce) $("compare").scrollIntoView({behavior:"smooth",block:"start"});
+  }
+
+  $("copyBtn").onclick = function(){
+    var t=$("template").textContent;
+    if(navigator.clipboard){ navigator.clipboard.writeText(t).then(function(){ $("copyBtn").textContent="Copied"; },function(){ $("copyBtn").textContent="Select the text above to copy"; }); }
+    else $("copyBtn").textContent="Select the text above to copy";
+  };
+
+  var HINTS = [
+    "You can't read all 8. What if the AI built something that reads them for you, and that you could see go wrong?",
+    "Ask for a <b>checker first</b> that tests the three rules, and make it <b>run</b> on every draft. Skip the tone rules: a checker can't measure \"friendly\".",
+    "Add <b>Ask for a checker first</b> (greeting, name, next step), <b>Run the checker on every draft</b>, and <b>Make it prove the checker can fail</b>. That last one catches a checker that's quietly broken."
+  ];
+  $("hintBtn").onclick = function(){
+    if(st.hints>=3) return;
+    var h=$("hint"); h.style.display="block"; h.innerHTML="<b>Hint "+(st.hints+1)+".</b> "+HINTS[st.hints];
+    st.hints++; $("hintBtn").textContent = st.hints<3 ? "Hint ("+(st.hints+1)+" of 3)" : "No more hints";
+    if(st.hints>=3) $("hintBtn").disabled=true;
+  };
+
+  function setCheck(pass, good){
+    var c=$("check"); c.className="check"+(pass===null?"":pass?" pass":" fail");
+    c.innerHTML = pass===null ? "The check: all 8 drafts follow the rules, and what the AI told you matches reality"
+      : pass ? OK+"PASSED: 8 of 8 right, and the report is honest"
+      : NO+"FAILED: "+(8-good)+" draft"+(8-good===1?"":"s")+" broke a rule" + (good===8?" (report didn't match)":"");
+  }
+  function fb(k,h){ var f=$("fb"); f.className="fb "+k; f.innerHTML=h; }
+  function fbClear(){ $("fb").className="fb"; }
+  function shake(el){ if(reduce) return; el.classList.remove("shake"); void el.offsetWidth; el.classList.add("shake"); }
+  function setStars(n){ var s=$("stars").children; for(var i=0;i<3;i++) s[i].className=i<n?"on":""; $("stars").setAttribute("aria-label", n+" of 3 stars"); }
+  function setSkin(s){ st.skin=s; $("skinPlain").setAttribute("aria-pressed",s==="plain"); $("skinTech").setAttribute("aria-pressed",s==="tech"); renderPrompt(); if(st.last && st.phase===2) finishLogOnly(); if(st.done) reveal(0+document.querySelectorAll("#stars .on").length); }
+  function finishLogOnly(){ if(has("show") && has("check") && st.last){ var pre=$("log").querySelector("pre"); if(pre) pre.textContent=checkerCode(); } }
+  $("skinPlain").onclick=function(){ setSkin("plain"); };
+  $("skinTech").onclick=function(){ setSkin("tech"); };
+  $("themeBtn").onclick=function(){ var l=document.body.classList.toggle("light"); $("themeBtn").textContent=l?"Dark":"Light"; };
+
+  window.__w4 = { st:st, simulate:simulate, isGood:isGood, MOVES:MOVES, CRITERIA:CRITERIA };
+  renderDrafts({drafts:[]}, 0); renderPrompt();
+})();
+</script>
+</body>
+</html>

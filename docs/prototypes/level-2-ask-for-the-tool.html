@@ -1,0 +1,434 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Puzzle Ladder · Level 2 · Ask for the tool, not the answer</title>
+<style>
+  :root{
+    --bg:#0d1117; --bg-elev:#161c2b; --card:#1a2130; --border:#2a3444; --text:#e8ecf4; --muted:#8a97ab;
+    --ok:#009E73; --ok-sub:#0b2a22; --danger:#D55E00; --danger-sub:#2e1a0d; --accent:#0072B2; --accent-sub:#0b2238;
+    --sky:#56B4E9; --warn:#E69F00; --purple:#CC79A7; --yellow:#F0E442;
+  }
+  body.light{ --bg:#f6f7f9; --bg-elev:#fff; --card:#fff; --border:#d5dae2; --text:#1d2433; --muted:#5b6578;
+    --ok-sub:#e3f4ee; --danger-sub:#fbeadf; --accent-sub:#e2eef7; }
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--bg);color:var(--text);font-family:Inter,system-ui,-apple-system,"Segoe UI",sans-serif;line-height:1.45}
+  .wrap{max-width:1160px;margin:0 auto;padding:20px}
+  button{font:inherit;cursor:pointer}
+  button:focus-visible{outline:3px solid var(--sky);outline-offset:2px}
+  .top{display:flex;align-items:center;justify-content:space-between;gap:16px;flex-wrap:wrap;background:var(--bg-elev);border:1px solid var(--border);border-radius:14px;padding:14px 18px}
+  .badge{width:42px;height:42px;border-radius:11px;background:var(--accent);color:#fff;display:flex;align-items:center;justify-content:center;font-weight:900;font-size:18px}
+  .kicker{font-size:11px;letter-spacing:.1em;text-transform:uppercase;color:var(--sky);font-weight:800}
+  h1{font-size:19px;margin:2px 0 0}
+  .meta{display:flex;align-items:center;gap:16px;flex-wrap:wrap}
+  .xp{font-size:12px;color:var(--muted)} .xp b{color:var(--text)}
+  .stars{font-size:18px;letter-spacing:3px;color:var(--muted)} .stars .on{color:var(--warn)}
+  .tg button{font-size:12px;padding:6px 11px;border-radius:8px;border:1px solid var(--border);background:var(--card);color:var(--text)}
+  .tg button[aria-pressed="true"]{border-color:var(--accent);background:var(--accent-sub);color:var(--sky);font-weight:700}
+
+  .steps{display:flex;gap:8px;margin:16px 0 12px;flex-wrap:wrap}
+  .step{font-size:12px;font-weight:700;padding:6px 12px;border-radius:20px;border:1px solid var(--border);color:var(--muted)}
+  .step.on{border-color:var(--sky);color:var(--sky)} .step.done{border-color:var(--ok);color:var(--ok)}
+
+  .row{display:grid;grid-template-columns:1fr 1fr;gap:16px}
+  @media (max-width:900px){.row{grid-template-columns:1fr}}
+  .panel{background:var(--bg-elev);border:1px solid var(--border);border-radius:14px;padding:16px}
+  .ph{font-size:12px;font-weight:800;letter-spacing:.06em;text-transform:uppercase;color:var(--muted);margin-bottom:10px;display:flex;justify-content:space-between;gap:8px}
+  .ask{font-size:16px;background:var(--card);border:1px solid var(--border);border-left:4px solid var(--warn);border-radius:10px;padding:12px 14px}
+  table{width:100%;border-collapse:collapse;font-size:12px;margin-top:10px}
+  th,td{padding:5px 8px;border-bottom:1px solid var(--border);text-align:left}
+  th{color:var(--muted);font-weight:700}
+  .more{font-size:12px;color:var(--muted);margin-top:6px}
+
+  .prompt{background:var(--card);border:1px solid var(--border);border-radius:12px;padding:12px 14px;font-size:14.5px;min-height:96px;white-space:pre-wrap}
+  .prompt .add{color:var(--sky);font-weight:600}
+  .prompt .decoy{color:var(--purple);font-weight:600}
+  .you{font-size:11px;color:var(--muted);margin-bottom:6px;text-transform:uppercase;letter-spacing:.08em;font-weight:700}
+
+  .moves{display:flex;flex-wrap:wrap;gap:8px;margin-top:12px}
+  .move{font-size:13px;padding:8px 12px;border-radius:20px;border:1px solid var(--border);background:var(--card);color:var(--text);text-align:left;transition:transform .15s,border-color .2s,background .2s}
+  .move:hover{transform:translateY(-1px);border-color:var(--sky)}
+  .move[aria-pressed="true"]{border-color:var(--accent);background:var(--accent-sub);color:var(--sky);font-weight:700}
+  .move[aria-pressed="true"]::before{content:"+ ";}
+
+  .btn{padding:11px 18px;border-radius:10px;border:none;font-weight:800;font-size:14px}
+  .btn.primary{background:var(--accent);color:#fff}
+  .btn.ghost{background:transparent;border:1px solid var(--border);color:var(--text)}
+  .btn:disabled{opacity:.4;cursor:not-allowed}
+  .actions{display:flex;gap:10px;flex-wrap:wrap;margin-top:14px}
+
+  /* scatter */
+  .scatter{position:relative;background:var(--card);border:1px solid var(--border);border-radius:12px;padding:12px 14px 6px}
+  svg.sc{width:100%;height:110px;display:block}
+  .axis{stroke:var(--border);stroke-width:1}
+  .tick{fill:var(--muted);font-size:10px}
+  .truth{stroke:var(--ok);stroke-width:2;stroke-dasharray:4 4}
+  .truthlbl{fill:var(--ok);font-size:10px;font-weight:700}
+  .dot{transition:opacity .3s}
+  .stat{display:flex;gap:16px;flex-wrap:wrap;font-size:13px;margin-top:6px}
+  .stat b{font-size:15px}
+  .runs{margin-top:10px;display:flex;flex-direction:column;gap:6px;max-height:260px;overflow:auto}
+  .run{font-size:12.5px;background:var(--card);border:1px solid var(--border);border-radius:9px;padding:8px 10px;display:flex;gap:10px;align-items:flex-start}
+  .run .n{flex:none;font-weight:800;color:var(--muted);width:20px}
+  .run .num{font-weight:800}
+  .run code{font-family:ui-monospace,Menlo,monospace;font-size:11.5px;color:var(--sky);word-break:break-all}
+  .run.ok{border-color:var(--ok)} .run.bad{border-color:var(--danger)}
+  .ic{width:16px;height:16px;flex:none;margin-top:1px}
+
+  .check{margin-top:12px;height:40px;border-radius:9px;border:1px solid var(--border);background:var(--card);display:flex;align-items:center;justify-content:center;font-weight:800;font-size:13px;gap:8px;padding:0 10px;text-align:center}
+  .check.pass{background:var(--ok-sub);border-color:var(--ok);color:var(--ok)}
+  .check.fail{background:var(--danger-sub);border-color:var(--danger);color:var(--danger)}
+  .fb{margin-top:12px;padding:12px 14px;border-radius:10px;font-size:14px;display:none}
+  .fb.bad{display:block;background:var(--danger-sub);border:1px solid var(--danger)}
+  .fb.good{display:block;background:var(--ok-sub);border:1px solid var(--ok)}
+  .fb.warn{display:block;background:var(--card);border:1px solid var(--warn)}
+  .hint{font-size:13px;margin-top:10px;padding:10px 12px;border-left:3px solid var(--warn);background:var(--card);border-radius:0 8px 8px 0;display:none}
+  .shake{animation:shake .45s}
+  @keyframes shake{0%,100%{transform:translateX(0)}20%{transform:translateX(-7px)}40%{transform:translateX(7px)}60%{transform:translateX(-4px)}80%{transform:translateX(4px)}}
+
+  .compare{display:none;margin-top:16px}
+  .compare .row > div{border-radius:12px;padding:14px}
+  .colA{background:var(--danger-sub);border:1px solid var(--danger)}
+  .colB{background:var(--ok-sub);border:1px solid var(--ok)}
+  .compare h3{margin:0 0 6px;font-size:14px}
+  .compare .q{font-size:13.5px;font-style:italic}
+  .tryit{margin-top:14px;background:var(--bg-elev);border:1px solid var(--sky);border-radius:12px;padding:14px 16px}
+  .tryit pre{white-space:pre-wrap;font-family:inherit;font-size:14px;background:var(--card);border:1px solid var(--border);border-radius:9px;padding:10px 12px;margin:8px 0}
+  .tryit ul{margin:6px 0 0 18px;padding:0;font-size:13px;color:var(--muted)}
+  .collected{display:flex;gap:8px;flex-wrap:wrap;margin-top:8px}
+  .chip{font-size:12px;font-weight:800;padding:5px 10px;border-radius:20px;border:1px solid var(--warn);color:var(--warn);animation:pop .5s cubic-bezier(.2,1.4,.4,1)}
+  @keyframes pop{from{transform:scale(.5);opacity:0}to{transform:scale(1);opacity:1}}
+  @media (prefers-reduced-motion: reduce){*{animation:none!important;transition:none!important}}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <header class="top">
+    <div style="display:flex;align-items:center;gap:12px">
+      <div class="badge" aria-hidden="true">2</div>
+      <div>
+        <div class="kicker">World 2 · Spot the Guess · Level 3</div>
+        <h1>Ask for the tool, not the answer</h1>
+      </div>
+    </div>
+    <div class="meta">
+      <div class="xp">Rank: <b>Guesser</b> · <b id="xp">120</b> XP</div>
+      <div class="stars" id="stars" aria-label="0 of 3 stars"><span>★</span><span>★</span><span>★</span></div>
+      <div class="tg" role="group" aria-label="Skin and theme">
+        <button id="skinPlain" aria-pressed="true">Spreadsheet</button>
+        <button id="skinTech" aria-pressed="false">Technical</button>
+        <button id="themeBtn">Light</button>
+      </div>
+    </div>
+  </header>
+
+  <div class="steps" aria-hidden="true">
+    <span class="step on" id="s1">1 · Just ask</span>
+    <span class="step" id="s2">2 · Rewrite the ask</span>
+    <span class="step" id="s3">3 · Take it to your AI</span>
+  </div>
+
+  <div class="row">
+    <!-- LEFT: the job + the prompt -->
+    <section class="panel" aria-labelledby="jobH">
+      <div class="ph"><span id="jobH">The job</span><span>sales.csv · 2,000 rows</span></div>
+      <div class="ask">Your manager asks: <b>"What was West region revenue in Q3?"</b> You paste the sales sheet into your AI.</div>
+      <table aria-label="First rows of sales.csv">
+        <thead><tr><th>order_id</th><th>date</th><th>region</th><th>category</th><th>revenue</th></tr></thead>
+        <tbody>
+          <tr><td>10001</td><td>2025-07-03</td><td>West</td><td>Electronics</td><td>1,284.50</td></tr>
+          <tr><td>10002</td><td>2025-07-03</td><td>East</td><td>Furniture</td><td>612.00</td></tr>
+          <tr><td>10003</td><td>2025-06-29</td><td>West</td><td>Office</td><td>88.40</td></tr>
+          <tr><td>10004</td><td>2025-08-14</td><td>South</td><td>Electronics</td><td>2,010.75</td></tr>
+        </tbody>
+      </table>
+      <div class="more">… 1,996 more rows</div>
+
+      <div style="margin-top:16px">
+        <div class="you">What you type</div>
+        <div class="prompt" id="prompt" aria-live="polite"></div>
+      </div>
+
+      <div id="builder" style="display:none">
+        <div class="ph" style="margin-top:14px"><span>Add to your ask</span><span id="pickCount"></span></div>
+        <div class="moves" id="moves"></div>
+      </div>
+
+      <div class="actions">
+        <button class="btn primary" id="runBtn">Ask the AI 5 times</button>
+        <button class="btn ghost" id="hintBtn" style="display:none">Hint (1 of 3)</button>
+      </div>
+      <div class="hint" id="hint" aria-live="polite"></div>
+    </section>
+
+    <!-- RIGHT: what comes back -->
+    <section class="panel" aria-labelledby="outH">
+      <div class="ph"><span id="outH">What comes back</span><span>same question · 5 runs</span></div>
+      <div class="scatter">
+        <svg class="sc" id="sc" viewBox="0 0 600 110" role="img" aria-label="Answers from each run plotted against the true answer"></svg>
+        <div class="stat"><span>Different answers: <b id="distinct">–</b></span><span>Correct: <b id="correct">–</b></span><span id="whoComputed" style="color:var(--muted)"></span></div>
+      </div>
+      <div class="check" id="check">The check: the same answer every run, and it matches the database</div>
+      <div class="runs" id="runs"></div>
+      <div class="fb" id="fb" role="status" aria-live="polite"></div>
+    </section>
+  </div>
+
+  <!-- the payoff: what you do differently -->
+  <section class="compare" id="compare" aria-labelledby="cmpH">
+    <div class="ph"><span id="cmpH">What you do differently</span></div>
+    <div class="row">
+      <div class="colA">
+        <h3>Just prompting</h3>
+        <div class="q">"Here's my sales data. What was West region revenue in Q3?"</div>
+        <p style="font-size:13px;margin:8px 0 0">The AI <b>reads</b> 2,000 rows and <b>predicts</b> what the total probably is. 5 runs, 5 different numbers, all wrong. Nothing to check.</p>
+      </div>
+      <div class="colB">
+        <h3>Asking for the tool</h3>
+        <div class="q" id="finalPrompt"></div>
+        <p style="font-size:13px;margin:8px 0 0">The AI <b>writes a formula</b>, and the spreadsheet <b>does the math</b>. Same exact answer every run, and you can read the formula, check it, and reuse it next quarter.</p>
+      </div>
+    </div>
+    <div class="ph" style="margin-top:14px"><span>Moves collected</span></div>
+    <div class="collected" id="collected"></div>
+
+    <div class="tryit">
+      <div class="kicker">Try it in your AI</div>
+      <div style="font-size:14px;margin-top:4px">Next time you need a number from your data, copy this pattern:</div>
+      <pre id="template"></pre>
+      <div class="actions" style="margin-top:4px"><button class="btn ghost" id="copyBtn">Copy the pattern</button></div>
+      <ul>
+        <li><b>ChatGPT:</b> upload the file. It writes and runs code itself, so "run it" really happens.</li>
+        <li><b>Copilot in Excel:</b> ask for the formula, then put it in a cell. Excel does the math.</li>
+        <li><b>A chat AI that can't run code:</b> ask for the formula only, then paste it into your spreadsheet yourself. Never take its number.</li>
+      </ul>
+    </div>
+  </section>
+</div>
+
+<script>
+(function(){
+  var reduce = matchMedia('(prefers-reduced-motion: reduce)').matches;
+  var $ = function(id){ return document.getElementById(id); };
+  var TRUTH = 227421.36;
+  var BASE = "Here's my sales data. What was West region revenue in Q3?";
+
+  // ---- Moves the learner can add. Three real moves, four popular prompt "tricks" that don't change who does the math. ----
+  var MOVES = [
+    { id:"tool",  real:true,  plain:"Don't calculate it yourself. Write a spreadsheet formula that adds up revenue where region is West and the date is in Q3.",
+                               tech:"Don't calculate it yourself. Write a pandas script that filters region == 'West' and Q3 dates, then sums revenue.",
+                               label:"Ask for a formula, not the number" },
+    { id:"run",   real:true,  plain:"Run the formula on my file and give me the result it produces.",
+                               tech:"Execute the script on sales.csv and report the value it outputs.",
+                               label:"Make it run the formula" },
+    { id:"show",  real:true,  plain:"Show me the formula so I can check it.",
+                               tech:"Show me the code so I can review it.",
+                               label:"Show me the formula" },
+    { id:"care",  real:false, plain:"Please be very careful and double-check your math.", tech:"Please be very careful and double-check your math.", label:"Be careful, double-check" },
+    { id:"steps", real:false, plain:"Think step by step.", tech:"Think step by step.", label:"Think step by step" },
+    { id:"expert",real:false, plain:"You are an expert data analyst.", tech:"You are an expert data analyst.", label:"You are an expert" },
+    { id:"just",  real:false, plain:"Reply with just the number.", tech:"Reply with just the number.", label:"Just the number" }
+  ];
+
+  // ---- Recorded responses (fixtures), so the puzzle is reproducible. Values reflect real behaviour in Jeff's demo (179K–442K). ----
+  var REC = {
+    naive:   [312904.10, 198417.55, 441203.00, 265880.25, 179622.40],
+    tricks:  [251330.00, 289104.80, 233915.20, 307460.00, 214778.65],
+    formulaOnly: [231880.00, 219400.00, 240115.50, 226950.00, 228300.00]
+  };
+  var FORMULAS = {
+    plain: ['=SUMIFS(E:E, C:C,"West", B:B,">=2025-07-01", B:B,"<=2025-09-30")',
+            '=SUMPRODUCT((C2:C2001="West")*(MONTH(B2:B2001)>=7)*(MONTH(B2:B2001)<=9)*E2:E2001)'],
+    tech:  ['df[(df.region=="West") & df.date.between("2025-07-01","2025-09-30")].revenue.sum()',
+            'df.query("region==\'West\' and date.dt.quarter==3")["revenue"].sum()']
+  };
+
+  var st = { phase:1, skin:"plain", picked:{}, attempts:0, hints:0, done:false, xp:120, collected:[] };
+
+  function fmt(n){ return n.toLocaleString("en-US",{minimumFractionDigits:2,maximumFractionDigits:2}); }
+  function has(id){ return !!st.picked[id]; }
+
+  // ---- Deterministic outcome model: what the AI produces depends ONLY on which moves are in the ask ----
+  function outcome(){
+    if(st.phase===1) return { kind:"naive", vals:REC.naive };
+    if(has("tool") && has("run")) return { kind:"tool", vals:[TRUTH,TRUTH,TRUTH,TRUTH,TRUTH] };
+    if(has("tool")) return { kind:"formulaOnly", vals:REC.formulaOnly };
+    var anyTrick = MOVES.some(function(m){ return !m.real && has(m.id); });
+    return { kind: anyTrick ? "tricks" : "naive", vals: anyTrick ? REC.tricks : REC.naive };
+  }
+
+  // ---- Render the prompt the learner is building ----
+  function renderPrompt(){
+    var html = esc(BASE);
+    if(st.phase>=2){
+      MOVES.forEach(function(m){ if(has(m.id)) html += ' <span class="'+(m.real?"add":"decoy")+'">'+esc(st.skin==="plain"?m.plain:m.tech)+'</span>'; });
+    }
+    $("prompt").innerHTML = html;
+  }
+  function promptText(){
+    var t = BASE; MOVES.forEach(function(m){ if(has(m.id)) t += " " + (st.skin==="plain"?m.plain:m.tech); }); return t;
+  }
+  function esc(s){ return s.replace(/&/g,"&amp;").replace(/</g,"&lt;"); }
+
+  function renderMoves(){
+    var h=""; MOVES.forEach(function(m){ h += '<button class="move" data-id="'+m.id+'" aria-pressed="'+has(m.id)+'">'+m.label+'</button>'; });
+    $("moves").innerHTML = h;
+    Array.prototype.forEach.call(document.querySelectorAll(".move"), function(b){
+      b.onclick = function(){ if(st.done) return; var id=b.getAttribute("data-id"); st.picked[id]=!st.picked[id]; renderMoves(); renderPrompt(); };
+    });
+    var n = MOVES.filter(function(m){ return has(m.id); }).length;
+    $("pickCount").textContent = n ? n + " added" : "pick any";
+  }
+
+  // ---- Scatter plot ----
+  var X0=150000, X1=460000;
+  function x(v){ return 30 + (v-X0)/(X1-X0)*540; }
+  function drawAxes(){
+    var s = '<line class="axis" x1="30" y1="80" x2="570" y2="80"/>';
+    [150000,250000,350000,450000].forEach(function(t){ s += '<text class="tick" x="'+x(t)+'" y="98" text-anchor="middle">'+(t/1000)+'K</text>'; });
+    s += '<line class="truth" x1="'+x(TRUTH)+'" y1="8" x2="'+x(TRUTH)+'" y2="80"/><text class="truthlbl" x="'+(x(TRUTH)+5)+'" y="16">true answer 227,421.36</text>';
+    return s;
+  }
+  function plot(vals, onDone){
+    var svg=$("sc"); svg.innerHTML = drawAxes();
+    var i=0;
+    function next(){
+      if(i>=vals.length){ onDone(); return; }
+      var v=vals[i], ok=Math.abs(v-TRUTH)<0.005, cx=x(v), cy=ok?62:34+((i*13)%34);
+      var shape = ok
+        ? '<rect class="dot" x="'+(cx-6)+'" y="'+(cy-6)+'" width="12" height="12" rx="2" fill="var(--ok)"/>'
+        : '<circle class="dot" cx="'+cx+'" cy="'+cy+'" r="6" fill="var(--danger)"/>';
+      svg.insertAdjacentHTML("beforeend", shape);
+      addRun(i, v, ok);
+      i++; setTimeout(next, reduce?0:280);
+    }
+    next();
+  }
+
+  var IC_OK='<svg class="ic" viewBox="0 0 24 24" fill="none" stroke="var(--ok)" stroke-width="2.6" stroke-linecap="round"><path d="M5 12l4 4 10-10"/></svg>';
+  var IC_NO='<svg class="ic" viewBox="0 0 24 24" fill="none" stroke="var(--danger)" stroke-width="2.6" stroke-linecap="round"><path d="M6 6l12 12M18 6L6 18"/></svg>';
+  function addRun(i, v, ok){
+    var o = st.lastOutcome, body;
+    var f = FORMULAS[st.skin][i%2];
+    if(o.kind==="tool"){
+      body = (has("show") ? '<code>'+esc(f)+'</code><br>' : '<span style="color:var(--muted)">(ran a formula it didn\'t show you)</span><br>') +
+             'Result from running it: <span class="num" style="color:var(--ok)">'+fmt(v)+'</span>';
+    } else if(o.kind==="formulaOnly"){
+      body = '<code>'+esc(f)+'</code><br>"Applying this, the total is about <span class="num" style="color:var(--danger)">'+fmt(v)+'</span>."';
+    } else {
+      body = '"West region revenue in Q3 was <span class="num" style="color:var(--danger)">'+fmt(v)+'</span>."';
+    }
+    $("runs").insertAdjacentHTML("beforeend", '<div class="run '+(ok?"ok":"bad")+'"><span class="n">#'+(i+1)+'</span>'+(ok?IC_OK:IC_NO)+'<div>'+body+'</div></div>');
+  }
+
+  // ---- Run ----
+  $("runBtn").onclick = function(){
+    if(st.done) return;
+    $("runBtn").disabled = true; $("runs").innerHTML=""; fbClear(); setCheck(null);
+    st.lastOutcome = outcome();
+    if(st.phase===2) st.attempts++;
+    plot(st.lastOutcome.vals, finish);
+  };
+
+  function finish(){
+    var o=st.lastOutcome, vals=o.vals;
+    var distinct = vals.filter(function(v,i){ return vals.indexOf(v)===i; }).length;
+    var correct = vals.filter(function(v){ return Math.abs(v-TRUTH)<0.005; }).length;
+    $("distinct").textContent = distinct; $("correct").textContent = correct + " of 5";
+    $("whoComputed").textContent = o.kind==="tool" ? "Who did the math: the spreadsheet" : "Who did the math: the AI (guessing)";
+    var pass = distinct===1 && correct===5;
+    setCheck(pass);
+    $("runBtn").disabled = false;
+
+    if(st.phase===1){
+      fb("bad","<b>Five asks, five different answers, none right.</b> The AI isn't adding up 2,000 rows. It's predicting what a total <i>probably</i> looks like. Asking again won't fix that.<br><br><b>Your move:</b> change <i>what you ask for</i>.");
+      shake($("check"));
+      st.phase=2; $("builder").style.display="block"; $("hintBtn").style.display="inline-block";
+      $("runBtn").textContent="Ask with my rewrite"; $("s1").className="step done"; $("s2").className="step on";
+      renderMoves(); renderPrompt();
+      return;
+    }
+    if(o.kind==="tricks"){
+      shake($("check"));
+      fb("bad","<b>Closer, but still guessing.</b> \"Be careful\", \"think step by step\" and \"you're an expert\" change how the AI <i>talks</i>, not who does the math. It's still predicting the number. Which move takes the math out of its hands?");
+      return;
+    }
+    if(o.kind==="naive"){
+      shake($("check"));
+      fb("bad","<b>Nothing changed.</b> \"Just the number\" makes it shorter, not right. Add a move that changes <i>who does the math</i>.");
+      return;
+    }
+    if(o.kind==="formulaOnly"){
+      shake($("check"));
+      fb("warn","<b>Half-way there.</b> You got a formula, but the AI <i>still guessed</i> the total instead of running it. See \"about 231,880\"? Getting a formula isn't enough. Something has to <b>run</b> it: the AI's code tool, or your own spreadsheet.");
+      return;
+    }
+    // success
+    st.done = true;
+    var stars = 1 + ((st.attempts<=2 && st.hints<3)?1:0) + (has("show")?1:0);
+    setStars(stars);
+    st.xp += 20 + 15; $("xp").textContent = st.xp;
+    var sameFormula = has("show") ? " Look closely: runs used <b>two different formulas</b> and got the <b>identical</b> number. The right answer comes from the spreadsheet doing the math, not from the wording." : "";
+    fb("good","<b>Same exact answer, 5 out of 5.</b> The AI didn't get better at math. You asked it for a tool and had the tool do the math." + sameFormula +
+      (has("show") ? "" : "<br><br>For the third star: also ask it to <b>show you the formula</b>. A number you can't check is still asking you to trust it."));
+    $("s2").className="step done"; $("s3").className="step on";
+    reveal();
+  }
+
+  function reveal(){
+    $("compare").style.display="block";
+    $("finalPrompt").textContent = '"' + promptText() + '"';
+    var c = [];
+    if(has("tool")) c.push("Ask for the tool, not the answer");
+    if(has("run"))  c.push("Make it run the tool");
+    if(has("show")) c.push("Show me the work");
+    $("collected").innerHTML = c.map(function(x){ return '<span class="chip">'+x+'</span>'; }).join("");
+    $("template").textContent = st.skin==="plain"
+      ? "Don't calculate this yourself. Write a spreadsheet formula that [what you need, e.g. adds up revenue where region is West in Q3]. Run it on my file and give me the result it produces. Show me the formula so I can check it."
+      : "Don't compute this yourself. Write a script that [what you need]. Execute it on the attached file and report the value it outputs. Show me the code.";
+    if(!reduce) $("compare").scrollIntoView({behavior:"smooth", block:"start"});
+  }
+
+  $("copyBtn").onclick = function(){
+    var t=$("template").textContent;
+    if(navigator.clipboard){ navigator.clipboard.writeText(t).then(function(){ $("copyBtn").textContent="Copied"; }, function(){ $("copyBtn").textContent="Select the text above to copy"; }); }
+    else { $("copyBtn").textContent="Select the text above to copy"; }
+  };
+
+  // ---- Hints: nudge -> show the gap -> worked move (caps stars at 2, never costs XP) ----
+  var HINTS = [
+    "Who does the adding up in your current ask? If the answer is \"the AI\", your rewrite needs to change that.",
+    "Spreadsheets add up 2,000 rows perfectly every time. The AI is good at <i>writing</i> formulas. What if you asked for the formula instead of the number?",
+    "Add <b>Ask for a formula, not the number</b> and <b>Make it run the formula</b>. Leave the politeness tricks out. They don't change who does the math."
+  ];
+  $("hintBtn").onclick = function(){
+    if(st.hints>=3) return;
+    var h=$("hint"); h.style.display="block"; h.innerHTML="<b>Hint "+(st.hints+1)+".</b> "+HINTS[st.hints];
+    st.hints++; $("hintBtn").textContent = st.hints<3 ? "Hint ("+(st.hints+1)+" of 3)" : "No more hints";
+    if(st.hints>=3) $("hintBtn").disabled=true;
+  };
+
+  // ---- Helpers ----
+  function setCheck(pass){
+    var c=$("check"); c.className="check"+(pass===null?"":pass?" pass":" fail");
+    c.innerHTML = pass===null ? "The check: the same answer every run, and it matches the database"
+      : pass ? IC_OK+"PASSED: one answer, exactly right, every run" : IC_NO+"FAILED: answers vary or don't match the database";
+  }
+  function fb(k,h){ var f=$("fb"); f.className="fb "+k; f.innerHTML=h; }
+  function fbClear(){ $("fb").className="fb"; }
+  function shake(el){ if(reduce) return; el.classList.remove("shake"); void el.offsetWidth; el.classList.add("shake"); }
+  function setStars(n){ var s=$("stars").children; for(var i=0;i<3;i++) s[i].className=i<n?"on":""; $("stars").setAttribute("aria-label", n+" of 3 stars"); }
+
+  function setSkin(s){ st.skin=s; $("skinPlain").setAttribute("aria-pressed", s==="plain"); $("skinTech").setAttribute("aria-pressed", s==="tech"); renderPrompt(); if(st.done) reveal(); }
+  $("skinPlain").onclick=function(){ setSkin("plain"); };
+  $("skinTech").onclick=function(){ setSkin("tech"); };
+  $("themeBtn").onclick=function(){ var l=document.body.classList.toggle("light"); $("themeBtn").textContent=l?"Dark":"Light"; };
+
+  window.__l2 = { st:st, outcome:outcome, MOVES:MOVES, TRUTH:TRUTH, REC:REC };
+  $("sc").innerHTML = drawAxes(); renderPrompt();
+})();
+</script>
+</body>
+</html>
