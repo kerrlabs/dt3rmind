@@ -5,11 +5,16 @@ nicely and hope" to "ask the AI for tools and checks that make the right-answer 
 and prove it." See `docs/spec/SPEC.md` (v0.2) for the product spec.
 
 This repo is the **wave-1 foundation**: the level-packet schema, a pure engine, four result
-renderers, the app shell (world map + level player + settings), plus the full set of authored
+renderers, the app shell (two-tier world map + level player + settings), plus the full set of authored
 level packets. `content/levels/` holds **31 packets** — all seven worlds, their bosses, and the
 capstone (the capstone's live free-text/grading engine is Phase 2). The three load-bearing
 reference levels are called out below; the rest are wave-2 content on the same contract.
 Wave-2 authors add level content on top — see `docs/AUTHORING.md`.
+
+Routes (HashRouter): `#/` world view · `#/world/:n` that world's levels · `#/level/:id` the level
+player · `#/settings`. The map is derived entirely from packets + progress; `worlds.ts` adds a
+`tool`/`toolKey` per world for the node glyph. Adding a world or a level needs no layout edits —
+positions are computed.
 
 ## Stack
 
@@ -38,7 +43,8 @@ src/content/           schema.ts (the contract), packets loader, simulators/, wo
 src/engine/            pure engine: rule resolution, stars, XP, pass oracle
 src/store/             progress store (XP, stars, ranks, move deck) + localStorage
 src/ui/                result renderers + shared helpers
-src/pages/             WorldMap, LevelPlayer, Settings
+src/pages/             CircuitMap (two-tier world map), LevelPlayer, Settings
+                       mapState.ts (state derivation), mapGeometry.ts (layout), MapGlyphs.tsx
 src/app/               AppContext (theme/skin/reduced-motion/progress)
 tests/                 schema, exhaustive combination, engine, and store tests
 docs/                  spec, curriculum, prototypes, AUTHORING.md
