@@ -6,7 +6,8 @@
   "kicker": "World 4 · Name the Check · Level 4 (keystone)",
   "competencies": ["C5", "C6", "C7"],
   "movesTaught": ["M6", "M4"],
-  "isBoss": true,
+  "isBoss": false,
+  "isKeystone": true,
   "job": {
     "text": "Your team has 8 customer emails to answer today. You have the AI draft the replies. Every reply must have: a greeting, the customer's name, and a clear next step. You don't have time to read all 8. How do you know they're right?",
     "preview": {

@@ -82,7 +82,7 @@ export function WorldMap(): JSX.Element {
                           <div className="lt">{p.title}</div>
                           <div className="lk">
                             Level {p.order}
-                            {p.isBoss ? ' · boss' : ''}
+                            {p.isBoss ? ' · boss' : p.isKeystone ? ' · keystone' : ''}
                             {' · '}
                             <span className="stars" style={{ fontSize: 13 }} aria-label={`${s} of ${starMax} stars`}>
                               {Array.from({ length: starMax }, (_, i) => <span key={i} className={i < s ? 'on' : ''}>★</span>)}

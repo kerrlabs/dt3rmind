@@ -291,7 +291,7 @@ export function LevelPlayer(): JSX.Element {
               <p style={{ fontSize: 13, marginTop: 8 }} dangerouslySetInnerHTML={{ __html: sanitizeHtml(packet.whatYouDoDifferently.rewrite) }} /></div>
           </div>
 
-          {packet.isBoss ? (
+          {packet.isBoss || packet.isKeystone ? (
             <div className="rankup">
               <div className="crest"><svg viewBox="0 0 24 24"><path d="M12 3l7 3v6c0 4-3 7-7 9-4-2-7-5-7-9V6z" /><path d="M9 12l2 2 4-4" /></svg></div>
               <div><div className="kicker">Rank up</div><div style={{ fontSize: 18, fontWeight: 900 }}>You’re a {rankForXp(app.progress.xp).name}</div>

@@ -180,6 +180,8 @@ export interface LevelPacket {
   /** Canonical move IDs taught (M1–M9). */
   movesTaught: string[];
   isBoss: boolean;
+  /** Keystone level: earns the boss XP bonus and rank-up crest but does NOT gate world unlocks. */
+  isKeystone?: boolean;
 
   job: {
     text: string;

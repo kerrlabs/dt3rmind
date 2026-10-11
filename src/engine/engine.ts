@@ -165,7 +165,7 @@ export function computeXp(
 ): number {
   let xp = packet.xp.level;
   if (opts.seenFailing) xp += packet.xp.seenFailing;
-  if (packet.isBoss) xp += packet.xp.boss;
+  if (packet.isBoss || packet.isKeystone) xp += packet.xp.boss;
   return xp;
 }
 
