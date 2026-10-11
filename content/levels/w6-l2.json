@@ -1,0 +1,182 @@
+{
+  "id": "w6-l2",
+  "world": 6,
+  "order": 2,
+  "title": "Point at the broken case",
+  "kicker": "World 6 · Prove It & Fix It · Level 2",
+  "competencies": ["C11", "C9"],
+  "movesTaught": ["M8"],
+  "isBoss": false,
+  "job": {
+    "text": "The case-set runner shows <b>1 of 4</b> cases red: February expected 980 but got 1,120. Re-direct the build to fix it — <b>without</b> hard-coding February and <b>without</b> loosening the check to make it pass. All four cases must still be green after. <i>In your own words you would point at the failing case and ask for a root fix; here you build that ask from the checklist.</i>",
+    "preview": {
+      "columns": ["case", "month", "expected", "got", "result"],
+      "rows": [
+        ["normal", "January", "1,040", "1,040", "green"],
+        ["failing", "February", "980", "1,120", "red"],
+        ["normal", "March", "1,310", "1,310", "green"],
+        ["normal", "April", "905", "905", "green"]
+      ],
+      "more": "seed-42 sales · 1 of 4 red (February counts a refund as a sale)"
+    }
+  },
+  "naivePrompt": "Just fix it.",
+  "basePrompt": "Just fix it.",
+  "renderer": "table",
+  "moves": [
+    {
+      "id": "localize",
+      "kind": "real",
+      "label": "Localize the failure",
+      "text": {
+        "plain": "Tell me which case is red and what it expected versus what it got, before changing anything.",
+        "tech": "Report the failing case: its id, expected value, and actual value, before editing."
+      }
+    },
+    {
+      "id": "rerunall",
+      "kind": "real",
+      "label": "Re-run all cases, no regressions",
+      "text": {
+        "plain": "After the fix, re-run all four cases — every one that was green must stay green.",
+        "tech": "After the fix, execute the full case set and assert no previously-green case regressed."
+      }
+    },
+    {
+      "id": "narrate",
+      "kind": "trick",
+      "label": "Have it explain the fix",
+      "text": {
+        "plain": "Let the AI talk you through why it's fixed instead of re-running the cases.",
+        "tech": "Accept the model's prose explanation of the fix in place of re-running the cases."
+      }
+    },
+    {
+      "id": "confident",
+      "kind": "trick",
+      "label": "Tell it to be thorough",
+      "text": {
+        "plain": "Just remind it to be thorough so it gets February right.",
+        "tech": "Just remind it to be thorough on the failing month."
+      }
+    }
+  ],
+  "subChoiceGroup": "How should it fix the failing case?",
+  "subChoices": [
+    { "id": "fixrule", "kind": "real", "label": "Fix the underlying rule (handle refunds for every month)" },
+    { "id": "hardcode", "kind": "trick", "label": "Special-case February (if month == Feb, return 980)" },
+    { "id": "loosen", "kind": "trick", "label": "Loosen the check so February passes as-is" }
+  ],
+  "rules": [
+    {
+      "id": "pass",
+      "when": {
+        "requireAll": ["localize", "rerunall", "fixrule"],
+        "forbidAny": ["hardcode", "loosen"]
+      },
+      "isPass": true,
+      "claim": "4 of 4 green after the fix. The check is unchanged.",
+      "doer": "tool",
+      "feedback": "<b>Fixed at the root.</b> You found the real reason February failed — a refund counted as a sale — fixed the rule for every month, re-ran all four, and nothing else broke. That's a fix, not a patch.",
+      "lesson": "Localize, fix the rule, keep the check.",
+      "output": {
+        "columns": ["case", "expected", "after fix"],
+        "rows": [
+          { "cells": ["January", "1,040", "1,040"], "pass": true },
+          { "cells": ["February", "980", "980"], "pass": true },
+          { "cells": ["March", "1,310", "1,310"], "pass": true },
+          { "cells": ["April", "905", "905"], "pass": true }
+        ],
+        "source": "the rule fixed at the root, check intact, no regression"
+      }
+    },
+    {
+      "id": "hardcoded",
+      "when": { "requireAny": ["hardcode"], "forbidAny": ["loosen"] },
+      "isPass": false,
+      "claim": "February passes now, but March came back red.",
+      "doer": "tool",
+      "feedback": "<b>You fixed the case, not the rule.</b> Hard-coding February to 980 made February green and broke March. Point at <i>why</i> February failed and fix the rule behind it, not the one month.",
+      "lesson": "Patching one case breaks another.",
+      "output": {
+        "columns": ["case", "expected", "after patch"],
+        "rows": [
+          { "cells": ["January", "1,040", "1,040"], "pass": true },
+          { "cells": ["February", "980", "980"], "pass": true },
+          { "cells": ["March", "1,310", "1,190"], "pass": false },
+          { "cells": ["April", "905", "905"], "pass": true }
+        ],
+        "source": "an overfit: if month == Feb return 980"
+      }
+    },
+    {
+      "id": "loosened",
+      "when": { "requireAny": ["loosen"] },
+      "isPass": false,
+      "claim": "All four green — because the check now asks for less.",
+      "doer": "ai-guessing",
+      "feedback": "<b>You passed it by lowering the bar.</b> The cases are green because the check now accepts a wider range, not because the tool got right. Don't trade the check away for a green — fix the tool.",
+      "lesson": "Don't trade the check away for a green.",
+      "output": {
+        "columns": ["case", "expected (loosened)", "tool output"],
+        "rows": [
+          { "cells": ["January", "~1,040 ±200", "1,040"], "pass": true },
+          { "cells": ["February", "~980 ±200", "1,120"], "pass": true },
+          { "cells": ["March", "~1,310 ±200", "1,310"], "pass": true },
+          { "cells": ["April", "~905 ±200", "905"], "pass": true }
+        ],
+        "source": "a check weakened until the wrong answer fits"
+      }
+    },
+    {
+      "id": "naive",
+      "when": {},
+      "isPass": false,
+      "claim": "\"Just fix it.\" — February still red, or fixed by guesswork.",
+      "doer": "ai-guessing",
+      "feedback": "<b>\"Just fix it\" doesn't say what to fix.</b> You didn't localize the failure or demand the whole set re-run, so you can't tell a real fix from an overfit. Point at the broken case, fix the rule, and re-run all four.",
+      "lesson": "A vague fix hides whether anything actually got better.",
+      "output": {
+        "columns": ["case", "expected", "got"],
+        "rows": [
+          { "cells": ["January", "1,040", "1,040"], "pass": true },
+          { "cells": ["February", "980", "1,120"], "pass": false },
+          { "cells": ["March", "1,310", "1,310"], "pass": true },
+          { "cells": ["April", "905", "905"], "pass": true }
+        ],
+        "source": "an unlocalized \"just fix it\" ask"
+      }
+    }
+  ],
+  "attemptBudget": 3,
+  "stars": {
+    "attemptBudget": 3,
+    "showMove": null,
+    "thirdStar": { "requireAll": ["localize"] }
+  },
+  "xp": { "level": 20, "seenFailing": 15, "boss": 0 },
+  "hints": {
+    "nudge": "Which case is red, and what did it expect versus get?",
+    "gap": "Watch the trap: hard-coding February breaks March, and loosening the check only hides the error. The case isn't the problem — the rule is. February counts a refund as a sale.",
+    "moves": "Add <b>Localize the failure</b> and <b>Re-run all cases, no regressions</b>, and choose <b>Fix the underlying rule</b> — not special-casing February and not loosening the check."
+  },
+  "whatYouDoDifferently": {
+    "naive": "\"just fix it\" → an overfit that passes February and breaks March.",
+    "rewrite": "localize the failing case, fix the rule behind it, re-run all four → clean, no regression, check intact."
+  },
+  "tryIt": {
+    "template": {
+      "plain": "Case [X] failed: it expected [E] but got [G]. Fix the underlying rule so it passes — don't special-case [X] — and re-run ALL cases to prove nothing else broke.",
+      "tech": "Case [X] failed (expected [E], got [G]). Fix the root rule, do not hard-code [X], and re-run the whole case set to prove no regression."
+    },
+    "notes": [
+      "<b>ChatGPT:</b> demand it show all cases green after the fix, not just the one that failed.",
+      "<b>Copilot in Excel:</b> re-check every test row, not only the one you fixed.",
+      "<b>A chat AI that can't run code:</b> re-run the whole case set yourself; an overfit shows up as a new red elsewhere. Never accept \"I fixed it\" without seeing every case."
+    ]
+  },
+  "expectPass": {
+    "conditions": { "requireAll": ["localize", "rerunall", "fixrule"] },
+    "forbidSubChoicesAny": ["hardcode", "loosen"]
+  }
+}

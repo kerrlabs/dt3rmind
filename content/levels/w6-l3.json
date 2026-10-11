@@ -1,0 +1,167 @@
+{
+  "id": "w6-l3",
+  "world": 6,
+  "order": 3,
+  "title": "Prove it like you mean it",
+  "kicker": "World 6 · Prove It & Fix It · Level 3",
+  "competencies": ["C9", "C11"],
+  "movesTaught": ["M6"],
+  "isBoss": false,
+  "job": {
+    "text": "Before you can mark the tool \"done,\" add your <b>own</b> case that could actually break it — on a dimension you haven't tested yet — with its correct expected value, and show the whole set passing. So far you have tested a normal month, an empty month, and a refund month. A duplicate of one of those proves nothing new. <i>In your own words you would ask the AI to add a case on an untested dimension; here you build that ask from the checklist.</i>",
+    "preview": {
+      "columns": ["case", "dimension", "status"],
+      "rows": [
+        ["March", "normal month", "tested, green"],
+        ["January", "empty month (boundary)", "tested, green"],
+        ["May", "refund / negative amount (adversarial)", "tested, green"],
+        ["your new case", "???", "add one on an untested dimension"]
+      ],
+      "more": "seed-42 sales · year boundary (Dec→Jan) is still untested"
+    }
+  },
+  "naivePrompt": "Add a test and we're done.",
+  "basePrompt": "Add a test and we're done.",
+  "renderer": "table",
+  "moves": [
+    {
+      "id": "expected",
+      "kind": "real",
+      "label": "Say its expected value",
+      "text": {
+        "plain": "State the correct expected total for the new case before you run it.",
+        "tech": "Commit the expected value for the new case before executing it."
+      }
+    },
+    {
+      "id": "allpass",
+      "kind": "real",
+      "label": "Show the whole set passing",
+      "text": {
+        "plain": "Run every case, old and new, and show them all green.",
+        "tech": "Execute the full case set including the new case and report all green."
+      }
+    },
+    {
+      "id": "done",
+      "kind": "trick",
+      "label": "Call it done, it looks solid",
+      "text": {
+        "plain": "It's covered enough — call it done.",
+        "tech": "Coverage looks fine — mark it done."
+      }
+    }
+  ],
+  "subChoiceGroup": "Which case do you add?",
+  "subChoices": [
+    { "id": "newdim", "kind": "real", "label": "A month spanning the year boundary (Dec→Jan) — an untested dimension" },
+    { "id": "dup", "kind": "trick", "label": "Another normal month like March — a duplicate" }
+  ],
+  "rules": [
+    {
+      "id": "pass",
+      "when": {
+        "requireAll": ["expected", "allpass", "newdim"],
+        "forbidAny": ["dup"]
+      },
+      "isPass": true,
+      "claim": "4 of 4 green, including the year-boundary case with its committed value.",
+      "doer": "tool",
+      "feedback": "<b>You proved it like you mean it.</b> You picked a case that could actually break it — a month spanning the year boundary — gave it the right expected total, and it held. That's a new dimension, not a repeat.",
+      "lesson": "Design a case that could fail, then show it doesn't.",
+      "output": {
+        "columns": ["case", "expected", "tool output"],
+        "rows": [
+          { "cells": ["March (normal)", "48,210.60", "48,210.60"], "pass": true },
+          { "cells": ["January (empty)", "0.00", "0.00"], "pass": true },
+          { "cells": ["May (refund)", "46,235.80", "46,235.80"], "pass": true },
+          { "cells": ["Dec→Jan (year boundary)", "52,900.15", "52,900.15"], "pass": true }
+        ],
+        "source": "a case set that reaches an untested dimension and holds"
+      }
+    },
+    {
+      "id": "dup_case",
+      "when": { "requireAny": ["dup"] },
+      "isPass": false,
+      "claim": "The new case can't fail differently from one you already have.",
+      "doer": "ai-guessing",
+      "feedback": "<b>That case can't fail differently from one you already have.</b> Another ordinary month tests exactly what March already tested. A test that can only pass the same way isn't a new test. Try a dimension we haven't tried.",
+      "lesson": "A redundant case adds no proof.",
+      "output": {
+        "columns": ["case", "dimension", "adds proof?"],
+        "rows": [
+          { "cells": ["March (normal)", "normal month", "—"], "pass": true },
+          { "cells": ["another normal month", "normal month (duplicate)", "no new coverage"], "pass": false }
+        ],
+        "source": "a duplicate of a dimension already covered"
+      }
+    },
+    {
+      "id": "no_expected",
+      "when": { "requireAll": ["newdim", "allpass"], "forbidAny": ["expected", "dup"] },
+      "isPass": false,
+      "claim": "Year-boundary case ran, but with no committed expected value.",
+      "doer": "ai-guessing",
+      "feedback": "<b>Good dimension, no answer attached.</b> A year-boundary month is worth testing — but without a committed expected total you'll grade it to whatever it returns. State the correct number first.",
+      "lesson": "A good case needs the right answer attached.",
+      "output": {
+        "columns": ["case", "expected", "tool output"],
+        "rows": [
+          { "cells": ["Dec→Jan (year boundary)", "(none committed)", "52,900.15"], "pass": false }
+        ],
+        "source": "a new dimension with no expected value"
+      }
+    },
+    {
+      "id": "naive",
+      "when": {},
+      "isPass": false,
+      "claim": "\"Add a test and we're done.\"",
+      "doer": "ai-guessing",
+      "feedback": "<b>\"Add a test\" without saying what kind just repeats what you have.</b> Pick a case on a dimension you haven't tried, commit its expected value, and run the whole set. Otherwise you've added nothing.",
+      "lesson": "Proof means a case that could have failed, not another easy one.",
+      "output": {
+        "columns": ["case", "dimension", "status"],
+        "rows": [
+          { "cells": ["March", "normal", "already covered"], "pass": true },
+          { "cells": ["January", "empty", "already covered"], "pass": true },
+          { "cells": ["May", "refund", "already covered"], "pass": true },
+          { "cells": ["(no new case)", "???", "nothing added"], "pass": false }
+        ],
+        "source": "no new dimension added"
+      }
+    }
+  ],
+  "attemptBudget": 3,
+  "stars": {
+    "attemptBudget": 3,
+    "showMove": null,
+    "thirdStar": { "requireAll": ["expected"] }
+  },
+  "xp": { "level": 20, "seenFailing": 15, "boss": 0 },
+  "hints": {
+    "nudge": "What input have we NOT tried that could trip it up?",
+    "gap": "Covered so far: normal, empty, refund. What about a month that spans a year boundary — December into January?",
+    "moves": "Choose the <b>year-boundary (Dec→Jan)</b> case, add <b>Say its expected value</b> and <b>Show the whole set passing</b>. Skip the duplicate month — it proves nothing new."
+  },
+  "whatYouDoDifferently": {
+    "naive": "\"add a test\" → a duplicate that proves nothing.",
+    "rewrite": "add a case on an untested dimension with its expected value, run the whole set → real proof."
+  },
+  "tryIt": {
+    "template": {
+      "plain": "Add one case that could actually break this on a dimension we haven't tested yet, with its correct expected result, and show me the whole set passing.",
+      "tech": "Add one case on an untested dimension, commit its expected value, and run the full set to show every case green."
+    },
+    "notes": [
+      "<b>ChatGPT:</b> ask it to name the untested dimensions first, then add a case for one.",
+      "<b>Copilot in Excel:</b> add a test row that's unlike the others — a boundary value, not a repeat.",
+      "<b>A chat AI that can't run code:</b> pick the weird input yourself and work out the answer before testing. Never accept \"I added a test, all pass\" without seeing it."
+    ]
+  },
+  "expectPass": {
+    "conditions": { "requireAll": ["expected", "allpass", "newdim"] },
+    "forbidSubChoicesAny": ["dup"]
+  }
+}

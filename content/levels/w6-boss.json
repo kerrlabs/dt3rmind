@@ -1,0 +1,227 @@
+{
+  "id": "w6-boss",
+  "world": 6,
+  "order": 4,
+  "title": "The timezone that dropped the orders",
+  "kicker": "World 6 · Prove It & Fix It · Boss",
+  "competencies": ["C11", "C12", "C9"],
+  "movesTaught": ["M8", "M6"],
+  "isBoss": true,
+  "job": {
+    "text": "New domain: a <b>daily active users</b> tool over an event log. It has been green for weeks — but it silently drops events that land right at <b>midnight UTC</b>, so days near a timezone edge undercount. The check never tested a boundary timestamp, so it stayed green on a wrong number. Expose the false green, re-direct the fix at the rule (not the one day, and not by loosening the check), and add your own adversarial boundary case that passes. <i>In your own words you would ask the AI to run the boundary case, strengthen the check, fix the rule, and prove it; here you build that ask from the checklist. Pass or fail is decided by the deterministic case runner, never by the AI reading your words.</i>",
+    "preview": {
+      "columns": ["day", "boundary event at 00:00 UTC?", "check result", "actually correct?"],
+      "rows": [
+        ["ordinary day", "no", "green", "yes"],
+        ["edge day (held-out)", "yes", "green", "no — midnight event dropped"]
+      ],
+      "more": "events.log · the check never tested a 00:00 UTC timestamp"
+    }
+  },
+  "naivePrompt": "It's been green for weeks, we're done.",
+  "basePrompt": "It's been green for weeks, we're done.",
+  "renderer": "table",
+  "moves": [
+    {
+      "id": "runedge",
+      "kind": "real",
+      "label": "Run the check on the edge day",
+      "text": {
+        "plain": "Run your check on the held-out day with a midnight-UTC event, not just the ordinary days.",
+        "tech": "Execute the check against the held-out day containing a 00:00 UTC event."
+      }
+    },
+    {
+      "id": "strengthen",
+      "kind": "real",
+      "label": "Strengthen it so it fails here",
+      "text": {
+        "plain": "Add what's needed so the check goes red on the undercounted day — it must account for the boundary timestamp.",
+        "tech": "Add the boundary-inclusive clause so the check returns False on the undercounted day."
+      }
+    },
+    {
+      "id": "rootfix",
+      "kind": "real",
+      "label": "Fix the rule, not the day",
+      "text": {
+        "plain": "Fix how the tool buckets timestamps for every day — don't hard-code the one edge day.",
+        "tech": "Fix the time-bucketing rule globally; do not special-case the failing day."
+      }
+    },
+    {
+      "id": "addcase",
+      "kind": "real",
+      "label": "Add a passing adversarial boundary case",
+      "text": {
+        "plain": "Add your own boundary case — a day with an event exactly at midnight UTC — with its correct count, and show it green.",
+        "tech": "Add an adversarial case with a 00:00 UTC event and its committed expected count; show it passing."
+      }
+    },
+    {
+      "id": "trust",
+      "kind": "trick",
+      "label": "Trust the green",
+      "text": {
+        "plain": "It's been green for weeks, so it's fine.",
+        "tech": "It's been green for weeks, so it's fine."
+      }
+    },
+    {
+      "id": "patchday",
+      "kind": "trick",
+      "label": "Just make the edge day pass",
+      "text": {
+        "plain": "Special-case the one edge day so it reads right.",
+        "tech": "Hard-code the edge day's count so it reads right."
+      }
+    },
+    {
+      "id": "loosen",
+      "kind": "trick",
+      "label": "Loosen the check so it passes",
+      "text": {
+        "plain": "Widen the check so the undercount falls inside the allowed range.",
+        "tech": "Relax the check tolerance so the undercount is accepted."
+      }
+    }
+  ],
+  "subChoices": [],
+  "rules": [
+    {
+      "id": "pass",
+      "when": {
+        "requireAll": ["runedge", "strengthen", "rootfix", "addcase"],
+        "forbidAny": ["patchday", "loosen"]
+      },
+      "isPass": true,
+      "claim": "Check now fails the old wrong answer; rule fixed for every day; boundary case green; no regression.",
+      "doer": "checker",
+      "feedback": "<b>Boss cleared.</b> You ran the check on the edge day and watched the false green turn red, fixed the time-bucketing rule for every day, added your own midnight-UTC case, and the whole set holds — with the check tighter, not looser. That is prove-it-and-fix-it end to end.",
+      "lesson": "Expose the false green, fix the rule at the root, and prove it with a case that could have failed.",
+      "output": {
+        "columns": ["check / case", "before", "after"],
+        "rows": [
+          { "cells": ["check on edge day", "green (false)", "red → caught"], "pass": true },
+          { "cells": ["rule fix", "edge day only", "every day (root)"], "pass": true },
+          { "cells": ["ordinary days", "green", "still green"], "pass": true },
+          { "cells": ["new midnight-UTC case", "not tested", "green"], "pass": true }
+        ],
+        "source": "false green exposed, rule fixed at the root, adversarial case added"
+      }
+    },
+    {
+      "id": "patched",
+      "when": { "requireAny": ["patchday"], "forbidAny": ["loosen"] },
+      "isPass": false,
+      "claim": "The edge day reads right now, but another day near the boundary is off.",
+      "doer": "tool",
+      "feedback": "<b>You fixed the day, not the rule.</b> Hard-coding the one edge day leaves every other boundary day still undercounting. Fix how the tool buckets midnight timestamps for all days.",
+      "lesson": "Patching one case leaves the whole class broken.",
+      "output": {
+        "columns": ["day", "expected", "after patch"],
+        "rows": [
+          { "cells": ["patched edge day", "1,204", "1,204"], "pass": true },
+          { "cells": ["another boundary day", "1,190", "1,176"], "pass": false }
+        ],
+        "source": "an overfit on the one edge day"
+      }
+    },
+    {
+      "id": "loosened",
+      "when": { "requireAny": ["loosen"] },
+      "isPass": false,
+      "claim": "Everything green — because the check now tolerates the undercount.",
+      "doer": "ai-guessing",
+      "feedback": "<b>You passed it by lowering the bar.</b> Widening the check lets the undercount through instead of catching it. A boss pass needs the check tighter, not looser — fix the tool.",
+      "lesson": "Loosening the check hides the bug it was built to catch.",
+      "output": {
+        "columns": ["day", "check tolerance", "result"],
+        "rows": [
+          { "cells": ["edge day", "±5% (widened)", "accepted undercount"], "pass": true },
+          { "cells": ["ordinary day", "±5% (widened)", "accepted"], "pass": true }
+        ],
+        "source": "a check weakened until the wrong count fits"
+      }
+    },
+    {
+      "id": "ran_no_root",
+      "when": { "requireAll": ["runedge", "strengthen"], "forbidAny": ["rootfix", "patchday", "loosen"] },
+      "isPass": false,
+      "claim": "Check now goes red on the edge day — but the tool is still wrong.",
+      "doer": "checker",
+      "feedback": "<b>Half the boss.</b> You exposed the false green and the check now fails the edge day — good. But you never fixed the rule, so the tool still drops the midnight event and the case stays red. Fix the bucketing rule at the root.",
+      "lesson": "Catching the false green is step one; fixing the rule is step two.",
+      "output": {
+        "columns": ["day", "check", "tool count"],
+        "rows": [
+          { "cells": ["edge day", "red (now catches it)", "still undercounts"], "pass": false }
+        ],
+        "source": "the false green exposed but the rule not yet fixed"
+      }
+    },
+    {
+      "id": "ran_no_strengthen",
+      "when": { "requireAll": ["runedge"], "forbidAny": ["strengthen", "patchday", "loosen"] },
+      "isPass": false,
+      "claim": "Check still passes the edge day — the wrong answer.",
+      "doer": "checker",
+      "feedback": "<b>The check passed the wrong answer.</b> You ran it on the edge day, but it never tests the boundary timestamp, so it stays green on an undercount. Strengthen it so it goes red here first.",
+      "lesson": "Find the dimension the check ignores before you trust the green.",
+      "output": {
+        "columns": ["day", "check tests boundary?", "result"],
+        "rows": [
+          { "cells": ["edge day", "no", "green — missed it"], "pass": false }
+        ],
+        "source": "the edge day run against a check that never tested a boundary"
+      }
+    },
+    {
+      "id": "naive",
+      "when": {},
+      "isPass": false,
+      "claim": "\"It's been green for weeks, we're done.\"",
+      "doer": "ai-guessing",
+      "feedback": "<b>The green lied, for weeks.</b> The tool silently drops midnight-UTC events, but the check never tested a boundary timestamp, so it stayed green. 'Trust the green' doesn't change what the check looks at. Run the edge case, strengthen the check, fix the rule, and add a boundary case that passes.",
+      "lesson": "A check that never saw a boundary can be silently wrong for a long time.",
+      "output": {
+        "columns": ["day", "check tests boundary?", "result"],
+        "rows": [
+          { "cells": ["ordinary day", "no", "green"], "pass": true },
+          { "cells": ["edge day (held-out)", "no", "green — undercount hidden"], "pass": false }
+        ],
+        "source": "a check that never tested the timezone edge"
+      }
+    }
+  ],
+  "attemptBudget": 3,
+  "stars": {
+    "attemptBudget": 3,
+    "showMove": null,
+    "thirdStar": { "requireAll": ["addcase"] }
+  },
+  "xp": { "level": 20, "seenFailing": 15, "boss": 50 },
+  "hints": {
+    "nudge": "It's been green for weeks but it's wrong on the edge day — so the check never looked at a boundary timestamp. What is the edge day doing that the check ignores?",
+    "gap": "An event lands exactly at 00:00 UTC and the tool drops it, so days near the timezone edge undercount. The check only ever tested ordinary mid-day timestamps.",
+    "moves": "Add <b>Run the check on the edge day</b>, <b>Strengthen it so it fails here</b>, <b>Fix the rule, not the day</b>, and <b>Add a passing adversarial boundary case</b>. Skip 'trust the green', 'make the edge day pass', and 'loosen the check' — the first ignores the bug, the second overfits, the third hides it."
+  },
+  "whatYouDoDifferently": {
+    "naive": "\"it's been green for weeks\" → a tool that drops midnight events, undetected.",
+    "rewrite": "run the edge case, strengthen the check until it goes red, fix the bucketing rule for every day, and add your own midnight-UTC case that passes."
+  },
+  "tryIt": {
+    "template": {
+      "plain": "This passed its check but it's wrong at [boundary case]. Show me the check and strengthen it so it FAILS this case. Then fix the underlying rule — not just this one case, and don't loosen the check. Finally add a boundary case of your own with its correct answer and show the whole set green.",
+      "tech": "This passed the check but is wrong at [boundary]. Strengthen the check to return False here, fix the root rule (no hard-coding, no loosening), add an adversarial boundary case with a committed expected value, and run the full set to prove all green with no regression."
+    },
+    "notes": [
+      "<b>ChatGPT:</b> make it run the strengthened check on the boundary case and show it going red, then show every case green after the root fix.",
+      "<b>Copilot in Excel:</b> add the boundary condition to the check column, confirm the bad row flips to FALSE, then re-check every row after the fix.",
+      "<b>A chat AI that can't run code:</b> work the boundary case by hand, confirm the check now fails it, and re-run the whole set yourself. Never accept \"I checked, it's green\" — a false green is exactly what it looks like."
+    ]
+  },
+  "expectPass": {
+    "conditions": { "requireAll": ["runedge", "strengthen", "rootfix", "addcase"], "forbidAny": ["patchday", "loosen"] }
+  }
+}

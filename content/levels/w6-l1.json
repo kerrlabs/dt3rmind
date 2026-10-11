@@ -1,0 +1,155 @@
+{
+  "id": "w6-l1",
+  "world": 6,
+  "order": 1,
+  "title": "The green that lied",
+  "kicker": "World 6 · Prove It & Fix It · Level 1",
+  "competencies": ["C12", "C9"],
+  "movesTaught": ["M6", "M4"],
+  "isBoss": false,
+  "job": {
+    "text": "Your month-total tool is passing its check. A new, held-out month comes in — and the tool is wrong on it, <b>even though the check stayed green</b>. The check only ever tested the one happy month, so it never looked at this one. Find why the check didn't catch it and strengthen it. <i>In your own words you would ask the AI to run the check on the new month and tighten it; here you build that ask from the checklist.</i>",
+    "preview": {
+      "columns": ["month", "has refund?", "check result", "actually correct?"],
+      "rows": [
+        ["March (tested)", "no", "green", "yes"],
+        ["August (held-out)", "yes (−$240)", "green", "no — refund counted as a sale"]
+      ],
+      "more": "seed-42 sales · the check only ever saw March"
+    }
+  },
+  "naivePrompt": "It's green, we're good.",
+  "basePrompt": "It's green, we're good.",
+  "renderer": "table",
+  "moves": [
+    {
+      "id": "runnew",
+      "kind": "real",
+      "label": "Run the check on the new case",
+      "text": {
+        "plain": "Run your check on this held-out month too, not just the one it was built on.",
+        "tech": "Execute the existing check against the held-out month, not only the month it was authored on."
+      }
+    },
+    {
+      "id": "showcheck",
+      "kind": "real",
+      "label": "Show me the check",
+      "text": {
+        "plain": "Show me the check so I can see what it actually looks at.",
+        "tech": "Print the check's source so I can see which conditions it tests."
+      }
+    },
+    {
+      "id": "strengthen",
+      "kind": "real",
+      "label": "Strengthen it so it fails here",
+      "text": {
+        "plain": "Add what's needed so the check goes red on this wrong answer — it must account for refunds.",
+        "tech": "Add the clause (signed/refund handling) so the check returns False on the held-out wrong answer."
+      }
+    },
+    {
+      "id": "trust",
+      "kind": "trick",
+      "label": "Trust the green",
+      "text": {
+        "plain": "It's green, so it's fine — move on.",
+        "tech": "It's green, so it's fine — move on."
+      }
+    },
+    {
+      "id": "rerun",
+      "kind": "trick",
+      "label": "Just run it again",
+      "text": {
+        "plain": "Run the same check again and hope it catches it this time.",
+        "tech": "Re-run the identical check and hope for a different result."
+      }
+    }
+  ],
+  "subChoices": [],
+  "rules": [
+    {
+      "id": "pass",
+      "when": { "requireAll": ["runnew", "strengthen"] },
+      "isPass": true,
+      "claim": "Strengthened check now fails August (the held-out wrong answer).",
+      "doer": "checker",
+      "feedback": "<b>You exposed the false green.</b> You ran the check on the held-out month, saw it falsely pass, and added the refund clause. Now the check goes red on the wrong answer — so it can actually catch this class of bug.",
+      "lesson": "Strengthen the check until the false green turns red.",
+      "output": {
+        "columns": ["month", "check looks at refunds?", "check result"],
+        "rows": [
+          { "cells": ["March", "yes", "green"], "pass": true },
+          { "cells": ["August (wrong answer)", "yes", "red — caught"], "pass": true }
+        ],
+        "source": "a check strengthened until it fails the bad case"
+      }
+    },
+    {
+      "id": "ran_no_strengthen",
+      "when": { "requireAll": ["runnew"], "forbidAny": ["strengthen"] },
+      "isPass": false,
+      "claim": "Check still passes August — the wrong answer.",
+      "doer": "checker",
+      "feedback": "<b>The check passed the wrong answer.</b> You ran it on the new month, but it doesn't test the thing that's wrong here — refunds. It only compares a positive total. Add the clause that would catch it.",
+      "lesson": "Find the dimension the check ignores.",
+      "output": {
+        "columns": ["month", "check looks at refunds?", "check result"],
+        "rows": [
+          { "cells": ["March", "no", "green"], "pass": true },
+          { "cells": ["August (wrong answer)", "no", "green — missed it"], "pass": false }
+        ],
+        "source": "a check run on the new case but never tightened"
+      }
+    },
+    {
+      "id": "naive",
+      "when": {},
+      "isPass": false,
+      "claim": "\"It's green, we're good.\"",
+      "doer": "ai-guessing",
+      "feedback": "<b>The green lied.</b> The tool is wrong on this month, but your check never looked at it, so it stayed green. 'Trust the green' and 'run it again' don't change what the check tests. A green only covers what the check tests.",
+      "lesson": "A passing check isn't a correct tool.",
+      "output": {
+        "columns": ["month", "check looks at refunds?", "check result"],
+        "rows": [
+          { "cells": ["March", "no", "green"], "pass": true },
+          { "cells": ["August (wrong answer)", "no", "green — never checked"], "pass": false }
+        ],
+        "source": "a check that only ever saw the happy month"
+      }
+    }
+  ],
+  "attemptBudget": 3,
+  "stars": {
+    "attemptBudget": 3,
+    "showMove": "showcheck",
+    "thirdStar": null
+  },
+  "xp": { "level": 20, "seenFailing": 15, "boss": 0 },
+  "hints": {
+    "nudge": "The tool passed but it's wrong here — so the check never looked at this. What is this month doing that the check ignores?",
+    "gap": "This month has a refund — a negative amount. The check only ever tested positive months, so it has no way to notice.",
+    "moves": "Add <b>Run the check on the new case</b> and <b>Strengthen it so it fails here</b> — teach it to account for refunds, then this case goes red."
+  },
+  "whatYouDoDifferently": {
+    "naive": "\"it's green, we're good.\" → a wrong month sails through a check that never looked at it.",
+    "rewrite": "run the check on a new case, watch it falsely pass, then strengthen it until it catches the bug."
+  },
+  "tryIt": {
+    "template": {
+      "plain": "This passed your check but it's actually wrong on [case]. That means the check is too weak. Show me the check, and strengthen it so it FAILS this case — then re-run.",
+      "tech": "This passed the check but is wrong on [case], so the check is too weak. Show the check, add the clause that makes it return False on this case, and re-run it."
+    },
+    "notes": [
+      "<b>ChatGPT:</b> make it run the strengthened check on the bad case and show it going red before you trust it.",
+      "<b>Copilot in Excel:</b> add the missing condition to the check column and confirm the bad row flips to FALSE.",
+      "<b>A chat AI that can't run code:</b> ask what the check does and doesn't look at — the gap is the fix. Never accept \"I checked, it's green.\""
+    ]
+  },
+  "expectPass": {
+    "conditions": { "requireAll": ["runnew", "strengthen"] }
+  }
+}
