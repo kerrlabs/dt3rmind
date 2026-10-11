@@ -88,6 +88,23 @@
   "renderer": "numeric-scatter",
   "rules": [
     {
+      "id": "right-moves-plus-tricks",
+      "when": {
+        "requireAll": ["tool", "run"],
+        "requireAny": ["care", "steps", "expert", "just"]
+      },
+      "isPass": false,
+      "claim": "Result from running it: 227,421.36 — but you also kept a trick in the ask.",
+      "doer": "spreadsheet",
+      "feedback": "<b>You found the moves that do the work, but you also kept a trick ('be careful', 'think step by step', 'you're an expert', or 'just the number').</b> It doesn't change who does the math — the formula and running it do. Take it out so you know exactly which part made the answer exact.",
+      "lesson": "The tool and running it do the math; the tricks just change the voice — drop them.",
+      "output": {
+        "truth": 227421.36,
+        "values": [227421.36, 227421.36, 227421.36, 227421.36, 227421.36],
+        "showNote": "The tool still gets it right — but the trick in your ask is doing nothing. Drop it to see which move mattered."
+      }
+    },
+    {
       "id": "pass",
       "when": { "requireAll": ["tool", "run"] },
       "isPass": true,
@@ -189,6 +206,9 @@
     ]
   },
   "expectPass": {
-    "conditions": { "requireAll": ["tool", "run"] }
+    "conditions": {
+      "requireAll": ["tool", "run"],
+      "forbidAny": ["care", "steps", "expert", "just"]
+    }
   }
 }

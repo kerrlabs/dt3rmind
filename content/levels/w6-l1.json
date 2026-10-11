@@ -71,6 +71,23 @@
   "subChoices": [],
   "rules": [
     {
+      "id": "right-moves-plus-tricks",
+      "when": { "requireAll": ["runnew", "strengthen"], "requireAny": ["trust", "rerun"] },
+      "isPass": false,
+      "claim": "Strengthened check now fails August — but you also kept a trick in the ask.",
+      "doer": "checker",
+      "feedback": "<b>You found the moves that do the work, but you also kept a trick ('trust the green' or 'just run it again').</b> Neither changes what the check looks at — running it on the new case and strengthening it do. Take it out so you know exactly which part caught the false green.",
+      "lesson": "Running the new case and strengthening the check do the work; the tricks just ride along — drop them.",
+      "output": {
+        "columns": ["month", "check looks at refunds?", "check result"],
+        "rows": [
+          { "cells": ["March", "yes", "green"], "pass": true },
+          { "cells": ["August (wrong answer)", "yes", "red — caught"], "pass": true }
+        ],
+        "source": "a strengthened check, plus a needless trick"
+      }
+    },
+    {
       "id": "pass",
       "when": { "requireAll": ["runnew", "strengthen"] },
       "isPass": true,
@@ -150,6 +167,6 @@
     ]
   },
   "expectPass": {
-    "conditions": { "requireAll": ["runnew", "strengthen"] }
+    "conditions": { "requireAll": ["runnew", "strengthen"], "forbidAny": ["trust", "rerun"] }
   }
 }

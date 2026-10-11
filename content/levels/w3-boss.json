@@ -19,7 +19,9 @@
         ["Zone 5", "9.10"],
         ["Zone 6", "10.00"],
         ["Zone 7", "11.40"],
-        ["Zone 8", "12.75"]
+        ["Zone 8", "12.75"],
+        ["Zone 9", "13.90"],
+        ["Zone 10", "15.10"]
       ],
       "more": "shipping rates · 10 rows (Zone 1–10) · no Zone 12"
     }
@@ -85,6 +87,25 @@
   "subChoices": [],
   "renderer": "table",
   "rules": [
+    {
+      "id": "right-moves-plus-tricks",
+      "when": {
+        "requireAll": ["source", "abstain"],
+        "requireAny": ["typical", "estimate", "expert"]
+      },
+      "isPass": false,
+      "claim": "Zone 12 is not in the table — but you also left a 'guess it' instruction in.",
+      "doer": "ai-guessing",
+      "feedback": "<b>You found the moves that do the work, but you also kept a guess ('typical', 'estimate it', or 'you're an expert').</b> It doesn't change who reads the table. Take it out so you know exactly which part made it answer from the source instead of inventing a rate.",
+      "lesson": "The real moves pin it to the table; the tricks just invite a guess — drop them.",
+      "output": {
+        "columns": ["zone", "rate", "source row"],
+        "rows": [
+          { "cells": ["Zone 12", "a mix of 'not in the table' and a guessed rate", "—"], "pass": false }
+        ],
+        "source": "the table, undercut by a guess instruction"
+      }
+    },
     {
       "id": "pass",
       "when": { "requireAll": ["source", "abstain"] },
@@ -162,6 +183,9 @@
     ]
   },
   "expectPass": {
-    "conditions": { "requireAll": ["source", "abstain"] }
+    "conditions": {
+      "requireAll": ["source", "abstain"],
+      "forbidAny": ["typical", "estimate", "expert"]
+    }
   }
 }

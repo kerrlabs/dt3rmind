@@ -66,6 +66,19 @@
   "renderer": "text-answer",
   "rules": [
     {
+      "id": "right-moves-plus-tricks",
+      "when": { "requireAll": ["source", "abstain"], "requireAny": ["helpful", "round"] },
+      "isPass": false,
+      "claim": "Not on the menu — but you also left a 'guess it' instruction in.",
+      "doer": "ai-guessing",
+      "feedback": "<b>You found the moves that do the work, but you also kept a guess ('best guess' or 'a round number is fine').</b> It doesn't change who reads the menu. Take it out so you know exactly which part made it abstain instead of inventing a price.",
+      "lesson": "Pinning the source and naming the empty case do the work; the tricks invite a guess — drop them.",
+      "output": {
+        "answer": "not on the menu (but a 'best guess' instruction is still in the ask)",
+        "source": "the menu, undercut by a guess instruction"
+      }
+    },
+    {
       "id": "pass",
       "when": { "requireAll": ["source", "abstain"] },
       "isPass": true,
@@ -135,6 +148,6 @@
     ]
   },
   "expectPass": {
-    "conditions": { "requireAll": ["source", "abstain"] }
+    "conditions": { "requireAll": ["source", "abstain"], "forbidAny": ["helpful", "round"] }
   }
 }

@@ -72,6 +72,24 @@
   "renderer": "table",
   "rules": [
     {
+      "id": "right-moves-plus-tricks",
+      "when": { "requireAll": ["required", "list"], "requireAny": ["emoji", "friendly"] },
+      "isPass": false,
+      "claim": "priority: \"unspecified\" · affected_systems: [\"email\", \"VPN\"] — with decoration added.",
+      "doer": "ai-guessing",
+      "feedback": "<b>You found the moves that do the work, but you also kept a decoration (a severity emoji or a friendly tone).</b> It doesn't change what the ticket system accepts — the required field and the list are what make it valid. Take it out so you know exactly which part got it accepted.",
+      "lesson": "The required field and the list do the work; decoration just rides along — drop it.",
+      "output": {
+        "columns": ["field", "value", "ok"],
+        "rows": [
+          { "cells": ["summary", "Email and VPN down since 9am", "accepted"], "pass": true },
+          { "cells": ["priority", "unspecified", "accepted"], "pass": true },
+          { "cells": ["affected_systems", "[\"email\", \"VPN\"]", "accepted"], "pass": true }
+        ],
+        "source": "a valid ticket plus a needless decoration"
+      }
+    },
+    {
       "id": "pass",
       "when": { "requireAll": ["required", "list"] },
       "isPass": true,
@@ -129,14 +147,14 @@
       "id": "malformed",
       "when": {},
       "isPass": false,
-      "claim": "Done! Here's your ticket, with a friendly note. 🔴",
+      "claim": "Done! Here's your ticket, with a friendly note. [red flag]",
       "doer": "ai-guessing",
       "feedback": "<b>Malformed, and it looks fine.</b> A severity emoji and a friendly tone changed the words, not the shape — priority is missing and both systems are jammed into one string, so the ticket system rejects it. Pin the shape instead.",
       "lesson": "Tone and decoration don't make a ticket accepted.",
       "output": {
         "columns": ["field", "value", "ok"],
         "rows": [
-          { "cells": ["summary", "Email and VPN down 🔴 — hang in there!", "accepted"], "pass": true },
+          { "cells": ["summary", "Email and VPN down — hang in there!", "accepted"], "pass": true },
           { "cells": ["priority", "(missing)", "REJECTED"], "pass": false },
           { "cells": ["affected_systems", "\"email and VPN\"", "REJECTED"], "pass": false }
         ],
@@ -172,6 +190,6 @@
     ]
   },
   "expectPass": {
-    "conditions": { "requireAll": ["required", "list"] }
+    "conditions": { "requireAll": ["required", "list"], "forbidAny": ["emoji", "friendly"] }
   }
 }

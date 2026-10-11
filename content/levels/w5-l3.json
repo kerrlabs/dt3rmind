@@ -51,6 +51,15 @@
       }
     },
     {
+      "id": "show",
+      "kind": "real",
+      "label": "Show me the tool",
+      "text": {
+        "plain": "Show me the tool/formula so I can check it against my locked number myself.",
+        "tech": "Show me the code/query so I can review it against the committed value."
+      }
+    },
+    {
       "id": "after",
       "kind": "trick",
       "label": "I'll check after I see it",
@@ -148,8 +157,8 @@
   "attemptBudget": 3,
   "stars": {
     "attemptBudget": 3,
-    "showMove": null,
-    "thirdStar": { "requireAll": ["exactval"] }
+    "showMove": "show",
+    "thirdStar": null
   },
   "xp": { "level": 20, "seenFailing": 15, "boss": 0 },
   "hints": {

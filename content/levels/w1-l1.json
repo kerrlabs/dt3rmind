@@ -58,6 +58,23 @@
   "renderer": "text-answer",
   "rules": [
     {
+      "id": "right-moves-plus-tricks",
+      "when": { "requireAll": ["shape", "price_num"], "requireAny": ["polite", "expert"] },
+      "isPass": false,
+      "claim": "item: oat latte · size: large · price: 4.50 — with a friendly flourish.",
+      "doer": "ai-guessing",
+      "feedback": "<b>You found the moves that do the work, but you also kept a trick ('friendly' or 'expert').</b> It doesn't change the shape of the answer. Take it out so you know exactly which part made it a receipt you can paste.",
+      "lesson": "The real moves set the shape; the tricks just change the voice — drop them.",
+      "output": {
+        "fields": [
+          { "key": "item", "value": "oat latte" },
+          { "key": "size", "value": "large" },
+          { "key": "price", "value": "4.50", "numeric": true }
+        ],
+        "source": "the shape you asked for, plus a needless flourish"
+      }
+    },
+    {
       "id": "pass",
       "when": { "requireAll": ["shape", "price_num"] },
       "isPass": true,
@@ -134,6 +151,6 @@
     ]
   },
   "expectPass": {
-    "conditions": { "requireAll": ["shape", "price_num"] }
+    "conditions": { "requireAll": ["shape", "price_num"], "forbidAny": ["polite", "expert"] }
   }
 }

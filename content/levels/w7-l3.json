@@ -105,6 +105,31 @@
       }
     },
     {
+      "id": "right-moves-plus-tricks",
+      "when": {
+        "requireAll": ["dosage_gate", "dosage_risk"],
+        "requireAny": ["warn_gate"],
+        "forbidAny": ["copy_billing"]
+      },
+      "isPass": false,
+      "claim": "Dosage hard-gated and named riskiest — but you also hard-gated the warning-signs list.",
+      "doer": "ai-guessing",
+      "feedback": "<b>You found the moves that do the work, but you also hard-gated the warning-signs list.</b> A list of symptoms has no single exact answer to gate against, so that gate catches nothing — hard-gating the dosage and naming it the riskiest step are what matter. Take it out so you know exactly which call carried the judgment.",
+      "lesson": "Gate the exact high-cost step; a hard gate on an open-ended list just rides along — drop it.",
+      "output": {
+        "columns": ["step", "tier", "outcome"],
+        "rows": [
+          { "cells": ["Compute the medication dosage", "hard gate · riskiest", "exact, tool-computed"], "pass": true },
+          { "cells": ["Greet the patient", "heuristic", "best effort"], "pass": true },
+          { "cells": ["Summarize the diagnosis", "heuristic", "best effort"], "pass": true },
+          { "cells": ["Look up the next appointment", "hard gate", "exact"], "pass": true },
+          { "cells": ["List warning signs", "hard gate", "wasteful — nothing exact to gate"], "pass": false },
+          { "cells": ["Decide whether to escalate", "human review", "a clinician decides"], "pass": true }
+        ],
+        "source": "the right calls, plus a wasteful gate on an open-ended list"
+      }
+    },
+    {
       "id": "pass",
       "when": { "requireAll": ["dosage_gate", "dosage_risk"] },
       "isPass": true,
@@ -177,7 +202,7 @@
   "expectPass": {
     "conditions": {
       "requireAll": ["dosage_gate", "dosage_risk"],
-      "forbidAny": ["copy_billing"]
+      "forbidAny": ["copy_billing", "warn_gate"]
     }
   }
 }

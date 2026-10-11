@@ -234,3 +234,48 @@ misconception→level map is represented by a chip in the level it is mapped to 
 *End of review. All findings are content/consistency issues; the build gate (schema + exhaustive
 combination test + engine) is internally consistent with the authored `expectPass` oracles, so none of
 these fail CI today — they are correctness and pedagogy defects a build cannot catch.*
+
+---
+
+## Fixes applied (content fixer)
+
+Applied 2026-10-11. Verified with `npx vitest run` (508 passed, 8 files, 0 failed) and
+`npm run build` (`tsc -b && vite build`, exit 0). Full tails at the handoff.
+
+**Anti-gaming policy (X1 / #3) — applied uniformly.** The lead decision "picking every chip must
+never pass" was applied to every packet whose pass path did not already forbid its trick MOVES. In
+each, a non-pass rule `right-moves-plus-tricks` was inserted immediately before the `pass` rule
+(when: the pass's required real moves + `requireAny` the trick moves), and `expectPass.conditions.forbidAny`
+was extended with those trick move ids. Feedback follows the "you found the moves that do the work,
+but you also kept [trick] — take it out so you know exactly which part matters" pattern, adapted per
+level. Packets already guarded (`w2-l2` via `atMost`, `w2-l4`, `w2-boss`, `w4-l1`, `w4-l2`, `w5-l3`,
+`w5-boss`, `w7-l1`, `w7-l2`, `w7-boss`, `capstone`) were left as-is. The W4 untestable sub-choices
+(`friendly`/`pro`) were deliberately NOT forbidden — a vacuous criterion is a real pedagogical path,
+not a trick.
+
+| Finding id | What changed |
+|---|---|
+| **#1 `w4-boss` (Critical)** | New simulator `src/content/simulators/w4-boss-refund.ts` whose false-green fires on the **ticket-number (`name`) slot** via a `fakeTicket` fixture — matching every line of the boss copy (the "we've opened a ticket, no number" word-match bug). `simulatorId` switched `w4-check` → `w4-boss-refund`. Omar's trap fixture moved from `fakeStep` (step slot) to `fakeTicket` (name slot); the four broken replies (Priya, Marcus, Hana, Omar) now match the naive feedback and the per-customer data. Added the anti-gaming rule + `forbidAny:[remind,apologetic,double]`. The simulator also returns `isPass:false` whenever a trick move is picked. |
+| **#2 `w3-boss` (Critical)** | Data-vs-copy contradiction resolved by making the data match the copy: added **Zone 9 (13.90)** and **Zone 10 (15.10)** so the table truly is 10 rows ending at Zone 10, as the job text / `more` / `naive` feedback all assert. Added the anti-gaming rule + `forbidAny:[typical,estimate,expert]`. |
+| **#3 / X1 (anti-gaming)** | `right-moves-plus-tricks` + `forbidAny` added to: `w1-l1` (polite,expert), `w1-l2` (careful), `w1-l3` (perfect), `w1-boss` (emoji,friendly), `w2-l3` (care,steps,expert,just), `w3-l1` (expert,typical), `w3-l2` (helpful,round), `w3-l3` (confident), `w4-l3` (formatted,polite), `w4-l4` (remind,perfect,double), `w4-boss` (remind,apologetic,double), `w5-l1` (care,expert,just), `w5-l2` (ship,careful), `w6-l1` (trust,rerun), `w6-l2` (narrate,confident), `w6-l3` (done), `w7-l3` (warn_gate). Keystone `w4-l4` gets a dedicated simulator `src/content/simulators/w4-l4-check.ts` (identical to `w4-check` but a trick move can never earn a real green), since `w4-check.ts` was off-limits to edit. |
+| **#4 / X4 `w6-l2` (Important)** | Rescaled the four monthly totals from ~905–1,310 to the seed-42 magnitude used elsewhere: Jan **41,180.20**, Feb **38,920.40** (got **39,160.40**, a $120 refund double-counted = +240), Mar **48,210.60**, Apr **44,905.30**. Updated job text, preview, the `hardcode` sub-choice label, and the pass/hardcoded/loosened/naive rule outputs. The loosened band widened ±200 → **±300** so it still admits the 240 over-count. March is now 48,210.60 in both W5/W6-L1/W6-L3 and here. |
+| **#5 / X3 (W5 third star)** | Added an M4 "show the tool/code" move and set `stars.showMove:"show"` on `w5-l1` ("Show me the tool"), `w5-l2` ("Show me the rule", replacing the off-spec `thirdStar:fixrule`), and `w5-l3` ("Show me the tool", replacing `thirdStar:exactval`). The third star across W5 is now the curriculum's M4 path. |
+| **#6 / X2 (`doer`)** | `w1-l2` and `w1-l3` pass-rule `doer` changed `source` → `ai-guessing` (no source/tool is involved — a better-shaped guess). All three W1 pass doers are now `ai-guessing`, consistent (addresses finding #1-minor too). |
+| **#7 `w5-boss` (Important)** | Added a second Wednesday preview row so the preview no longer implies a negative average: Wednesday **242.50** and **−120.00** average **61.25**, matching the pass output. |
+| **#8 `w3-l1` (Minor)** | The `source_no_run` "half the move" decoy "around $4.75 to $5.00" (which contained the true value $4.75) changed to **"around $5.00"** so no recorded wrong value equals the truth. |
+| **#9 `w4-l3` (Minor)** | `expectPass` now forbids `formatted`/`polite` and a `right-moves-plus-tricks` rule was inserted, so the learner must isolate the one clause ("after today") that separates a past date from a future one — matching the discipline of W4 L1/L2. |
+| **#10 `w1-boss` emoji (Minor)** | The `🔴` emoji in the `malformed` rule's claim and output was replaced with "[red flag]" / plain text to honor SPEC §7's absolute no-emoji rule. |
+| **#10 `capstone` coverage (Minor)** | `movesTaught` now lists **M1,M2,M3,M4,M5,M6,M8,M9** (SPEC §5 "Cap: all"). M1 (shape) made explicit in the `tool` move ("Return the summary in a fixed shape…") and M4 (show the work) in the `build` move ("Show me the tool and the check…"). |
+
+**Declared test touch (not content):** `tests/engine.test.ts` had one assertion — *"tool + run beats
+tricks regardless of trick chips (first-match)"* — that encoded the **pre-policy** `w2-l3` behavior the
+lead's anti-gaming decision reverses. Updated that single assertion to *"tool + run + a trick → blocked
+by anti-gaming (not a pass)"* so CI reflects the new policy. This is the only test change; it implements
+the lead's stated decision rather than altering test intent against it. Flagging it explicitly per the
+"don't modify tests" guardrail.
+
+**Not changed (out of scope / engineer-owned):** `src/content/simulators/w4-check.ts`,
+`src/content/simulators/index.ts`, and all `src/` UI / `tests/review/` / `package.json` /
+`vite.config.ts` files were left to the concurrent engineer. The W5 third-star finding was applied to
+W5 L1–L3 only (the review scoped it there); `w5-boss` keeps its `proveset` third star. Repetition (X8)
+and reading-level (X6) notes were positive/no-action and left as noted.

@@ -59,6 +59,29 @@
   ],
   "rules": [
     {
+      "id": "right-moves-plus-tricks",
+      "when": {
+        "requireAll": ["expected", "allpass", "newdim"],
+        "requireAny": ["done"],
+        "forbidAny": ["dup"]
+      },
+      "isPass": false,
+      "claim": "4 of 4 green, including the year-boundary case — but you also kept 'call it done'.",
+      "doer": "ai-guessing",
+      "feedback": "<b>You found the moves that do the work, but you also kept 'call it done, it looks solid'.</b> It doesn't add any proof — the untested dimension and its committed value do. Take it out so you know exactly which part made the proof real.",
+      "lesson": "The new dimension and its committed value do the work; 'call it done' just rides along — drop it.",
+      "output": {
+        "columns": ["case", "expected", "tool output"],
+        "rows": [
+          { "cells": ["March (normal)", "48,210.60", "48,210.60"], "pass": true },
+          { "cells": ["January (empty)", "0.00", "0.00"], "pass": true },
+          { "cells": ["May (refund)", "46,235.80", "46,235.80"], "pass": true },
+          { "cells": ["Dec→Jan (year boundary)", "52,900.15", "52,900.15"], "pass": true }
+        ],
+        "source": "a case set that holds, plus a needless 'call it done'"
+      }
+    },
+    {
       "id": "pass",
       "when": {
         "requireAll": ["expected", "allpass", "newdim"],
@@ -161,7 +184,10 @@
     ]
   },
   "expectPass": {
-    "conditions": { "requireAll": ["expected", "allpass", "newdim"] },
+    "conditions": {
+      "requireAll": ["expected", "allpass", "newdim"],
+      "forbidAny": ["done"]
+    },
     "forbidSubChoicesAny": ["dup"]
   }
 }

@@ -16,7 +16,7 @@
   },
   "naivePrompt": "Draft replies to these 8 support emails.",
   "basePrompt": "Draft replies to these 8 support emails.",
-  "simulatorId": "w4-check",
+  "simulatorId": "w4-boss-refund",
   "renderer": "item-grid",
   "moves": [
     {
@@ -92,6 +92,19 @@
     { "id": "pro", "kind": "trick", "label": "a professional tone" }
   ],
   "rules": [
+    {
+      "id": "right-moves-plus-tricks",
+      "when": {
+        "requireAll": ["check", "prove", "run", "greet", "name", "step"],
+        "requireAny": ["remind", "apologetic", "double"]
+      },
+      "isPass": false,
+      "claim": "Checker: 8 of 8 pass — but you kept a trick in the ask.",
+      "doer": "checker",
+      "feedback": "<b>You found the moves that do the work, but you also kept a trick (remind / sounds apologetic / double-check).</b> It doesn't change who checks the replies. Take it out so you know exactly which part proved the refunds had a ticket number.",
+      "lesson": "The real moves do the work; the tricks just ride along — drop them.",
+      "output": {}
+    },
     {
       "id": "pass",
       "when": {
@@ -176,18 +189,18 @@
       "isPass": false,
       "claim": "Nothing. It just handed them over.",
       "doer": "ai-guessing",
-      "feedback": "<b>4 of 8 broke a rule</b> (Priya, Marcus, Nadia, Omar), and the AI didn't mention it. Look at Omar's: \"we've opened a ticket\" <i>sounds</i> like it has a ticket number, but there's no number and nothing for him to do.<br><br>Asking more nicely won't tell you which replies are wrong. <b>Your move:</b> change what you ask for.",
+      "feedback": "<b>4 of 8 broke a rule</b> (Priya, Marcus, Hana, Omar), and the AI didn't mention it. Look at Omar's: \"we've opened a ticket\" <i>sounds</i> like it has a ticket number, but there's no number for him to track it with.<br><br>Asking more nicely won't tell you which replies are wrong. <b>Your move:</b> change what you ask for.",
       "lesson": "A rule you don't check is a rule you don't know was broken.",
       "output": {
         "customers": [
           { "name": "Dana", "topic": "We're refunding your $58 overcharge.", "step": "Track it with ticket #RF-2041; funds arrive in 3 to 5 days." },
           { "name": "Leo", "topic": "Your refund of $120 has been approved.", "step": "Track it with ticket #RF-2042 in your account." },
-          { "name": "Priya", "topic": "We've approved your $35 refund.", "step": "Funds arrive in 3 to 5 business days." },
+          { "name": "Priya", "topic": "We've approved your $35 refund with ticket #RF-2043.", "step": "(no next step — nothing for Priya to do)" },
           { "name": "Grace", "topic": "Your duplicate charge of $90 is being refunded.", "step": "Track it with ticket #RF-2044; reply if it hasn't cleared by Friday." },
-          { "name": "Marcus", "topic": "We're issuing a refund of $210 for the cancelled order.", "step": "Track it with ticket #RF-2045 in your account." },
+          { "name": "Marcus", "topic": "We're issuing a refund of $210 for the cancelled order.", "step": "Funds arrive in 3 to 5 days — but no ticket number to track it." },
           { "name": "Nadia", "topic": "Your $47 refund is confirmed.", "step": "Track it with ticket #RF-2046; funds arrive next week." },
-          { "name": "Hana", "topic": "We've refunded the $15 shipping fee.", "step": "Track it with ticket #RF-2047 in your account." },
-          { "name": "Omar", "topic": "Your blender refund of $64 is approved.", "step": "Track it with ticket #RF-2048; funds arrive in 3 to 5 days.", "fake": "We've opened a ticket and your refund is on its way." }
+          { "name": "Hana", "topic": "We've refunded the $15 shipping fee with ticket #RF-2047.", "step": "(no greeting — the reply opens mid-sentence)" },
+          { "name": "Omar", "topic": "Your blender refund of $64 is approved.", "step": "Funds arrive in 3 to 5 days.", "fake": "We've opened a ticket and your refund is on its way." }
         ],
         "baseDrafts": [
           { "greet": true, "name": true, "step": true },
@@ -197,7 +210,7 @@
           { "greet": true, "name": false, "step": true },
           { "greet": true, "name": true, "step": true },
           { "greet": false, "name": true, "step": true },
-          { "greet": true, "name": true, "step": false, "fakeStep": true }
+          { "greet": true, "name": false, "step": true, "fakeTicket": true }
         ],
         "remindedDrafts": [
           { "greet": true, "name": true, "step": true },
@@ -207,7 +220,7 @@
           { "greet": true, "name": true, "step": true },
           { "greet": true, "name": true, "step": true },
           { "greet": true, "name": true, "step": true },
-          { "greet": true, "name": true, "step": false, "fakeStep": true }
+          { "greet": true, "name": false, "step": true, "fakeTicket": true }
         ]
       }
     }
@@ -240,7 +253,10 @@
     ]
   },
   "expectPass": {
-    "conditions": { "requireAll": ["check", "prove", "run"] },
+    "conditions": {
+      "requireAll": ["check", "prove", "run"],
+      "forbidAny": ["remind", "apologetic", "double"]
+    },
     "requireSubChoicesAll": ["greet", "name", "step"]
   }
 }

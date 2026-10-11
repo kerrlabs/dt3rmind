@@ -75,6 +75,20 @@
   "renderer": "text-answer",
   "rules": [
     {
+      "id": "right-moves-plus-tricks",
+      "when": { "requireAll": ["source", "run"], "requireAny": ["expert", "typical"] },
+      "isPass": false,
+      "claim": "The oat latte is $4.75 — but you also left a 'guess it' instruction in.",
+      "doer": "ai-guessing",
+      "feedback": "<b>You found the moves that do the work, but you also kept a guess ('typical price' or 'you know prices').</b> It doesn't change who reads the menu. Take it out so you know exactly which part made it read the real row instead of inventing a number.",
+      "lesson": "Pinning the source and reading the value do the work; the tricks invite a guess — drop them.",
+      "output": {
+        "answer": "The oat latte is $4.75 — but a 'typical price' instruction is still in the ask.",
+        "highlights": ["$4.75"],
+        "source": "the menu row, undercut by a guess instruction"
+      }
+    },
+    {
       "id": "pass",
       "when": { "requireAll": ["source", "run"] },
       "isPass": true,
@@ -95,13 +109,13 @@
       "id": "source_no_run",
       "when": { "requireAll": ["source"], "forbidAny": ["run"] },
       "isPass": false,
-      "claim": "The oat latte is around $4.75 to $5.00.",
+      "claim": "The oat latte is around $5.00.",
       "doer": "ai-guessing",
-      "feedback": "<b>Half the move.</b> You pointed it at the menu, but didn't tell it to read the exact value, so it still rounded to a range. Add 'read the real value'.",
+      "feedback": "<b>Half the move.</b> You pointed it at the menu, but didn't tell it to read the exact value, so it still rounded to a nearby number. Add 'read the real value'.",
       "lesson": "Pinning the source isn't enough; make it read the exact value.",
       "output": {
-        "answer": "The oat latte is around $4.75 to $5.00.",
-        "highlights": ["$4.75 to $5.00"],
+        "answer": "The oat latte is around $5.00.",
+        "highlights": ["$5.00"],
         "source": "the menu, read loosely"
       }
     },
@@ -148,6 +162,6 @@
     ]
   },
   "expectPass": {
-    "conditions": { "requireAll": ["source", "run"] }
+    "conditions": { "requireAll": ["source", "run"], "forbidAny": ["expert", "typical"] }
   }
 }

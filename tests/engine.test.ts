@@ -68,9 +68,10 @@ describe('w2-l3 (rule table) outcomes mirror the prototype', () => {
     expect(r.isPass).toBe(true);
     expect(r.doer).toBe('spreadsheet');
   });
-  it('tool + run beats tricks regardless of trick chips (first-match)', () => {
+  it('tool + run + a trick -> blocked by anti-gaming (not a pass)', () => {
     const r = resolveOutcome(p, pick(p, ['tool', 'run', 'care', 'expert']));
-    expect(r.isPass).toBe(true);
+    expect(r.isPass).toBe(false);
+    expect(r.rule.id).toBe('right-moves-plus-tricks');
   });
 });
 

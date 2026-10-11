@@ -16,7 +16,7 @@
   },
   "naivePrompt": "Draft replies to these 8 customer emails.",
   "basePrompt": "Draft replies to these 8 customer emails.",
-  "simulatorId": "w4-check",
+  "simulatorId": "w4-l4-check",
   "renderer": "item-grid",
   "moves": [
     {
@@ -86,6 +86,19 @@
     { "id": "pro", "kind": "trick", "label": "a professional tone" }
   ],
   "rules": [
+    {
+      "id": "right-moves-plus-tricks",
+      "when": {
+        "requireAll": ["check", "prove", "run", "greet", "name", "step"],
+        "requireAny": ["remind", "perfect", "double"]
+      },
+      "isPass": false,
+      "claim": "Checker: 8 of 8 pass — but you kept a trick in the ask.",
+      "doer": "checker",
+      "feedback": "<b>You found the moves that do the work, but you also kept a trick (remind / make it perfect / double-check).</b> It doesn't change who checks the drafts. Take it out so you know exactly which part proved the drafts were right.",
+      "lesson": "The real moves do the work; the tricks just ride along — drop them.",
+      "output": {}
+    },
     {
       "id": "pass",
       "when": {
@@ -234,7 +247,10 @@
     ]
   },
   "expectPass": {
-    "conditions": { "requireAll": ["check", "prove", "run"] },
+    "conditions": {
+      "requireAll": ["check", "prove", "run"],
+      "forbidAny": ["remind", "perfect", "double"]
+    },
     "requireSubChoicesAll": ["greet", "name", "step"]
   }
 }

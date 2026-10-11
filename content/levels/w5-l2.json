@@ -51,6 +51,15 @@
       }
     },
     {
+      "id": "show",
+      "kind": "real",
+      "label": "Show me the rule",
+      "text": {
+        "plain": "Show me the tool/rule so I can check how it handles refunds and empty months.",
+        "tech": "Show me the code/query so I can review the signed-sum and empty-month handling."
+      }
+    },
+    {
       "id": "ship",
       "kind": "trick",
       "label": "Ship it, it's green",
@@ -75,6 +84,27 @@
     { "id": "eyeball", "kind": "trick", "label": "I'll eyeball each result after it runs" }
   ],
   "rules": [
+    {
+      "id": "right-moves-plus-tricks",
+      "when": {
+        "requireAll": ["proveset", "expected", "fixrule", "commit"],
+        "requireAny": ["ship", "careful"]
+      },
+      "isPass": false,
+      "claim": "3 of 3 cases match — but you also kept a trick in the ask.",
+      "doer": "tool",
+      "feedback": "<b>You found the moves that do the work, but you also kept a trick ('ship it, it's green' or 'be extra careful').</b> It doesn't change the proof — the case set and the committed values do. Take it out so you know exactly which part proved the tool.",
+      "lesson": "The case set and committed values do the work; the tricks just ride along — drop them.",
+      "output": {
+        "columns": ["case", "expected", "tool output"],
+        "rows": [
+          { "cells": ["normal (March)", "48,210.60", "48,210.60"], "pass": true },
+          { "cells": ["empty (January)", "0.00", "0.00"], "pass": true },
+          { "cells": ["refund (May)", "46,235.80", "46,235.80"], "pass": true }
+        ],
+        "source": "a proven tool, plus a needless trick"
+      }
+    },
     {
       "id": "pass",
       "when": {
@@ -154,8 +184,8 @@
   "attemptBudget": 3,
   "stars": {
     "attemptBudget": 3,
-    "showMove": null,
-    "thirdStar": { "requireAll": ["fixrule"] }
+    "showMove": "show",
+    "thirdStar": null
   },
   "xp": { "level": 20, "seenFailing": 15, "boss": 0 },
   "hints": {
@@ -179,7 +209,10 @@
     ]
   },
   "expectPass": {
-    "conditions": { "requireAll": ["proveset", "expected", "fixrule"] },
+    "conditions": {
+      "requireAll": ["proveset", "expected", "fixrule"],
+      "forbidAny": ["ship", "careful"]
+    },
     "requireSubChoicesAll": ["commit"],
     "forbidSubChoicesAny": ["eyeball"]
   }

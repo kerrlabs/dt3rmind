@@ -8,16 +8,16 @@
   "movesTaught": ["M8"],
   "isBoss": false,
   "job": {
-    "text": "The case-set runner shows <b>1 of 4</b> cases red: February expected 980 but got 1,120. Re-direct the build to fix it — <b>without</b> hard-coding February and <b>without</b> loosening the check to make it pass. All four cases must still be green after. <i>In your own words you would point at the failing case and ask for a root fix; here you build that ask from the checklist.</i>",
+    "text": "The case-set runner shows <b>1 of 4</b> cases red: February expected 38,920.40 but got 39,160.40. Re-direct the build to fix it — <b>without</b> hard-coding February and <b>without</b> loosening the check to make it pass. All four cases must still be green after. <i>In your own words you would point at the failing case and ask for a root fix; here you build that ask from the checklist.</i>",
     "preview": {
       "columns": ["case", "month", "expected", "got", "result"],
       "rows": [
-        ["normal", "January", "1,040", "1,040", "green"],
-        ["failing", "February", "980", "1,120", "red"],
-        ["normal", "March", "1,310", "1,310", "green"],
-        ["normal", "April", "905", "905", "green"]
+        ["normal", "January", "41,180.20", "41,180.20", "green"],
+        ["failing", "February", "38,920.40", "39,160.40", "red"],
+        ["normal", "March", "48,210.60", "48,210.60", "green"],
+        ["normal", "April", "44,905.30", "44,905.30", "green"]
       ],
-      "more": "seed-42 sales · 1 of 4 red (February counts a refund as a sale)"
+      "more": "seed-42 sales · 1 of 4 red (February counts a $120 refund as a sale)"
     }
   },
   "naivePrompt": "Just fix it.",
@@ -64,10 +64,33 @@
   "subChoiceGroup": "How should it fix the failing case?",
   "subChoices": [
     { "id": "fixrule", "kind": "real", "label": "Fix the underlying rule (handle refunds for every month)" },
-    { "id": "hardcode", "kind": "trick", "label": "Special-case February (if month == Feb, return 980)" },
+    { "id": "hardcode", "kind": "trick", "label": "Special-case February (if month == Feb, return 38,920.40)" },
     { "id": "loosen", "kind": "trick", "label": "Loosen the check so February passes as-is" }
   ],
   "rules": [
+    {
+      "id": "right-moves-plus-tricks",
+      "when": {
+        "requireAll": ["localize", "rerunall", "fixrule"],
+        "requireAny": ["narrate", "confident"],
+        "forbidAny": ["hardcode", "loosen"]
+      },
+      "isPass": false,
+      "claim": "4 of 4 green after the fix — but you also kept a trick in the ask.",
+      "doer": "tool",
+      "feedback": "<b>You found the moves that do the work, but you also kept a trick ('have it explain the fix' or 'tell it to be thorough').</b> Neither re-runs the cases — localizing the failure, fixing the rule, and re-running all four do. Take it out so you know exactly which part proved the fix.",
+      "lesson": "Localizing, fixing the rule and re-running do the work; the tricks just ride along — drop them.",
+      "output": {
+        "columns": ["case", "expected", "after fix"],
+        "rows": [
+          { "cells": ["January", "41,180.20", "41,180.20"], "pass": true },
+          { "cells": ["February", "38,920.40", "38,920.40"], "pass": true },
+          { "cells": ["March", "48,210.60", "48,210.60"], "pass": true },
+          { "cells": ["April", "44,905.30", "44,905.30"], "pass": true }
+        ],
+        "source": "a root fix, plus a needless trick"
+      }
+    },
     {
       "id": "pass",
       "when": {
@@ -82,10 +105,10 @@
       "output": {
         "columns": ["case", "expected", "after fix"],
         "rows": [
-          { "cells": ["January", "1,040", "1,040"], "pass": true },
-          { "cells": ["February", "980", "980"], "pass": true },
-          { "cells": ["March", "1,310", "1,310"], "pass": true },
-          { "cells": ["April", "905", "905"], "pass": true }
+          { "cells": ["January", "41,180.20", "41,180.20"], "pass": true },
+          { "cells": ["February", "38,920.40", "38,920.40"], "pass": true },
+          { "cells": ["March", "48,210.60", "48,210.60"], "pass": true },
+          { "cells": ["April", "44,905.30", "44,905.30"], "pass": true }
         ],
         "source": "the rule fixed at the root, check intact, no regression"
       }
@@ -96,17 +119,17 @@
       "isPass": false,
       "claim": "February passes now, but March came back red.",
       "doer": "tool",
-      "feedback": "<b>You fixed the case, not the rule.</b> Hard-coding February to 980 made February green and broke March. Point at <i>why</i> February failed and fix the rule behind it, not the one month.",
+      "feedback": "<b>You fixed the case, not the rule.</b> Hard-coding February to 38,920.40 made February green and broke March. Point at <i>why</i> February failed and fix the rule behind it, not the one month.",
       "lesson": "Patching one case breaks another.",
       "output": {
         "columns": ["case", "expected", "after patch"],
         "rows": [
-          { "cells": ["January", "1,040", "1,040"], "pass": true },
-          { "cells": ["February", "980", "980"], "pass": true },
-          { "cells": ["March", "1,310", "1,190"], "pass": false },
-          { "cells": ["April", "905", "905"], "pass": true }
+          { "cells": ["January", "41,180.20", "41,180.20"], "pass": true },
+          { "cells": ["February", "38,920.40", "38,920.40"], "pass": true },
+          { "cells": ["March", "48,210.60", "48,090.60"], "pass": false },
+          { "cells": ["April", "44,905.30", "44,905.30"], "pass": true }
         ],
-        "source": "an overfit: if month == Feb return 980"
+        "source": "an overfit: if month == Feb return 38,920.40"
       }
     },
     {
@@ -120,10 +143,10 @@
       "output": {
         "columns": ["case", "expected (loosened)", "tool output"],
         "rows": [
-          { "cells": ["January", "~1,040 ±200", "1,040"], "pass": true },
-          { "cells": ["February", "~980 ±200", "1,120"], "pass": true },
-          { "cells": ["March", "~1,310 ±200", "1,310"], "pass": true },
-          { "cells": ["April", "~905 ±200", "905"], "pass": true }
+          { "cells": ["January", "~41,180 ±300", "41,180.20"], "pass": true },
+          { "cells": ["February", "~38,920 ±300", "39,160.40"], "pass": true },
+          { "cells": ["March", "~48,210 ±300", "48,210.60"], "pass": true },
+          { "cells": ["April", "~44,905 ±300", "44,905.30"], "pass": true }
         ],
         "source": "a check weakened until the wrong answer fits"
       }
@@ -139,10 +162,10 @@
       "output": {
         "columns": ["case", "expected", "got"],
         "rows": [
-          { "cells": ["January", "1,040", "1,040"], "pass": true },
-          { "cells": ["February", "980", "1,120"], "pass": false },
-          { "cells": ["March", "1,310", "1,310"], "pass": true },
-          { "cells": ["April", "905", "905"], "pass": true }
+          { "cells": ["January", "41,180.20", "41,180.20"], "pass": true },
+          { "cells": ["February", "38,920.40", "39,160.40"], "pass": false },
+          { "cells": ["March", "48,210.60", "48,210.60"], "pass": true },
+          { "cells": ["April", "44,905.30", "44,905.30"], "pass": true }
         ],
         "source": "an unlocalized \"just fix it\" ask"
       }
@@ -176,7 +199,10 @@
     ]
   },
   "expectPass": {
-    "conditions": { "requireAll": ["localize", "rerunall", "fixrule"] },
+    "conditions": {
+      "requireAll": ["localize", "rerunall", "fixrule"],
+      "forbidAny": ["narrate", "confident"]
+    },
     "forbidSubChoicesAny": ["hardcode", "loosen"]
   }
 }

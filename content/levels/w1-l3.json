@@ -54,11 +54,29 @@
   "renderer": "table",
   "rules": [
     {
+      "id": "right-moves-plus-tricks",
+      "when": { "requireAll": ["required"], "requireAny": ["perfect"] },
+      "isPass": false,
+      "claim": "#2 price: \"unknown\" — with a 'make it perfect' tacked on.",
+      "doer": "ai-guessing",
+      "feedback": "<b>You found the move that does the work, but you also kept 'make it perfect'.</b> It doesn't make the field required — 'required' is what turns a missing price into a visible 'unknown'. Take it out so you know exactly which part fixed it.",
+      "lesson": "'Required' does the work; 'perfect' just rides along — drop it.",
+      "output": {
+        "columns": ["order", "item", "size", "price"],
+        "rows": [
+          { "cells": ["#1", "oat latte", "large", "4.50"], "pass": true },
+          { "cells": ["#2", "seasonal special", "regular", "unknown"], "pass": true },
+          { "cells": ["#3", "drip", "small", "3.50"], "pass": true }
+        ],
+        "source": "a required price field, plus a needless wish"
+      }
+    },
+    {
       "id": "pass",
       "when": { "requireAll": ["required"] },
       "isPass": true,
       "claim": "#2 price: \"unknown\" — flagged, not dropped.",
-      "doer": "source",
+      "doer": "ai-guessing",
       "feedback": "<b>No silent gaps.</b> Now a missing price shows up as 'unknown' instead of just vanishing, so you'd catch it when you scan the column.",
       "lesson": "'Required' turns an invisible miss into a visible one.",
       "output": {
@@ -118,6 +136,6 @@
     ]
   },
   "expectPass": {
-    "conditions": { "requireAll": ["required"] }
+    "conditions": { "requireAll": ["required"], "forbidAny": ["perfect"] }
   }
 }

@@ -75,6 +75,22 @@
   "renderer": "table",
   "rules": [
     {
+      "id": "right-moves-plus-tricks",
+      "when": { "requireAll": ["shape", "source", "min"], "requireAny": ["confident"] },
+      "isPass": false,
+      "claim": "Cheapest: espresso, $3.00, from menu row 6 — with 'be confident' tacked on.",
+      "doer": "ai-guessing",
+      "feedback": "<b>You found the moves that do the work, but you also kept 'be confident'.</b> It doesn't change where the answer comes from — the shape, the single row, and picking the lowest price do. Take it out so you know exactly which part made it verifiable.",
+      "lesson": "Shape, source and the lowest-price pick do the work; 'be confident' just rides along — drop it.",
+      "output": {
+        "columns": ["drink", "price", "source row"],
+        "rows": [
+          { "cells": ["espresso", "$3.00", "row 6"], "pass": true }
+        ],
+        "source": "menu row 6, plus a needless confidence nudge"
+      }
+    },
+    {
       "id": "pass",
       "when": { "requireAll": ["shape", "source", "min"] },
       "isPass": true,
@@ -151,6 +167,6 @@
     ]
   },
   "expectPass": {
-    "conditions": { "requireAll": ["shape", "source", "min"] }
+    "conditions": { "requireAll": ["shape", "source", "min"], "forbidAny": ["confident"] }
   }
 }

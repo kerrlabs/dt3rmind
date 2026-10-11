@@ -54,11 +54,30 @@
   "renderer": "table",
   "rules": [
     {
+      "id": "right-moves-plus-tricks",
+      "when": { "requireAll": ["list"], "requireAny": ["careful"] },
+      "isPass": false,
+      "claim": "#2 item: [\"latte\", \"muffin\"] — with a 'be careful' tacked on.",
+      "doer": "ai-guessing",
+      "feedback": "<b>You found the move that does the work, but you also kept 'be careful'.</b> It doesn't change the shape — the list is what split the two items. Take it out so you know exactly which part fixed it.",
+      "lesson": "The list move does the work; 'be careful' just rides along — drop it.",
+      "output": {
+        "columns": ["order", "item", "size", "price"],
+        "rows": [
+          { "cells": ["#1", "oat latte", "large", "4.50"], "pass": true },
+          { "cells": ["#2", "latte", "regular", "4.50"], "pass": true },
+          { "cells": ["#2", "muffin", "—", "4.75"], "pass": true },
+          { "cells": ["#3", "drip", "small", "3.50"], "pass": true }
+        ],
+        "source": "a list-shaped item field, plus a needless warning"
+      }
+    },
+    {
       "id": "pass",
       "when": { "requireAll": ["list"] },
       "isPass": true,
       "claim": "#2 item: [\"latte\", \"muffin\"] — each priced separately.",
-      "doer": "source",
+      "doer": "ai-guessing",
       "feedback": "<b>The shape bends without breaking.</b> A list holds one item or many, so every order fits the same three columns, and order #2's two items each get their own price.",
       "lesson": "Design the shape for the hard case, not the easy one.",
       "output": {
@@ -119,6 +138,6 @@
     ]
   },
   "expectPass": {
-    "conditions": { "requireAll": ["list"] }
+    "conditions": { "requireAll": ["list"], "forbidAny": ["careful"] }
   }
 }
