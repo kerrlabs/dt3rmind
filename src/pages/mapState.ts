@@ -13,7 +13,8 @@ import type { Progress } from '../store/progress';
 import { isLevelUnlocked } from '../store/progress';
 import type { WorldMeta } from '../content/worlds';
 
-export type NodeState = 'passed' | 'current' | 'locked';
+/** 'open' = playable but not the single "you are here" level. */
+export type NodeState = 'passed' | 'current' | 'open' | 'locked';
 
 export interface LevelNode {
   id: string;
@@ -215,10 +216,12 @@ export function useLevelState(
     };
   };
 
-  return {
-    levels: practice.map(toNode),
-    boss: bossPacket ? toNode(bossPacket) : null,
-  };
+  const levels = practice.map(toNode);
+  const boss = bossPacket ? toNode(bossPacket) : null;
+  // Exactly one "you are here": the first playable unpassed level, else the boss.
+  const playable = [...levels, ...(boss ? [boss] : [])].filter((n) => n.state === 'current');
+  for (const n of playable.slice(1)) n.state = 'open';
+  return { levels, boss };
 }
 
 /** The ordered list of world numbers that have authored (non-capstone) content. */

@@ -1044,6 +1044,11 @@ svg.sc {
   color: var(--text);
   box-shadow: 0 0 0 4px color-mix(in srgb, var(--warn) 35%, transparent);
 }
+.node.open .tile {
+  border-color: var(--accent);
+  background: var(--card);
+  color: var(--text);
+}
 .node.locked .tile {
   border-style: dashed;
   border-color: var(--border);
@@ -1126,6 +1131,7 @@ svg.sc {
   color: var(--warn);
 }
 .node.locked .starline,
+.node.open .starline,
 .node.current .starline {
   color: var(--muted);
   letter-spacing: normal;

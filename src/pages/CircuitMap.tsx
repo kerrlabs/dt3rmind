@@ -29,6 +29,7 @@ import {
   authoredWorldNumbers,
   type WorldNode,
   type LevelNode,
+  type NodeState,
 } from './mapState';
 import {
   VBW,
@@ -140,7 +141,7 @@ function CapstoneItem({
   rank,
 }: {
   pt: Pt;
-  state: 'passed' | 'current' | 'locked';
+  state: NodeState;
   title: string;
   rank: string;
 }): JSX.Element {
@@ -305,6 +306,7 @@ function levelSrLabel(world: number, L: LevelNode): string {
   let state: string;
   if (L.state === 'passed') state = `passed, ${L.stars} of ${L.starMax} stars`;
   else if (L.state === 'current') state = 'current level, you are here, not yet passed';
+  else if (L.state === 'open') state = 'open, not yet passed';
   else state = 'locked';
   const open = L.state === 'locked' ? '' : ' Press Enter to play.';
   return `World ${world}, ${kind}, ${L.title}${ks}, ${state}.${open}`;
@@ -357,8 +359,8 @@ function LevelNodeItem({
         <span className="starline" aria-hidden="true">
           {L.state === 'locked'
             ? 'Locked'
-            : L.state === 'current'
-              ? 'In progress'
+            : L.state === 'current' || L.state === 'open'
+              ? 'Not played yet'
               : Array.from({ length: L.starMax }, (_, i) => (
                   <span key={i} className={i < L.stars ? 'on' : ''}>★</span>
                 ))}
