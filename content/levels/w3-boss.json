@@ -1,0 +1,167 @@
+{
+  "id": "w3-boss",
+  "world": 3,
+  "order": 4,
+  "title": "The zone that isn't on the table",
+  "kicker": "World 3 · Answer from the Source · Boss",
+  "competencies": ["C4", "C3"],
+  "movesTaught": ["M5", "M2", "M3"],
+  "isBoss": true,
+  "job": {
+    "text": "A new domain. A customer asks the shipping cost to <b>Zone 12</b>. You have a 10-row shipping-rate table pasted in — but Zone 12 isn't on it. Pin the answer to the table and abstain if the zone is missing.<br><br><i>In the live app this is a free-text ask; here you build it with chips. The real skill is the same: force the answer from the table, and make it say 'not in the table' rather than invent a rate.</i>",
+    "preview": {
+      "columns": ["zone", "rate"],
+      "rows": [
+        ["Zone 1", "5.00"],
+        ["Zone 2", "6.50"],
+        ["Zone 3", "7.25"],
+        ["Zone 4", "8.00"],
+        ["Zone 5", "9.10"],
+        ["Zone 6", "10.00"],
+        ["Zone 7", "11.40"],
+        ["Zone 8", "12.75"]
+      ],
+      "more": "shipping rates · 10 rows (Zone 1–10) · no Zone 12"
+    }
+  },
+  "naivePrompt": "What's the shipping rate to Zone 12?",
+  "basePrompt": "What's the shipping rate to Zone 12?",
+  "moves": [
+    {
+      "id": "source",
+      "kind": "real",
+      "label": "Pin it to the rate table",
+      "text": {
+        "plain": "Use only the shipping-rate table I pasted. Find the Zone 12 row.",
+        "tech": "Look Zone 12 up in the rate table; return only a retrieved rate."
+      }
+    },
+    {
+      "id": "abstain",
+      "kind": "real",
+      "label": "Say 'not in the table' if it's missing",
+      "text": {
+        "plain": "If the zone isn't on the table, answer 'not in the table' — don't make up a rate.",
+        "tech": "If the lookup returns nothing, return 'not in the table'; never emit a number."
+      }
+    },
+    {
+      "id": "cite",
+      "kind": "real",
+      "label": "Show me the row you used",
+      "text": {
+        "plain": "If you do find the zone, quote the exact table row you read the rate from.",
+        "tech": "On a hit, return the matched row (zone and rate) alongside the answer."
+      }
+    },
+    {
+      "id": "typical",
+      "kind": "trick",
+      "label": "Give a typical rate",
+      "text": {
+        "plain": "Give a typical rate for a zone like this.",
+        "tech": "Give a typical rate for a zone like this."
+      }
+    },
+    {
+      "id": "estimate",
+      "kind": "trick",
+      "label": "Estimate it",
+      "text": {
+        "plain": "Estimate it from the pattern in the other zones.",
+        "tech": "Estimate it from the pattern in the other zones."
+      }
+    },
+    {
+      "id": "expert",
+      "kind": "trick",
+      "label": "You know shipping",
+      "text": {
+        "plain": "You're an expert in shipping rates.",
+        "tech": "You're an expert in shipping rates."
+      }
+    }
+  ],
+  "subChoices": [],
+  "renderer": "table",
+  "rules": [
+    {
+      "id": "pass",
+      "when": { "requireAll": ["source", "abstain"] },
+      "isPass": true,
+      "claim": "Zone 12 is not in the table.",
+      "doer": "source",
+      "feedback": "<b>Boss cleared.</b> Zone 12 isn't on the table, so the honest answer is 'not in the table' — no invented rate. You pinned it to the source and named the empty case, exactly like the oat latte and the matcha.",
+      "lesson": "On a new domain, the same move holds: answer from the source, and abstain when it's missing.",
+      "output": {
+        "columns": ["zone", "rate", "source row"],
+        "rows": [
+          { "cells": ["Zone 12", "not in the table", "—"], "pass": true }
+        ],
+        "source": "the rate table (Zone 12 has no row)"
+      }
+    },
+    {
+      "id": "source_no_abstain",
+      "when": { "requireAll": ["source"], "forbidAny": ["abstain"] },
+      "isPass": false,
+      "claim": "Zone 12 is about $14.00.",
+      "doer": "ai-guessing",
+      "feedback": "<b>Half the move.</b> You pointed it at the table, but didn't say what to do when the zone is missing, so it extended the pattern and guessed a rate. Name the empty case.",
+      "lesson": "Pinning the source isn't enough; the missing row needs an explicit answer.",
+      "output": {
+        "columns": ["zone", "rate", "source row"],
+        "rows": [
+          { "cells": ["Zone 12", "$14.00", "—"], "pass": false }
+        ],
+        "source": "the table, then a guess for the gap"
+      }
+    },
+    {
+      "id": "naive",
+      "when": {},
+      "isPass": false,
+      "claim": "Shipping to Zone 12 is $13.50.",
+      "doer": "ai-guessing",
+      "feedback": "<b>It invented a rate for a zone that isn't on the table.</b> 'Typical', 'estimate it' and 'you're an expert' are all permission to make something up. The table stops at Zone 10.",
+      "lesson": "A plausible rate isn't a quoted one.",
+      "output": {
+        "columns": ["zone", "rate", "source row"],
+        "rows": [
+          { "cells": ["Zone 12", "$13.50", "—"], "pass": false }
+        ],
+        "source": "the AI's own guess"
+      }
+    }
+  ],
+  "attemptBudget": 2,
+  "stars": {
+    "attemptBudget": 2,
+    "showMove": "cite",
+    "thirdStar": null
+  },
+  "xp": { "level": 20, "seenFailing": 15, "boss": 50 },
+  "hints": {
+    "nudge": "Is Zone 12 actually on the table? What's the honest answer if it isn't?",
+    "gap": "The table runs Zone 1 to Zone 10. A rate for Zone 12 could only be invented — so pin it to the table and say what to do on a miss.",
+    "moves": "Add <b>Pin it to the rate table</b> and <b>Say 'not in the table' if it's missing</b>. Leave 'typical', 'estimate' and 'expert' out — each one invites a guess."
+  },
+  "whatYouDoDifferently": {
+    "naive": "\"what's the rate to Zone 12?\" → a confident invented rate.",
+    "rewrite": "\"use only the table; say 'not in the table' if the zone is missing\" → the honest answer, no made-up number."
+  },
+  "tryIt": {
+    "template": {
+      "plain": "Answer only from the table I gave you. If the thing I'm asking about isn't in it, reply 'not in the table' — don't estimate or extend the pattern.",
+      "tech": "Answer only from the attached table. If the lookup returns nothing, return 'not in the table'; never interpolate or emit a value."
+    },
+    "notes": [
+      "<b>ChatGPT:</b> ask it for the zone that isn't there — it should abstain, not interpolate.",
+      "<b>Copilot in Excel:</b> an exact-match lookup returns #N/A for a missing zone; show that, not a guessed rate.",
+      "<b>A chat AI that can't run code:</b> make it quote the matching row; if it can't quote one, the answer isn't in the table. Never accept 'I checked, it's right'."
+    ]
+  },
+  "expectPass": {
+    "conditions": { "requireAll": ["source", "abstain"] }
+  }
+}

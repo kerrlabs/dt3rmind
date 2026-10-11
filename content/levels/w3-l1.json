@@ -1,0 +1,153 @@
+{
+  "id": "w3-l1",
+  "world": 3,
+  "order": 1,
+  "title": "Only from the sheet",
+  "kicker": "World 3 · Answer from the Source · Level 1",
+  "competencies": ["C4", "C3"],
+  "movesTaught": ["M5", "M2", "M3"],
+  "isBoss": false,
+  "job": {
+    "text": "You paste a 6-row menu into your AI and ask: \"What's the price of the oat latte?\" The real price is written down one row away.",
+    "preview": {
+      "columns": ["item", "price"],
+      "rows": [
+        ["drip coffee", "3.50"],
+        ["oat latte", "4.75"],
+        ["cappuccino", "4.25"],
+        ["cold brew", "4.00"],
+        ["mocha", "5.00"],
+        ["espresso", "3.00"]
+      ],
+      "more": "menu · 6 rows"
+    }
+  },
+  "naivePrompt": "What's the price of the oat latte?",
+  "basePrompt": "What's the price of the oat latte?",
+  "moves": [
+    {
+      "id": "source",
+      "kind": "real",
+      "label": "Pin it to the menu",
+      "text": {
+        "plain": "Use only the menu I pasted. Find the oat latte row and read its price. If it isn't there, say 'not on the menu'.",
+        "tech": "Look the item up in the menu table and return that row's price; don't compute or invent."
+      }
+    },
+    {
+      "id": "run",
+      "kind": "real",
+      "label": "Read the real value",
+      "text": {
+        "plain": "Read the exact value from that row, don't round or estimate.",
+        "tech": "Return the retrieved cell value verbatim."
+      }
+    },
+    {
+      "id": "cite",
+      "kind": "real",
+      "label": "Show me which row you used",
+      "text": {
+        "plain": "Show me the menu row you read the price from so I can check it.",
+        "tech": "Return the matched row (item and price) alongside the answer."
+      }
+    },
+    {
+      "id": "expert",
+      "kind": "trick",
+      "label": "You know coffee prices",
+      "text": {
+        "plain": "You know coffee prices well.",
+        "tech": "You know coffee prices well."
+      }
+    },
+    {
+      "id": "typical",
+      "kind": "trick",
+      "label": "Give a typical price",
+      "text": {
+        "plain": "Give a typical price for a drink like this.",
+        "tech": "Give a typical price for a drink like this."
+      }
+    }
+  ],
+  "subChoices": [],
+  "renderer": "text-answer",
+  "rules": [
+    {
+      "id": "pass",
+      "when": { "requireAll": ["source", "run"] },
+      "isPass": true,
+      "claim": "The oat latte is $4.75.",
+      "doer": "source",
+      "feedback": "<b>Straight from the menu.</b> It read the oat latte row instead of guessing. Same answer every time, and you can see where it came from.",
+      "lesson": "Pin the answer to the source and the guess disappears.",
+      "output": {
+        "fields": [
+          { "key": "item", "value": "oat latte" },
+          { "key": "price", "value": "$4.75" }
+        ],
+        "highlights": ["$4.75"],
+        "source": "the oat latte row of the menu"
+      }
+    },
+    {
+      "id": "source_no_run",
+      "when": { "requireAll": ["source"], "forbidAny": ["run"] },
+      "isPass": false,
+      "claim": "The oat latte is around $4.75 to $5.00.",
+      "doer": "ai-guessing",
+      "feedback": "<b>Half the move.</b> You pointed it at the menu, but didn't tell it to read the exact value, so it still rounded to a range. Add 'read the real value'.",
+      "lesson": "Pinning the source isn't enough; make it read the exact value.",
+      "output": {
+        "answer": "The oat latte is around $4.75 to $5.00.",
+        "highlights": ["$4.75 to $5.00"],
+        "source": "the menu, read loosely"
+      }
+    },
+    {
+      "id": "naive",
+      "when": {},
+      "isPass": false,
+      "claim": "The oat latte is $5.25.",
+      "doer": "ai-guessing",
+      "feedback": "<b>It made up a number.</b> 'Typical' and 'you know prices' invite a guess. The real price is written down one row away. Point it at that row.",
+      "lesson": "A plausible number isn't the written one.",
+      "output": {
+        "answer": "The oat latte is $5.25.",
+        "highlights": ["$5.25"],
+        "source": "the AI's own guess"
+      }
+    }
+  ],
+  "attemptBudget": 2,
+  "stars": {
+    "attemptBudget": 2,
+    "showMove": "cite",
+    "thirdStar": null
+  },
+  "xp": { "level": 20, "seenFailing": 15, "boss": 0 },
+  "hints": {
+    "nudge": "Where is the <i>real</i> price written down?",
+    "gap": "It answered $5.25, but that row isn't on the menu. Which chip forces it to read the actual row?",
+    "moves": "Add <b>Pin it to the menu</b> and <b>Read the real value</b>. Leave the 'typical' and 'expert' chips out."
+  },
+  "whatYouDoDifferently": {
+    "naive": "\"what's the oat latte price?\" → an invented number.",
+    "rewrite": "\"use only the menu, read the oat latte row\" → the real $4.75, every time."
+  },
+  "tryIt": {
+    "template": {
+      "plain": "Use only the document I gave you. Find the exact line that answers this and read its value. If it isn't in the document, say 'not in the document' — don't guess.",
+      "tech": "Answer only from the attached file. Look the item up and return the retrieved cell verbatim; if the lookup is empty, return 'not in the document'."
+    },
+    "notes": [
+      "<b>ChatGPT:</b> upload the file and ask it to quote the exact line it used.",
+      "<b>Copilot in Excel:</b> use a lookup (VLOOKUP/XLOOKUP) so the value comes from a cell.",
+      "<b>A chat AI that can't run code:</b> ask it to quote the source line; if it can't quote it, it guessed. Never accept 'I checked, it's right'."
+    ]
+  },
+  "expectPass": {
+    "conditions": { "requireAll": ["source", "run"] }
+  }
+}

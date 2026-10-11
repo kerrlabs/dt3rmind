@@ -1,0 +1,140 @@
+{
+  "id": "w3-l2",
+  "world": 3,
+  "order": 2,
+  "title": "When the answer isn't there",
+  "kicker": "World 3 · Answer from the Source · Level 2",
+  "competencies": ["C4"],
+  "movesTaught": ["M5"],
+  "isBoss": false,
+  "job": {
+    "text": "Same 6-row menu, new question: \"What's the price of the matcha?\" But matcha isn't on the menu. Make the AI say \"not on the menu\" instead of inventing a price.",
+    "preview": {
+      "columns": ["item", "price"],
+      "rows": [
+        ["drip coffee", "3.50"],
+        ["oat latte", "4.75"],
+        ["cappuccino", "4.25"],
+        ["cold brew", "4.00"],
+        ["mocha", "5.00"],
+        ["espresso", "3.00"]
+      ],
+      "more": "menu · 6 rows · no matcha"
+    }
+  },
+  "naivePrompt": "What's the price of the matcha?",
+  "basePrompt": "What's the price of the matcha?",
+  "moves": [
+    {
+      "id": "source",
+      "kind": "real",
+      "label": "Pin it to the menu",
+      "text": {
+        "plain": "Use only the menu. Find the matcha row.",
+        "tech": "Look matcha up in the menu table."
+      }
+    },
+    {
+      "id": "abstain",
+      "kind": "real",
+      "label": "Say 'not found' if it's missing",
+      "text": {
+        "plain": "If the item isn't on the menu, answer 'not on the menu' — don't make up a price.",
+        "tech": "If the lookup returns nothing, return 'not on the menu'; never emit a number."
+      }
+    },
+    {
+      "id": "helpful",
+      "kind": "trick",
+      "label": "Give your best guess",
+      "text": {
+        "plain": "Be helpful and give your best guess.",
+        "tech": "Be helpful and give your best guess."
+      }
+    },
+    {
+      "id": "round",
+      "kind": "trick",
+      "label": "A round number is fine",
+      "text": {
+        "plain": "A round number like $5 is fine.",
+        "tech": "A round number like $5 is fine."
+      }
+    }
+  ],
+  "subChoices": [],
+  "renderer": "text-answer",
+  "rules": [
+    {
+      "id": "pass",
+      "when": { "requireAll": ["source", "abstain"] },
+      "isPass": true,
+      "claim": "Not on the menu.",
+      "doer": "source",
+      "feedback": "<b>The honest answer.</b> This is the first time a win means the AI said <i>less</i>. 'Not on the menu' is worth more than a confident wrong price.",
+      "lesson": "Teaching it to say 'I don't know' is a real move.",
+      "output": {
+        "answer": "not on the menu",
+        "source": "the menu (matcha has no row)"
+      }
+    },
+    {
+      "id": "source_no_abstain",
+      "when": { "requireAll": ["source"], "forbidAny": ["abstain"] },
+      "isPass": false,
+      "claim": "The matcha is about $4.80.",
+      "doer": "ai-guessing",
+      "feedback": "<b>Half the move.</b> You pointed it at the menu, but didn't tell it what to do when the item isn't there, so it filled the gap with a guess.",
+      "lesson": "Pinning the source isn't enough; name the empty case.",
+      "output": {
+        "answer": "The matcha is about $4.80.",
+        "highlights": ["$4.80"],
+        "source": "the menu, then a guess for the gap"
+      }
+    },
+    {
+      "id": "naive",
+      "when": {},
+      "isPass": false,
+      "claim": "The matcha is $5.00.",
+      "doer": "ai-guessing",
+      "feedback": "<b>It invented a price for an item that doesn't exist.</b> 'Best guess' and 'a round number is fine' are permission to make something up.",
+      "lesson": "'Helpful' without a source means 'invent'.",
+      "output": {
+        "answer": "The matcha is $5.00.",
+        "highlights": ["$5.00"],
+        "source": "the AI's own guess"
+      }
+    }
+  ],
+  "attemptBudget": 2,
+  "stars": {
+    "attemptBudget": 2,
+    "showMove": null,
+    "thirdStar": null
+  },
+  "xp": { "level": 20, "seenFailing": 15, "boss": 0 },
+  "hints": {
+    "nudge": "What's the honest answer when the thing just isn't there?",
+    "gap": "You pinned it to the menu, but it still guessed, because you never said what to do on a miss.",
+    "moves": "Add <b>Say 'not found' if it's missing</b> alongside <b>Pin it to the menu</b>."
+  },
+  "whatYouDoDifferently": {
+    "naive": "\"what's the matcha price?\" → an invented $5.00.",
+    "rewrite": "\"use only the menu; say 'not on the menu' if it's missing\" → the honest answer."
+  },
+  "tryIt": {
+    "template": {
+      "plain": "Answer only from the document. If the answer isn't in it, reply 'not in the document.' Do not fill the gap with a guess.",
+      "tech": "Answer only from the attached file. If the lookup returns nothing, return 'not in the document'; never emit a value."
+    },
+    "notes": [
+      "<b>ChatGPT:</b> test it on something you <i>know</i> isn't in the file — it should abstain.",
+      "<b>Copilot in Excel:</b> a lookup returns #N/A when it's missing; show that instead of a number.",
+      "<b>A chat AI that can't run code:</b> if it answers a question the document can't support, the abstain instruction didn't take — re-ask. Never accept 'I checked, it's right'."
+    ]
+  },
+  "expectPass": {
+    "conditions": { "requireAll": ["source", "abstain"] }
+  }
+}

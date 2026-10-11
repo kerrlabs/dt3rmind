@@ -1,0 +1,156 @@
+{
+  "id": "w3-l3",
+  "world": 3,
+  "order": 3,
+  "title": "Cite it or it didn't happen",
+  "kicker": "World 3 · Answer from the Source · Level 3",
+  "competencies": ["C4", "C3"],
+  "movesTaught": ["M5", "M1"],
+  "isBoss": false,
+  "job": {
+    "text": "Same menu. New question: \"Which drink is cheapest, and how much?\" The answer must carry <b>both</b> the value and the menu row it came from, so a reader can verify it.",
+    "preview": {
+      "columns": ["row", "item", "price"],
+      "rows": [
+        ["1", "drip coffee", "3.50"],
+        ["2", "oat latte", "4.75"],
+        ["3", "cappuccino", "4.25"],
+        ["4", "cold brew", "4.00"],
+        ["5", "mocha", "5.00"],
+        ["6", "espresso", "3.00"]
+      ],
+      "more": "menu · 6 rows · cheapest is espresso $3.00 (row 6)"
+    }
+  },
+  "naivePrompt": "Which drink is cheapest and how much?",
+  "basePrompt": "Which drink is cheapest and how much?",
+  "moves": [
+    {
+      "id": "shape",
+      "kind": "real",
+      "label": "Name the shape (drink, price, row)",
+      "text": {
+        "plain": "Answer in this format: drink, price, and which menu row it came from.",
+        "tech": "Return {drink, price, source_row}."
+      }
+    },
+    {
+      "id": "source",
+      "kind": "real",
+      "label": "Fill it from one row",
+      "text": {
+        "plain": "Fill all three fields from the same menu row — the price must belong to that drink.",
+        "tech": "Bind all three fields to the one retrieved row object."
+      }
+    },
+    {
+      "id": "min",
+      "kind": "real",
+      "label": "Pick the lowest-price row",
+      "text": {
+        "plain": "Pick the row with the lowest price.",
+        "tech": "source_row = argmin(price)."
+      }
+    },
+    {
+      "id": "cite",
+      "kind": "real",
+      "label": "Show me the row text",
+      "text": {
+        "plain": "Quote the exact menu row text next to the answer.",
+        "tech": "Return the raw matched row string alongside the fields."
+      }
+    },
+    {
+      "id": "confident",
+      "kind": "trick",
+      "label": "Be confident",
+      "text": {
+        "plain": "Be confident in your answer.",
+        "tech": "Be confident in your answer."
+      }
+    }
+  ],
+  "subChoices": [],
+  "renderer": "table",
+  "rules": [
+    {
+      "id": "pass",
+      "when": { "requireAll": ["shape", "source", "min"] },
+      "isPass": true,
+      "claim": "Cheapest: espresso, $3.00, from menu row 6.",
+      "doer": "source",
+      "feedback": "<b>Checkable.</b> The price belongs to the drink, it's the lowest on the menu, and you can see the exact row. Anyone can verify it in one glance.",
+      "lesson": "Cite the row and the answer verifies itself.",
+      "output": {
+        "columns": ["drink", "price", "source row"],
+        "rows": [
+          { "cells": ["espresso", "$3.00", "row 6"], "pass": true }
+        ],
+        "source": "menu row 6: espresso, $3.00"
+      }
+    },
+    {
+      "id": "shape_no_bind",
+      "when": { "requireAll": ["shape"], "forbidAny": ["source"] },
+      "isPass": false,
+      "claim": "Cheapest: oat latte, $3.00, from menu row 1.",
+      "doer": "ai-guessing",
+      "feedback": "<b>Right shape, wrong wiring.</b> The three fields came from different places, so the price still isn't the drink's. Fill them all from one row.",
+      "lesson": "A shape is only as good as where you fill it from.",
+      "output": {
+        "columns": ["drink", "price", "source row"],
+        "rows": [
+          { "cells": ["oat latte", "$3.00", "row 1"], "pass": false }
+        ],
+        "source": "three different rows stitched together"
+      }
+    },
+    {
+      "id": "naive",
+      "when": {},
+      "isPass": false,
+      "claim": "The cheapest is the oat latte at $3.50.",
+      "doer": "ai-guessing",
+      "feedback": "<b>The price doesn't belong to that drink.</b> It stitched a cheap price onto the wrong name — $3.50 is the drip coffee. 'Be confident' just made the mismatch sound sure.",
+      "lesson": "A confident pair can still be mismatched.",
+      "output": {
+        "columns": ["drink", "price", "source row"],
+        "rows": [
+          { "cells": ["oat latte", "$3.50", "—"], "pass": false }
+        ],
+        "source": "no row cited"
+      }
+    }
+  ],
+  "attemptBudget": 2,
+  "stars": {
+    "attemptBudget": 2,
+    "showMove": "cite",
+    "thirdStar": null
+  },
+  "xp": { "level": 20, "seenFailing": 15, "boss": 0 },
+  "hints": {
+    "nudge": "Does the price actually belong to the drink it named?",
+    "gap": "The three fields came from different rows — that's how the price ended up on the wrong drink. Pin them to one row.",
+    "moves": "Add <b>Name the shape</b>, <b>Fill it from one row</b>, and <b>Pick the lowest-price row</b>."
+  },
+  "whatYouDoDifferently": {
+    "naive": "\"which is cheapest?\" → a mismatched price and name.",
+    "rewrite": "\"give drink, price and the row, all from one row, lowest price\" → a cited, verifiable answer."
+  },
+  "tryIt": {
+    "template": {
+      "plain": "Give me the answer and the exact line in the document it came from, together. The value and its source must be from the same place.",
+      "tech": "Return {answer, source_row} where both fields are bound to the same retrieved row; the value must come from the cited row."
+    },
+    "notes": [
+      "<b>ChatGPT:</b> ask for a tiny table: answer | source line. If it can't fill the source, don't trust the answer.",
+      "<b>Copilot in Excel:</b> have the lookup return the row number too, so the source is visible.",
+      "<b>A chat AI that can't run code:</b> make it quote the source line next to the answer; a quote you can check beats a number you can't. Never accept 'I checked, it's right'."
+    ]
+  },
+  "expectPass": {
+    "conditions": { "requireAll": ["shape", "source", "min"] }
+  }
+}
