@@ -1,0 +1,390 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Dt3rmind — Executive Summary</title>
+<style>
+  /* ---- Okabe–Ito-inspired palette, matching the product's a11y tokens ---- */
+  :root {
+    --bg:        #0f1115;
+    --panel:     #171a21;
+    --panel-2:   #1e222b;
+    --ink:       #eef1f6;
+    --muted:     #9aa4b2;
+    --line:      #2b303b;
+    --blue:      #56b4e9;  /* Okabe–Ito sky blue */
+    --green:     #009e73;  /* bluish green */
+    --orange:    #e69f00;  /* orange */
+    --vermilion: #d55e00;  /* vermilion */
+    --purple:    #cc79a7;  /* reddish purple */
+    --yellow:    #f0e442;
+  }
+
+  * { box-sizing: border-box; }
+  html, body { height: 100%; margin: 0; }
+  body {
+    background: var(--bg);
+    color: var(--ink);
+    font: 400 18px/1.55 -apple-system, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    -webkit-font-smoothing: antialiased;
+  }
+
+  /* ---- Deck layout ---- */
+  .deck { height: 100vh; width: 100vw; overflow: hidden; position: relative; }
+
+  .slide {
+    position: absolute; inset: 0;
+    display: none;
+    flex-direction: column;
+    padding: 6vh 8vw 9vh;
+    opacity: 0;
+    transition: opacity .25s ease;
+  }
+  .slide.active { display: flex; opacity: 1; }
+  body.reduce-motion .slide { transition: none; }
+
+  .kicker {
+    text-transform: uppercase;
+    letter-spacing: .14em;
+    font-size: 13px;
+    font-weight: 700;
+    color: var(--blue);
+    margin: 0 0 10px;
+  }
+  h1 { font-size: clamp(30px, 5.2vw, 60px); line-height: 1.08; margin: 0 0 18px; letter-spacing: -0.01em; }
+  h2 { font-size: clamp(24px, 3.6vw, 40px); line-height: 1.12; margin: 0 0 22px; letter-spacing: -0.01em; }
+  h2 .accent { color: var(--blue); }
+  p  { margin: 0 0 16px; max-width: 60ch; }
+  .lead { font-size: clamp(18px, 2.1vw, 24px); color: var(--ink); max-width: 64ch; }
+  .sub  { color: var(--muted); }
+  strong { color: #fff; font-weight: 700; }
+  em { color: var(--yellow); font-style: italic; }
+  code {
+    font-family: "SF Mono", ui-monospace, "Cascadia Code", Consolas, monospace;
+    font-size: .88em; background: var(--panel-2); padding: 1px 6px; border-radius: 5px;
+    color: var(--orange);
+  }
+
+  .slide-body { flex: 1; min-height: 0; overflow: auto; }
+
+  ul { margin: 0; padding: 0; list-style: none; max-width: 70ch; }
+  ul li {
+    position: relative; padding: 10px 0 10px 28px; border-bottom: 1px solid var(--line);
+  }
+  ul li:last-child { border-bottom: 0; }
+  ul li::before {
+    content: ""; position: absolute; left: 2px; top: 19px;
+    width: 10px; height: 10px; border-radius: 2px; background: var(--green);
+  }
+  ol { margin: 0; padding-left: 1.3em; max-width: 68ch; }
+  ol li { padding: 8px 0; border-bottom: 1px solid var(--line); }
+  ol li:last-child { border-bottom: 0; }
+
+  /* ---- The thesis callout ---- */
+  .thesis {
+    border-left: 4px solid var(--orange);
+    background: var(--panel);
+    padding: 18px 22px; border-radius: 0 10px 10px 0;
+    max-width: 62ch; margin: 6px 0 20px;
+    font-size: clamp(19px, 2.3vw, 26px);
+  }
+
+  /* ---- Stat chips ---- */
+  .stats { display: flex; flex-wrap: wrap; gap: 14px; margin: 12px 0 4px; }
+  .stat {
+    background: var(--panel); border: 1px solid var(--line); border-radius: 12px;
+    padding: 16px 20px; min-width: 150px; flex: 1 1 150px;
+  }
+  .stat .n { font-size: clamp(26px, 4vw, 42px); font-weight: 800; color: var(--blue); line-height: 1; }
+  .stat .n.green { color: var(--green); }
+  .stat .n.orange { color: var(--orange); }
+  .stat .n.vermilion { color: var(--vermilion); }
+  .stat .l { color: var(--muted); font-size: 14px; margin-top: 8px; }
+
+  /* ---- Tables ---- */
+  table { border-collapse: collapse; width: 100%; max-width: 92ch; font-size: 15px; }
+  th, td { text-align: left; vertical-align: top; padding: 10px 14px; border-bottom: 1px solid var(--line); }
+  th { color: var(--blue); font-size: 12px; text-transform: uppercase; letter-spacing: .08em; }
+  td:first-child { white-space: nowrap; font-weight: 700; color: #fff; }
+
+  /* ---- Rank ladder ---- */
+  .ladder { display: flex; flex-wrap: wrap; align-items: center; gap: 10px; margin: 14px 0; }
+  .rank {
+    background: var(--panel); border: 1px solid var(--line); border-radius: 999px;
+    padding: 8px 16px; font-weight: 700; font-size: 15px;
+  }
+  .rank .xp { color: var(--muted); font-weight: 400; font-size: 13px; }
+  .arrow { color: var(--blue); font-weight: 800; }
+  .rank.cap { border-color: var(--orange); color: var(--orange); }
+
+  .two-col { display: grid; grid-template-columns: 1fr 1fr; gap: 28px; }
+  @media (max-width: 820px){ .two-col { grid-template-columns: 1fr; } }
+
+  .pill {
+    display: inline-block; background: var(--panel-2); border: 1px solid var(--line);
+    border-radius: 999px; padding: 3px 12px; font-size: 13px; color: var(--muted); margin-right: 8px;
+  }
+
+  /* ---- Title slide ---- */
+  .title-slide { justify-content: center; align-items: flex-start; }
+  .logo { font-size: clamp(44px, 9vw, 104px); font-weight: 800; letter-spacing: -0.02em; }
+  .logo .three { color: var(--orange); }
+  .tagline { font-size: clamp(18px, 2.6vw, 28px); color: var(--muted); margin-top: 8px; }
+  .verified { margin-top: 26px; font-size: 14px; color: var(--muted); }
+
+  /* ---- Chrome: progress bar + controls + page number ---- */
+  .progress { position: fixed; top: 0; left: 0; height: 4px; background: var(--blue); width: 0; z-index: 50; transition: width .25s ease; }
+  body.reduce-motion .progress { transition: none; }
+
+  .chrome {
+    position: fixed; bottom: 18px; right: 22px; z-index: 50;
+    display: flex; align-items: center; gap: 10px;
+    font-size: 13px; color: var(--muted);
+  }
+  .chrome button {
+    background: var(--panel); color: var(--ink); border: 1px solid var(--line);
+    border-radius: 8px; width: 34px; height: 34px; font-size: 18px; cursor: pointer;
+    display: inline-flex; align-items: center; justify-content: center;
+  }
+  .chrome button:hover { border-color: var(--blue); color: var(--blue); }
+  .chrome button:focus-visible { outline: 2px solid var(--blue); outline-offset: 2px; }
+  .counter { min-width: 56px; text-align: center; font-variant-numeric: tabular-nums; }
+
+  .hint {
+    position: fixed; bottom: 18px; left: 22px; z-index: 50;
+    font-size: 12px; color: var(--muted); opacity: .8;
+  }
+  kbd {
+    background: var(--panel-2); border: 1px solid var(--line); border-bottom-width: 2px;
+    border-radius: 5px; padding: 1px 6px; font-size: 11px; font-family: inherit;
+  }
+
+  /* ---- Print: one slide per page for PDF export ---- */
+  @media print {
+    @page { size: 1280px 720px; margin: 0; }
+    html, body { height: auto; background: #fff; color: #111; }
+    .deck { height: auto; width: auto; overflow: visible; }
+    .slide {
+      position: relative; inset: auto; display: flex !important; opacity: 1 !important;
+      height: 720px; width: 1280px; page-break-after: always; break-after: page;
+      padding: 60px 80px; background: #fff; color: #111;
+    }
+    h1, h2, .logo { color: #111; }
+    .thesis { background: #f5f5f5; }
+    .stat, .rank, table th, code { color: #111; }
+    .progress, .chrome, .hint { display: none !important; }
+    strong { color: #000; }
+    em { color: var(--vermilion); }
+  }
+</style>
+</head>
+<body>
+<div class="progress" id="progress"></div>
+
+<div class="deck" id="deck">
+
+  <!-- 1 — Title -->
+  <section class="slide title-slide active">
+    <p class="kicker">Executive Summary</p>
+    <div class="logo">Dt<span class="three">3</span>rmind</div>
+    <p class="tagline">Ask for the tool, not the answer.</p>
+    <p class="lead" style="margin-top:28px;">A gamified, chess.com-puzzle-style web course that teaches
+      <strong>non-technical adults how to direct AI reliably</strong> — built as a HackMidwest project
+      with a three-minute judging pitch.</p>
+    <p class="verified">Verified against the codebase · 2026-10-21 — figures read from live source,
+      authored packet JSON, <code>npm test</code>, and <code>npm&nbsp;run&nbsp;build</code>.</p>
+  </section>
+
+  <!-- 2 — What it is -->
+  <section class="slide">
+    <p class="kicker">What it is</p>
+    <h2>Stop asking for the answer. <span class="accent">Ask for the tool and the check.</span></h2>
+    <div class="slide-body">
+      <div class="thesis"><em>Determinism comes from the tools you force the AI through, not the words you give it.</em></div>
+      <p>Rather than teaching cleverer prompting, Dt3rmind teaches people to stop asking AI for the
+        <strong>answer</strong> and instead ask for the <strong>tool and the check</strong> that make an
+        answer exact — and to prove it.</p>
+      <p class="sub">Primary audience: non-technical adults who already use chat AI. A technical skin of the
+        same levels targets developers.</p>
+    </div>
+  </section>
+
+  <!-- 3 — The problem -->
+  <section class="slide">
+    <p class="kicker">The problem it dramatizes</p>
+    <h2>Same model, same data — <span class="accent">one approach is exact.</span></h2>
+    <div class="slide-body">
+      <p>Ask an AI to total 2,000 rows of sales data and you get five different wrong numbers
+        (179K–442K): the model <em>predicts what a total looks like</em> rather than computing it.
+        Ask it to write a formula and let a spreadsheet run it, and you get the exact answer every time.</p>
+      <div class="stats">
+        <div class="stat"><div class="n vermilion">0/10</div><div class="l">AI reading data (guessing)</div></div>
+        <div class="stat"><div class="n green">10/10</div><div class="l">AI writing SQL, engine runs it</div></div>
+        <div class="stat"><div class="n">Bedrock</div><div class="l">real AWS run, seed 42</div></div>
+      </div>
+      <p class="sub" style="margin-top:18px;">The proof point is a real AWS Bedrock run — not a mock.</p>
+    </div>
+  </section>
+
+  <!-- 4 — Product shape -->
+  <section class="slide">
+    <p class="kicker">Product shape</p>
+    <h2>7 worlds · <span class="accent">31 authored level packets</span></h2>
+    <div class="slide-body">
+      <ul>
+        <li><strong>7 worlds</strong>, each with 3 practice levels plus a boss. World 2 carries an extra
+          level; World 4 adds a <strong>keystone</strong> (<code>w4-l4</code>); the <strong>capstone</strong>
+          is a second, higher-order boss in World 7. <strong>Total: 31 packets.</strong></li>
+        <li><strong>9 concrete "moves" (M1–M9)</strong> — sentences a learner adds to a real prompt
+          (e.g. "ask for the tool, not the answer"). Popular prompting "tricks" are decoys that visibly fail.</li>
+        <li>The <strong>"false green"</strong> keystone: a checker reports 8/8 pass but is secretly broken —
+          it matched "next" in "arrives <em>next</em> week" — teaching that an unproven check is a promise, not proof.</li>
+        <li>A <strong>technical skin</strong> carries <code>plain</code> and <code>tech</code> text for every chip.</li>
+      </ul>
+      <p class="kicker" style="margin-top:22px;">XP-driven rank ladder</p>
+      <div class="ladder">
+        <span class="rank">Guesser</span><span class="arrow">→</span>
+        <span class="rank">Shaper <span class="xp">40</span></span><span class="arrow">→</span>
+        <span class="rank">Tool User <span class="xp">120</span></span><span class="arrow">→</span>
+        <span class="rank">Checker <span class="xp">220</span></span><span class="arrow">→</span>
+        <span class="rank">Builder <span class="xp">400</span></span><span class="arrow">→</span>
+        <span class="rank">Architect <span class="xp">650</span></span><span class="arrow">→</span>
+        <span class="rank cap">Certified Practitioner</span>
+      </div>
+    </div>
+  </section>
+
+  <!-- 5 — Technical architecture -->
+  <section class="slide">
+    <p class="kicker">Technical architecture</p>
+    <h2>Pure, deterministic, <span class="accent">fully client-side</span></h2>
+    <div class="slide-body">
+      <table>
+        <thead><tr><th>Layer</th><th>Details</th></tr></thead>
+        <tbody>
+          <tr><td>Frontend</td><td>Vite + React 18 + TypeScript (strict) + Vitest. Client-side static SPA, HashRouter, progress in <code>localStorage</code>. No backend wired into the SPA.</td></tr>
+          <tr><td>Content</td><td><strong>31 JSON level packets</strong> drive a pure, deterministic engine (rules, stars, XP, independent pass oracle). Map/layout computed from packets.</td></tr>
+          <tr><td>Engine</td><td>Pure engine + <strong>3 simulators</strong> (<code>w4-l4-check</code>, <code>w4-check</code>, <code>w4-boss-refund</code>). Independent oracle catches engine bugs.</td></tr>
+          <tr><td>Python harness</td><td>FastAPI + SSE, OpenAI/Bedrock/mock providers, seeded dataset (seed 42). Powers the real determinism beat; natural Phase-2 engine. Not imported by the app today.</td></tr>
+          <tr><td>Accessibility</td><td>WCAG 2.1 AA target: Okabe–Ito palette, keyboard play, reduced motion, <code>aria-live</code> narration.</td></tr>
+          <tr><td>Security</td><td>Author HTML sanitized via dependency-free allowlist. <code>react-router-dom</code> 6.30.6; no high/critical advisories in the shipped bundle.</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+  <!-- 6 — Quality gate -->
+  <section class="slide">
+    <p class="kicker">Quality gate</p>
+    <h2>Green build, <span class="accent">exhaustive tests</span></h2>
+    <div class="slide-body">
+      <div class="stats">
+        <div class="stat"><div class="n green">530</div><div class="l">tests passing (12 files)</div></div>
+        <div class="stat"><div class="n">31</div><div class="l">level packets, all build</div></div>
+        <div class="stat"><div class="n">82</div><div class="l">modules, clean build</div></div>
+        <div class="stat"><div class="n orange">~123 kB</div><div class="l">JS bundle (gzip)</div></div>
+      </div>
+      <p style="margin-top:20px;">The combination test enumerates <strong>every move/sub-choice assignment per
+        packet</strong> and cross-checks it against an independent pass oracle — a rule or simulator bug
+        surfaces as a disagreement.</p>
+      <p class="sub">Test count has grown from 437 (4 files) at the last engineering review to
+        <strong>530 (12 files)</strong>; UI tests under <code>tests/</code> are now collected, not silently skipped.</p>
+    </div>
+  </section>
+
+  <!-- 7 — Status & maturity -->
+  <section class="slide">
+    <p class="kicker">Status &amp; maturity</p>
+    <h2>Foundation complete · <span class="accent">Phase 2 planned</span></h2>
+    <div class="slide-body two-col">
+      <div>
+        <p class="kicker" style="color:var(--green)">Done &amp; tested</p>
+        <ul>
+          <li>Schema, pure engine, three simulators, four renderers</li>
+          <li>Two-tier world-map UI</li>
+          <li>All 31 level packets build and pass</li>
+          <li>Strong logic + UI test gate</li>
+        </ul>
+      </div>
+      <div>
+        <p class="kicker" style="color:var(--orange)">Phase 2 — not built</p>
+        <ul>
+          <li>Worlds 5–7, bosses, capstone run <strong>live-model free-text</strong> asks</li>
+          <li>AI-written code executed in a <strong>browser sandbox</strong></li>
+          <li>FastAPI harness + sandbox safety become load-bearing</li>
+        </ul>
+      </div>
+    </div>
+  </section>
+
+  <!-- 8 — Close -->
+  <section class="slide title-slide">
+    <p class="kicker">The one takeaway</p>
+    <h1><em>Don't let it guess the part<br>that has a right answer.</em></h1>
+    <p class="tagline" style="margin-top:18px;">Dt<span style="color:var(--orange)">3</span>rmind — ask for the tool, not the answer.</p>
+    <p class="verified">7 worlds · 31 packets · 530 tests · one move you can paste into ChatGPT tomorrow.</p>
+  </section>
+
+</div>
+
+<div class="hint"><kbd>←</kbd> <kbd>→</kbd> navigate · <kbd>F</kbd> fullscreen · <kbd>P</kbd> print / PDF</div>
+<div class="chrome">
+  <button id="prev" aria-label="Previous slide">‹</button>
+  <span class="counter"><span id="cur">1</span> / <span id="total">10</span></span>
+  <button id="next" aria-label="Next slide">›</button>
+</div>
+
+<script>
+  (function () {
+    var slides = Array.prototype.slice.call(document.querySelectorAll('.slide'));
+    var i = 0;
+    var curEl = document.getElementById('cur');
+    var totalEl = document.getElementById('total');
+    var progress = document.getElementById('progress');
+    totalEl.textContent = slides.length;
+
+    // Respect reduced-motion preference.
+    if (window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
+      document.body.classList.add('reduce-motion');
+    }
+
+    function show(n) {
+      i = Math.max(0, Math.min(slides.length - 1, n));
+      slides.forEach(function (s, idx) { s.classList.toggle('active', idx === i); });
+      curEl.textContent = i + 1;
+      progress.style.width = ((i) / (slides.length - 1) * 100) + '%';
+      if (location.hash !== '#' + (i + 1)) history.replaceState(null, '', '#' + (i + 1));
+    }
+    function next() { show(i + 1); }
+    function prev() { show(i - 1); }
+
+    document.getElementById('next').addEventListener('click', next);
+    document.getElementById('prev').addEventListener('click', prev);
+
+    document.addEventListener('keydown', function (e) {
+      switch (e.key) {
+        case 'ArrowRight': case 'PageDown': case ' ': next(); e.preventDefault(); break;
+        case 'ArrowLeft':  case 'PageUp': prev(); e.preventDefault(); break;
+        case 'Home': show(0); break;
+        case 'End': show(slides.length - 1); break;
+        case 'f': case 'F':
+          if (!document.fullscreenElement) { document.documentElement.requestFullscreen && document.documentElement.requestFullscreen(); }
+          else { document.exitFullscreen && document.exitFullscreen(); }
+          break;
+        case 'p': case 'P': window.print(); e.preventDefault(); break;
+      }
+    });
+
+    // Advance / go back on click anywhere except the controls.
+    document.getElementById('deck').addEventListener('click', function (e) {
+      if (e.target.closest('.chrome')) return;
+      if (e.clientX < window.innerWidth * 0.25) prev(); else next();
+    });
+
+    var start = parseInt((location.hash || '').replace('#', ''), 10);
+    show(isNaN(start) ? 0 : start - 1);
+  })();
+</script>
+</body>
+</html>
