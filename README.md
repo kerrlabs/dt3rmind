@@ -167,3 +167,27 @@ Current `npm audit` posture:
 `npm run build` is clean: **82 modules**, `dist/assets/index-*.js` ≈ **434 kB** (gzip ≈ 123 kB),
 CSS ≈ **19 kB**. All packets are inlined via `import.meta.glob({ eager: true })`, so the whole
 curriculum ships on first load; lazy-loading packets per level is a known Phase-2 optimization.
+
+## For the Platform team
+
+Handoff note for onboarding the container image.
+
+- **`APP_PORT`:** `8080`. The container reads it from the `APP_PORT` environment variable at start.
+- **Health path:** `/api/healthz`. It returns HTTP 200 only when the application is ready to serve requests.
+- The application has no database.
+- The application writes nothing to local disk that must survive a restart.
+- The application requires no role or group information beyond an authenticated staff member.
+
+Build command (run unchanged from the repository root):
+
+```bash
+docker buildx build --platform linux/arm64 -t dt3rmind:release --load .
+```
+
+**Tell us early if any of these apply:**
+
+- **You need to store data:** does not apply. The app is a static single-page app and keeps learner progress in the browser's `localStorage`, so the server stores nothing.
+- **You need to reach an existing system:** does not apply. The server only serves its own files and makes no calls to any database, API, or file share.
+- **You need roles or permissions:** does not apply. Every authenticated staff member gets the same content, and the app never reads role or group data.
+- **Waiting a minute for the app to wake is a problem for your users:** does not apply. The app is static, so a one-minute wake page is acceptable and the app works as soon as the page loads.
+- **You expect heavy concurrent use:** does not apply. The server only hands out static files and the app has no shared server-side state, so expected use is light.

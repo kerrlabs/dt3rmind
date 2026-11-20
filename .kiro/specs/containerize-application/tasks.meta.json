@@ -1,0 +1,244 @@
+{
+  "pbtResults": {},
+  "executionHistory": {
+    "1.1 Initialize `server/` module and implement pure functions": [
+      {
+        "executionId": "e8af9250-fb53-47e3-9e24-a21ef83395f3",
+        "chatSessionId": "sess_1af54cf9-1321-4bb4-9830-a98a7cf0f347",
+        "timestamp": 1794936495130
+      },
+      {
+        "executionId": "e8af9250-fb53-47e3-9e24-a21ef83395f3",
+        "chatSessionId": "sess_1af54cf9-1321-4bb4-9830-a98a7cf0f347",
+        "timestamp": 1794936506352
+      },
+      {
+        "executionId": "e8af9250-fb53-47e3-9e24-a21ef83395f3",
+        "chatSessionId": "sess_1af54cf9-1321-4bb4-9830-a98a7cf0f347",
+        "timestamp": 1794936604785
+      }
+    ],
+    "2.1 Implement `NewHandler(root fs.FS)`": [
+      {
+        "executionId": "e8af9250-fb53-47e3-9e24-a21ef83395f3",
+        "chatSessionId": "sess_1af54cf9-1321-4bb4-9830-a98a7cf0f347",
+        "timestamp": 1794936495246
+      },
+      {
+        "executionId": "e8af9250-fb53-47e3-9e24-a21ef83395f3",
+        "chatSessionId": "sess_1af54cf9-1321-4bb4-9830-a98a7cf0f347",
+        "timestamp": 1794936616871
+      },
+      {
+        "executionId": "e8af9250-fb53-47e3-9e24-a21ef83395f3",
+        "chatSessionId": "sess_1af54cf9-1321-4bb4-9830-a98a7cf0f347",
+        "timestamp": 1794936731378
+      }
+    ],
+    "2.6 Implement `main` startup and graceful shutdown": [
+      {
+        "executionId": "e8af9250-fb53-47e3-9e24-a21ef83395f3",
+        "chatSessionId": "sess_1af54cf9-1321-4bb4-9830-a98a7cf0f347",
+        "timestamp": 1794936495336
+      },
+      {
+        "executionId": "e8af9250-fb53-47e3-9e24-a21ef83395f3",
+        "chatSessionId": "sess_1af54cf9-1321-4bb4-9830-a98a7cf0f347",
+        "timestamp": 1794936739636
+      },
+      {
+        "executionId": "e8af9250-fb53-47e3-9e24-a21ef83395f3",
+        "chatSessionId": "sess_1af54cf9-1321-4bb4-9830-a98a7cf0f347",
+        "timestamp": 1794936838173
+      }
+    ],
+    "3. Checkpoint - Ensure all tests pass": [
+      {
+        "executionId": "e8af9250-fb53-47e3-9e24-a21ef83395f3",
+        "chatSessionId": "sess_1af54cf9-1321-4bb4-9830-a98a7cf0f347",
+        "timestamp": 1794936495421
+      },
+      {
+        "executionId": "e8af9250-fb53-47e3-9e24-a21ef83395f3",
+        "chatSessionId": "sess_1af54cf9-1321-4bb4-9830-a98a7cf0f347",
+        "timestamp": 1794937059348
+      },
+      {
+        "executionId": "e8af9250-fb53-47e3-9e24-a21ef83395f3",
+        "chatSessionId": "sess_1af54cf9-1321-4bb4-9830-a98a7cf0f347",
+        "timestamp": 1794937131114
+      }
+    ],
+    "4.1 Add `fast-check` dev dependency and implement `src/lib/apiFetch.ts`": [
+      {
+        "executionId": "e8af9250-fb53-47e3-9e24-a21ef83395f3",
+        "chatSessionId": "sess_1af54cf9-1321-4bb4-9830-a98a7cf0f347",
+        "timestamp": 1794936495499
+      },
+      {
+        "executionId": "e8af9250-fb53-47e3-9e24-a21ef83395f3",
+        "chatSessionId": "sess_1af54cf9-1321-4bb4-9830-a98a7cf0f347",
+        "timestamp": 1794936507446
+      },
+      {
+        "executionId": "e8af9250-fb53-47e3-9e24-a21ef83395f3",
+        "chatSessionId": "sess_1af54cf9-1321-4bb4-9830-a98a7cf0f347",
+        "timestamp": 1794936604120
+      }
+    ],
+    "6.1 Create `.dockerignore`": [
+      {
+        "executionId": "e8af9250-fb53-47e3-9e24-a21ef83395f3",
+        "chatSessionId": "sess_1af54cf9-1321-4bb4-9830-a98a7cf0f347",
+        "timestamp": 1794936495568
+      },
+      {
+        "executionId": "e8af9250-fb53-47e3-9e24-a21ef83395f3",
+        "chatSessionId": "sess_1af54cf9-1321-4bb4-9830-a98a7cf0f347",
+        "timestamp": 1794936507972
+      },
+      {
+        "executionId": "e8af9250-fb53-47e3-9e24-a21ef83395f3",
+        "chatSessionId": "sess_1af54cf9-1321-4bb4-9830-a98a7cf0f347",
+        "timestamp": 1794936604502
+      }
+    ],
+    "6.2 Create `scripts/guard-dist.sh`": [
+      {
+        "executionId": "e8af9250-fb53-47e3-9e24-a21ef83395f3",
+        "chatSessionId": "sess_1af54cf9-1321-4bb4-9830-a98a7cf0f347",
+        "timestamp": 1794936495629
+      },
+      {
+        "executionId": "e8af9250-fb53-47e3-9e24-a21ef83395f3",
+        "chatSessionId": "sess_1af54cf9-1321-4bb4-9830-a98a7cf0f347",
+        "timestamp": 1794936617419
+      },
+      {
+        "executionId": "e8af9250-fb53-47e3-9e24-a21ef83395f3",
+        "chatSessionId": "sess_1af54cf9-1321-4bb4-9830-a98a7cf0f347",
+        "timestamp": 1794936732420
+      }
+    ],
+    "6.3 Create the multi-stage `Dockerfile`": [
+      {
+        "executionId": "e8af9250-fb53-47e3-9e24-a21ef83395f3",
+        "chatSessionId": "sess_1af54cf9-1321-4bb4-9830-a98a7cf0f347",
+        "timestamp": 1794936495703
+      },
+      {
+        "executionId": "e8af9250-fb53-47e3-9e24-a21ef83395f3",
+        "chatSessionId": "sess_1af54cf9-1321-4bb4-9830-a98a7cf0f347",
+        "timestamp": 1794936844189
+      },
+      {
+        "executionId": "e8af9250-fb53-47e3-9e24-a21ef83395f3",
+        "chatSessionId": "sess_1af54cf9-1321-4bb4-9830-a98a7cf0f347",
+        "timestamp": 1794936924910
+      }
+    ],
+    "6.4 Create `scripts/build.sh`": [
+      {
+        "executionId": "e8af9250-fb53-47e3-9e24-a21ef83395f3",
+        "chatSessionId": "sess_1af54cf9-1321-4bb4-9830-a98a7cf0f347",
+        "timestamp": 1794936495794
+      },
+      {
+        "executionId": "e8af9250-fb53-47e3-9e24-a21ef83395f3",
+        "chatSessionId": "sess_1af54cf9-1321-4bb4-9830-a98a7cf0f347",
+        "timestamp": 1794936931266
+      },
+      {
+        "executionId": "e8af9250-fb53-47e3-9e24-a21ef83395f3",
+        "chatSessionId": "sess_1af54cf9-1321-4bb4-9830-a98a7cf0f347",
+        "timestamp": 1794937039665
+      }
+    ],
+    "6.5 Create `scripts/verify-image.sh`": [
+      {
+        "executionId": "e8af9250-fb53-47e3-9e24-a21ef83395f3",
+        "chatSessionId": "sess_1af54cf9-1321-4bb4-9830-a98a7cf0f347",
+        "timestamp": 1794936495913
+      },
+      {
+        "executionId": "e8af9250-fb53-47e3-9e24-a21ef83395f3",
+        "chatSessionId": "sess_1af54cf9-1321-4bb4-9830-a98a7cf0f347",
+        "timestamp": 1794936932252
+      },
+      {
+        "executionId": "e8af9250-fb53-47e3-9e24-a21ef83395f3",
+        "chatSessionId": "sess_1af54cf9-1321-4bb4-9830-a98a7cf0f347",
+        "timestamp": 1794937041053
+      }
+    ],
+    "7.1 Add a \"For the Platform team\" section to `README.md`": [
+      {
+        "executionId": "e8af9250-fb53-47e3-9e24-a21ef83395f3",
+        "chatSessionId": "sess_1af54cf9-1321-4bb4-9830-a98a7cf0f347",
+        "timestamp": 1794936495997
+      },
+      {
+        "executionId": "e8af9250-fb53-47e3-9e24-a21ef83395f3",
+        "chatSessionId": "sess_1af54cf9-1321-4bb4-9830-a98a7cf0f347",
+        "timestamp": 1794936933047
+      },
+      {
+        "executionId": "e8af9250-fb53-47e3-9e24-a21ef83395f3",
+        "chatSessionId": "sess_1af54cf9-1321-4bb4-9830-a98a7cf0f347",
+        "timestamp": 1794937042846
+      }
+    ],
+    "8. Final checkpoint - Ensure all tests pass": [
+      {
+        "executionId": "e8af9250-fb53-47e3-9e24-a21ef83395f3",
+        "chatSessionId": "sess_1af54cf9-1321-4bb4-9830-a98a7cf0f347",
+        "timestamp": 1794936496072
+      },
+      {
+        "executionId": "e8af9250-fb53-47e3-9e24-a21ef83395f3",
+        "chatSessionId": "sess_1af54cf9-1321-4bb4-9830-a98a7cf0f347",
+        "timestamp": 1794937137459
+      },
+      {
+        "executionId": "e8af9250-fb53-47e3-9e24-a21ef83395f3",
+        "chatSessionId": "sess_1af54cf9-1321-4bb4-9830-a98a7cf0f347",
+        "timestamp": 1794937207691
+      }
+    ],
+    "4. Implement the API fetch wrapper": [
+      {
+        "executionId": "e8af9250-fb53-47e3-9e24-a21ef83395f3",
+        "chatSessionId": "sess_1af54cf9-1321-4bb4-9830-a98a7cf0f347",
+        "timestamp": 1794936604261
+      }
+    ],
+    "1. Create the Go App_Server module and pure functions": [
+      {
+        "executionId": "e8af9250-fb53-47e3-9e24-a21ef83395f3",
+        "chatSessionId": "sess_1af54cf9-1321-4bb4-9830-a98a7cf0f347",
+        "timestamp": 1794936604983
+      }
+    ],
+    "2. Implement the HTTP handler and server lifecycle": [
+      {
+        "executionId": "e8af9250-fb53-47e3-9e24-a21ef83395f3",
+        "chatSessionId": "sess_1af54cf9-1321-4bb4-9830-a98a7cf0f347",
+        "timestamp": 1794936838292
+      }
+    ],
+    "6. Build, guard and verification tooling": [
+      {
+        "executionId": "e8af9250-fb53-47e3-9e24-a21ef83395f3",
+        "chatSessionId": "sess_1af54cf9-1321-4bb4-9830-a98a7cf0f347",
+        "timestamp": 1794937041372
+      }
+    ],
+    "7. Write the README handoff": [
+      {
+        "executionId": "e8af9250-fb53-47e3-9e24-a21ef83395f3",
+        "chatSessionId": "sess_1af54cf9-1321-4bb4-9830-a98a7cf0f347",
+        "timestamp": 1794937043109
+      }
+    ]
+  }
+}

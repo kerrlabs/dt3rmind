@@ -1,0 +1,19 @@
+# Secrets (Req 13.1)
+.env
+.env.*
+
+# VCS and local build output
+.git
+node_modules
+dist
+frontend-dist
+*.tsbuildinfo
+
+# Not needed for the image (Req 14.2 covers frontend-dist)
+docs
+tests
+data
+
+# Python artifacts (Req 10.1, 10.2)
+**/__pycache__
+**/*.pyc
