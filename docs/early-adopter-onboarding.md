@@ -129,10 +129,12 @@ Drain in-flight requests, then exit, within about 25 seconds.
 ### 7. Build for ARM64
 
 We run on AWS Graviton, not x86. On an Apple Silicon Mac you are already on ARM. On
-an Intel machine, be explicit:
+an Intel machine, be explicit.  Use any container tool that builds an OCI image; for
+example, with podman or with docker:
 
-```dockerfile
-# or: podman build --platform linux/arm64 ...
+```bash
+podman build --platform linux/arm64 .
+docker build --platform linux/arm64 .
 ```
 
 We check this when we onboard your image and will tell you if it is wrong.

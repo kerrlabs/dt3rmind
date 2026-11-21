@@ -239,6 +239,52 @@
         "chatSessionId": "sess_1af54cf9-1321-4bb4-9830-a98a7cf0f347",
         "timestamp": 1794937043109
       }
+    ],
+    "9.2 Run the Go tests": [
+      {
+        "executionId": "127ca1ba-e9bb-42d2-9fb2-ba15b1ac1ed3",
+        "chatSessionId": "sess_e49da954-2e38-4488-a56f-c424e43c4037",
+        "timestamp": 1795276175343
+      },
+      {
+        "executionId": "044f9459-c474-453b-b5a8-981b32e3a98e",
+        "chatSessionId": "sess_e49da954-2e38-4488-a56f-c424e43c4037",
+        "timestamp": 1795276378928
+      },
+      {
+        "executionId": "29fdb22f-8c09-4a3c-8dc7-2b8254adfae4",
+        "chatSessionId": "sess_e49da954-2e38-4488-a56f-c424e43c4037",
+        "timestamp": 1795276473698
+      },
+      {
+        "executionId": "29fdb22f-8c09-4a3c-8dc7-2b8254adfae4",
+        "chatSessionId": "sess_e49da954-2e38-4488-a56f-c424e43c4037",
+        "timestamp": 1795276941693
+      }
+    ],
+    "9.4 Review README wording": [
+      {
+        "executionId": "8c5a8520-b0ae-408a-8acd-63edd78e524f",
+        "chatSessionId": "sess_6db3bb7d-bdf9-42a5-99d2-8ccf62822ede",
+        "timestamp": 1795276988364
+      },
+      {
+        "executionId": "8c5a8520-b0ae-408a-8acd-63edd78e524f",
+        "chatSessionId": "sess_6db3bb7d-bdf9-42a5-99d2-8ccf62822ede",
+        "timestamp": 1795277028225
+      }
+    ],
+    "9.3 Run `scripts/verify-image.sh`": [
+      {
+        "executionId": "6115a4f8-611d-4b75-a8e1-b55eb1d3d63c",
+        "chatSessionId": "sess_6db3bb7d-bdf9-42a5-99d2-8ccf62822ede",
+        "timestamp": 1795277107804
+      },
+      {
+        "executionId": "b956924a-5dfc-4f56-b5a8-cdfb54da044b",
+        "chatSessionId": "sess_6db3bb7d-bdf9-42a5-99d2-8ccf62822ede",
+        "timestamp": 1795278425737
+      }
     ]
   }
 }

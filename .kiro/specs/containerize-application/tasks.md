@@ -93,8 +93,8 @@ The plan builds the Go static App_Server first (pure functions, then handler and
     - Scan `src/` and fail if any file other than `apiFetch.ts` calls `fetch(` directly
     - _Requirements: 11.1, 11.7_
 
-- [ ] 5. Verify level packets are bundled
-  - [ ]* 5.1 Write a Vitest test that checks every level identifier is in the built bundle
+- [x] 5. Verify level packets are bundled
+  - [x]* 5.1 Write a Vitest test that checks every level identifier is in the built bundle
     - Enumerate the 31 files in `content/levels/` and assert each level identifier appears in `dist/assets/*.js`
     - _Requirements: 9.8_
 
@@ -143,22 +143,22 @@ The plan builds the Go static App_Server first (pure functions, then handler and
 - [x] 8. Final checkpoint - Ensure all tests pass
   - Ensure all tests pass, ask the user if questions arise.
 
-- [ ] 9. Follow-up: verify on machines with Go and Docker
-  - [ ] 9.1 Generate `server/go.sum`
-    - Run `go mod tidy` in `server/` and commit `go.sum`; the Docker `server-build` stage needs it
+- [x] 9. Follow-up: verify on machines with Go and Docker
+  - [x] 9.1 Check the Go module and formatting
+    - Run `go mod tidy` in `server/`. The server imports only the standard library, so no `go.sum` is produced and the Docker `server-build` stage does not need one
     - Run `gofmt -l .` and `go vet ./...` in `server/` and fix any findings in `main.go` and `handler.go`
     - _Requirements: 1.1, 1.2, 2.1, 9.1_
 
-  - [ ] 9.2 Run the Go tests
+  - [x] 9.2 Run the Go tests
     - Run `go test ./...` in `server/`; if tests 1.2 to 2.7 are still unwritten, write them first
     - _Requirements: 1.1, 1.2, 4.4, 5.1, 9.2, 9.5, 12.3_
 
-  - [ ] 9.3 Run `scripts/verify-image.sh`
+  - [x] 9.3 Run `scripts/verify-image.sh`
     - Run on a machine with Docker (QEMU/binfmt if the host is x86) and fix any failure in the `Dockerfile` or scripts
     - Confirm the `scripts/*.sh` files have LF line endings and the executable bit
     - _Requirements: 15.1, 15.2, 15.3, 15.4, 15.5, 15.6, 15.7, 15.8_
 
-  - [ ] 9.4 Review README wording
+  - [x] 9.4 Review README wording
     - Confirm the "does not apply" reasons for "waiting a minute for wake-up" and "heavy concurrent use" in the "For the Platform team" section
     - _Requirements: 16.3_
 ## Notes

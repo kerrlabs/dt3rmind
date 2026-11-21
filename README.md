@@ -189,5 +189,5 @@ docker buildx build --platform linux/arm64 -t dt3rmind:release --load .
 - **You need to store data:** does not apply. The app is a static single-page app and keeps learner progress in the browser's `localStorage`, so the server stores nothing.
 - **You need to reach an existing system:** does not apply. The server only serves its own files and makes no calls to any database, API, or file share.
 - **You need roles or permissions:** does not apply. Every authenticated staff member gets the same content, and the app never reads role or group data.
-- **Waiting a minute for the app to wake is a problem for your users:** does not apply. The app is static, so a one-minute wake page is acceptable and the app works as soon as the page loads.
-- **You expect heavy concurrent use:** does not apply. The server only hands out static files and the app has no shared server-side state, so expected use is light.
+- **Waiting a minute for the app to wake is a problem for your users:** does not apply. The app makes no backend calls, so once the static files load it runs entirely in the browser and a wake-up delay only affects the first page load.
+- **You expect heavy concurrent use:** does not apply. The Go server only serves static files with no shared server-side state, so each learner's work happens in their own browser and adds almost no load.

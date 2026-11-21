@@ -20,3 +20,5 @@ frontend-dist/assets/index-DTts0tX3.js
 frontend-dist/favicon.svg
 frontend-dist/icons.svg
 frontend-dist/index.html
+# Windows build artifacts
+*.exe
