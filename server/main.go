@@ -102,8 +102,8 @@ func RedactedLogLine(method, path string, status int, d time.Duration) string {
 }
 
 const (
-servRoot        = "/srv"
-shutdownTimeout = 20 * time.Second
+	servRoot        = "/srv"
+	shutdownTimeout = 20 * time.Second
 )
 
 // run starts the server and blocks until ctx is cancelled (signal) or serving
@@ -111,59 +111,59 @@ shutdownTimeout = 20 * time.Second
 // missing index.html, bind failure or drain timeout, 0 after a clean drain.
 // onListen, if non-nil, is called with the bound address once listening.
 func run(ctx context.Context, appPort, root string, deadline time.Duration, stderr io.Writer, onListen func(net.Addr)) int {
-port, err := ParsePort(appPort)
-if err != nil {
-fmt.Fprintln(stderr, err)
-return 2
-}
+	port, err := ParsePort(appPort)
+	if err != nil {
+		fmt.Fprintln(stderr, err)
+		return 2
+	}
 
-rootFS := os.DirFS(root)
-f, err := rootFS.Open(indexFile)
-if err != nil {
-fmt.Fprintf(stderr, "cannot open %s/%s: %v\n", root, indexFile, err)
-return 1
-}
-f.Close()
+	rootFS := os.DirFS(root)
+	f, err := rootFS.Open(indexFile)
+	if err != nil {
+		fmt.Fprintf(stderr, "cannot open %s/%s: %v\n", root, indexFile, err)
+		return 1
+	}
+	f.Close()
 
-// Single listener, loopback only, no fallback address.
-ln, err := net.Listen("tcp4", ListenAddr(port))
-if err != nil {
-fmt.Fprintf(stderr, "bind failed: %v\n", err)
-return 1
-}
-if onListen != nil {
-onListen(ln.Addr())
-}
+	// Single listener, loopback only, no fallback address.
+	ln, err := net.Listen("tcp4", ListenAddr(port))
+	if err != nil {
+		fmt.Fprintf(stderr, "bind failed: %v\n", err)
+		return 1
+	}
+	if onListen != nil {
+		onListen(ln.Addr())
+	}
 
-srv := &http.Server{Handler: NewHandler(rootFS)}
-serveErr := make(chan error, 1)
-go func() { serveErr <- srv.Serve(ln) }()
+	srv := &http.Server{Handler: NewHandler(rootFS)}
+	serveErr := make(chan error, 1)
+	go func() { serveErr <- srv.Serve(ln) }()
 
-select {
-case err := <-serveErr:
-if err != nil && !errors.Is(err, http.ErrServerClosed) {
-fmt.Fprintf(stderr, "serve failed: %v\n", err)
-return 1
-}
-return 0
-case <-ctx.Done():
-}
+	select {
+	case err := <-serveErr:
+		if err != nil && !errors.Is(err, http.ErrServerClosed) {
+			fmt.Fprintf(stderr, "serve failed: %v\n", err)
+			return 1
+		}
+		return 0
+	case <-ctx.Done():
+	}
 
-// Shutdown closes the listener at once, then waits for in-flight requests.
-sctx, cancel := context.WithTimeout(context.Background(), deadline)
-defer cancel()
-if err := srv.Shutdown(sctx); err != nil {
-_ = srv.Close()
-fmt.Fprintf(stderr, "shutdown timed out: %v\n", err)
-return 1
-}
-return 0
+	// Shutdown closes the listener at once, then waits for in-flight requests.
+	sctx, cancel := context.WithTimeout(context.Background(), deadline)
+	defer cancel()
+	if err := srv.Shutdown(sctx); err != nil {
+		_ = srv.Close()
+		fmt.Fprintf(stderr, "shutdown timed out: %v\n", err)
+		return 1
+	}
+	return 0
 }
 
 func main() {
-ctx, stop := signal.NotifyContext(context.Background(), syscall.SIGTERM, syscall.SIGINT)
-defer stop()
-code := run(ctx, os.Getenv("APP_PORT"), servRoot, shutdownTimeout, os.Stderr, nil)
-stop()
-os.Exit(code)
+	ctx, stop := signal.NotifyContext(context.Background(), syscall.SIGTERM, syscall.SIGINT)
+	defer stop()
+	code := run(ctx, os.Getenv("APP_PORT"), servRoot, shutdownTimeout, os.Stderr, nil)
+	stop()
+	os.Exit(code)
 }
